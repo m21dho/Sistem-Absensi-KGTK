@@ -1,0 +1,1960 @@
+(function () {
+	'use strict';
+	var C = window.KGTK_ADMIN || {};
+
+	function api(path, method, body) {
+		var url = C.root + path;
+		if (C.root.indexOf('?') > -1 && path.indexOf('?') > -1) { // permalink polos: gabungkan query dengan &
+			var q = path.indexOf('?');
+			url = C.root + path.slice(0, q) + '&' + path.slice(q + 1);
+		}
+		return fetch(url, {
+			method: method,
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': C.nonce },
+			body: body ? JSON.stringify(body) : undefined
+		}).then(function (r) {
+			return r.json().catch(function () { return {}; }).then(function (d) {
+				if (!r.ok) { throw new Error(d.message || 'Terjadi kesalahan. Coba lagi.'); }
+				return d;
+			});
+		});
+	}
+
+	/* Salin link */
+	function copyText(text, btn) {
+		var done = function () {
+			var old = btn.textContent;
+			btn.textContent = 'Tersalin!';
+			setTimeout(function () { btn.textContent = old; }, 1500);
+		};
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+		} else { fallback(); }
+		function fallback() {
+			var t = document.createElement('textarea');
+			t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+			document.body.appendChild(t); t.select();
+			try { document.execCommand('copy'); done(); } catch (e) { window.prompt('Salin link ini:', text); }
+			document.body.removeChild(t);
+		}
+	}
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest('[data-copy]');
+		if (b) { copyText(b.getAttribute('data-copy'), b); }
+	});
+
+	function esc(str) {
+		if (str === null || str === undefined) { return ''; }
+		return String(str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
+
+	/**
+	 * Dialog Modal KGTK yang selaras dengan tema sistem web.
+	 */
+	function showModal(opts) {
+		return new Promise(function (resolve) {
+			opts = opts || {};
+			var type = opts.type || 'primary'; // 'primary' | 'danger' | 'warning'
+			var isAlert = !!opts.isAlert;
+			var title = opts.title || (isAlert ? 'Pemberitahuan' : 'Konfirmasi');
+			var message = opts.message || '';
+			var confirmText = opts.confirmText || (isAlert ? 'Mengerti' : (type === 'danger' ? 'Ya, Hapus' : 'Ya, Lanjutkan'));
+			var cancelText = opts.cancelText || 'Batal';
+
+			var iconSvg = '';
+			if (type === 'danger') {
+				iconSvg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
+			} else if (type === 'warning') {
+				iconSvg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>';
+			} else {
+				iconSvg = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+			}
+
+			var msgHtml = esc(message).replace(/\n\n/g, '<div class="kgtk-modal-space"></div>').replace(/\n/g, '<br>');
+
+			var overlay = document.createElement('div');
+			overlay.className = 'kgtk-modal-overlay';
+
+			var dialog = document.createElement('div');
+			dialog.className = 'kgtk-modal-dialog kgtk-ui';
+
+			var confirmBtnClass = 'kgtk-btn';
+			if (type === 'danger') {
+				confirmBtnClass += ' kgtk-btn--danger-solid';
+			} else if (type === 'primary') {
+				confirmBtnClass += ' kgtk-btn--navy';
+			}
+
+			var listHtml = '';
+			if (opts.errors && opts.errors.length > 0) {
+				listHtml = '<ul class="kgtk-modal-err-list">';
+				opts.errors.forEach(function (errItem) {
+					listHtml += '<li class="kgtk-modal-err-item">' +
+						'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+						'<div><strong>' + esc(errItem.label) + ':</strong> ' + esc(errItem.msg) + '</div>' +
+					'</li>';
+				});
+				listHtml += '</ul>';
+			}
+
+			dialog.innerHTML =
+				'<div class="kgtk-modal-top">' +
+					'<div class="kgtk-modal-icon is-' + type + '">' + iconSvg + '</div>' +
+					'<div class="kgtk-modal-content">' +
+						'<h3 class="kgtk-modal-title">' + esc(title) + '</h3>' +
+						(message ? '<div class="kgtk-modal-desc">' + msgHtml + '</div>' : '') +
+						listHtml +
+					'</div>' +
+				'</div>' +
+				'<div class="kgtk-modal-actions">' +
+					(!isAlert ? '<button type="button" class="kgtk-btn kgtk-btn--ghost kgtk-modal-cancel">' + esc(cancelText) + '</button>' : '') +
+					'<button type="button" class="' + confirmBtnClass + ' kgtk-modal-confirm">' + esc(confirmText) + '</button>' +
+				'</div>';
+
+			overlay.appendChild(dialog);
+			document.body.appendChild(overlay);
+
+			requestAnimationFrame(function () {
+				overlay.classList.add('is-visible');
+			});
+
+			var isClosed = false;
+			var closeDialog = function (result) {
+				if (isClosed) { return; }
+				isClosed = true;
+				overlay.classList.remove('is-visible');
+				document.removeEventListener('keydown', onKey);
+				setTimeout(function () {
+					if (overlay.parentNode) {
+						overlay.parentNode.removeChild(overlay);
+					}
+					resolve(result);
+				}, 200);
+			};
+
+			var onKey = function (e) {
+				if (e.key === 'Escape') {
+					e.preventDefault();
+					closeDialog(false);
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					closeDialog(true);
+				}
+			};
+			document.addEventListener('keydown', onKey);
+
+			var btnConfirm = dialog.querySelector('.kgtk-modal-confirm');
+			if (btnConfirm) {
+				btnConfirm.addEventListener('click', function () { closeDialog(true); });
+				btnConfirm.focus();
+			}
+
+			var btnCancel = dialog.querySelector('.kgtk-modal-cancel');
+			if (btnCancel) {
+				btnCancel.addEventListener('click', function () { closeDialog(false); });
+			}
+
+			overlay.addEventListener('click', function (e) {
+				if (e.target === overlay) {
+					closeDialog(false);
+				}
+			});
+		});
+	}
+
+	function modalConfirm(opts) {
+		if (typeof opts === 'string') {
+			opts = { message: opts };
+		}
+		opts.isAlert = false;
+		return showModal(opts);
+	}
+
+	function modalAlert(opts) {
+		if (typeof opts === 'string') {
+			opts = { message: opts };
+		}
+		opts.isAlert = true;
+		return showModal(opts);
+	}
+
+	/* Hapus pelatihan */
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest('[data-hapus]');
+		if (!b) { return; }
+		var nama = b.getAttribute('data-nama');
+		modalConfirm({
+			title: 'Hapus Pelatihan',
+			message: 'Hapus pelatihan "' + nama + '"?\n\nSemua kelas dan data peserta pelatihan ini ikut terhapus dan tidak bisa dikembalikan.',
+			confirmText: 'Ya, Hapus Pelatihan',
+			cancelText: 'Batal',
+			type: 'danger'
+		}).then(function (ok) {
+			if (!ok) { return; }
+			b.disabled = true;
+			api('admin/pelatihan/' + b.getAttribute('data-hapus'), 'DELETE').then(function () {
+				var card = b.closest('.kgtk-pcard');
+				if (card) { card.remove(); }
+				if (!document.querySelector('.kgtk-pcard')) { window.location.reload(); }
+			}).catch(function (err) {
+				b.disabled = false;
+				modalAlert({ title: 'Gagal Menghapus', message: err.message, type: 'danger' });
+			});
+		});
+	});
+
+	/* Form buat pelatihan */
+	var form = document.getElementById('kgtk-form-buat');
+	if (form) {
+		var box = document.getElementById('kgtk-form-error');
+		var showErr = function (m) { box.textContent = m; box.hidden = false; box.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+
+		var list = document.getElementById('kgtk-kelas-list');
+		var tpl = document.getElementById('kgtk-kelas-tpl');
+		var refresh = function () {
+			var rows = list.querySelectorAll('.kgtk-kelas-row');
+			Array.prototype.forEach.call(rows, function (r, i) {
+				r.querySelector('.kgtk-kelas-no').textContent = String(i + 1);
+				r.querySelector('[data-up]').disabled = i === 0;
+				r.querySelector('[data-down]').disabled = i === rows.length - 1;
+				r.querySelector('[data-del]').disabled = rows.length === 1;
+			});
+		};
+		document.getElementById('kgtk-kelas-add').addEventListener('click', function () {
+			if (list.querySelectorAll('.kgtk-kelas-row').length >= 20) { return showErr('Maksimal 20 kelas per pelatihan.'); }
+			list.appendChild(tpl.content.cloneNode(true));
+			refresh();
+			var rows = list.querySelectorAll('.kgtk-kelas-row');
+			rows[rows.length - 1].querySelector('[data-knama]').focus();
+		});
+		list.addEventListener('click', function (e) {
+			var b = e.target.closest('button');
+			if (!b || b.disabled) { return; }
+			var row = b.closest('.kgtk-kelas-row');
+			if (b.hasAttribute('data-del')) { row.remove(); }
+			else if (b.hasAttribute('data-up') && row.previousElementSibling) { list.insertBefore(row, row.previousElementSibling); }
+			else if (b.hasAttribute('data-down') && row.nextElementSibling) { list.insertBefore(row.nextElementSibling, row); }
+			refresh();
+		});
+		refresh();
+		form.elements.kode.addEventListener('input', function (e) {
+			e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+		});
+
+		var undList = document.getElementById('kgtk-undangan-list');
+		var undTpl = document.getElementById('kgtk-undangan-tpl');
+		var undAddBtn = document.getElementById('kgtk-undangan-add');
+
+		var refreshUndanganRows = function () {
+			if (!undList) { return; }
+			var uRows = undList.querySelectorAll('.kgtk-und-row');
+			Array.prototype.forEach.call(uRows, function (r, i) {
+				var noEl = r.querySelector('.kgtk-und-no');
+				if (noEl) { noEl.textContent = String(i + 1); }
+			});
+		};
+
+		if (undAddBtn && undList && undTpl) {
+			undAddBtn.addEventListener('click', function () {
+				if (undList.querySelectorAll('.kgtk-und-row').length >= 1000) {
+					return showErr('Maksimal 1000 baris peserta ditetapkan saat membuat pelatihan.');
+				}
+				undList.appendChild(undTpl.content.cloneNode(true));
+				refreshUndanganRows();
+				var uRows = undList.querySelectorAll('.kgtk-und-row');
+				var lastRow = uRows[uRows.length - 1];
+				var inpNik = lastRow.querySelector('[data-unik]');
+				if (inpNik) {
+					inpNik.addEventListener('input', function (e) {
+						e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 16);
+					});
+				}
+				var inpNama = lastRow.querySelector('[data-unama]');
+				if (inpNama) { inpNama.focus(); }
+			});
+
+			undList.addEventListener('click', function (e) {
+				var b = e.target.closest('[data-und-del]');
+				if (!b) { return; }
+				var row = b.closest('.kgtk-und-row');
+				if (row) { row.remove(); }
+				refreshUndanganRows();
+			});
+		}
+
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			box.hidden = true;
+			var f = form.elements;
+			if (!f.nama.value.trim()) { return showErr('Nama pelatihan wajib diisi.'); }
+			if (!f.tanggal_mulai.value) { return showErr('Tanggal mulai wajib diisi.'); }
+			if (f.tanggal_selesai.value && f.tanggal_selesai.value < f.tanggal_mulai.value) {
+				return showErr('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+			}
+			var kelas = [], seen = {};
+			var rows = list.querySelectorAll('.kgtk-kelas-row');
+			for (var i = 0; i < rows.length; i++) {
+				var n = rows[i].querySelector('[data-knama]').value.trim();
+				var v = parseInt(rows[i].querySelector('[data-kslot]').value, 10);
+				if (!n) { return showErr('Nama kelas nomor ' + (i + 1) + ' wajib diisi.'); }
+				if (seen[n.toLowerCase()]) { return showErr('Nama kelas tidak boleh sama: ' + n + '.'); }
+				if (!(v >= 1 && v <= 2000)) { return showErr('Slot kelas ' + n + ' harus antara 1 dan 2000.'); }
+				seen[n.toLowerCase()] = true;
+				kelas.push({ nama: n, slot: v });
+			}
+			if (!kelas.length) { return showErr('Tambahkan minimal satu kelas.'); }
+
+			var undangan = [];
+			if (undList) {
+				var uRows = undList.querySelectorAll('.kgtk-und-row');
+				for (var ui = 0; ui < uRows.length; ui++) {
+					var unama = (uRows[ui].querySelector('[data-unama]').value || '').trim();
+					var unik = (uRows[ui].querySelector('[data-unik]').value || '').trim();
+					var uhp = (uRows[ui].querySelector('[data-uhp]').value || '').trim();
+					var uemail = (uRows[ui].querySelector('[data-uemail]').value || '').trim();
+
+					if (!unama && !unik && !uhp && !uemail) {
+						continue; // baris kosong diabaikan
+					}
+
+					if (unik && !/^\d{16}$/.test(unik)) {
+						return showErr('Baris ' + (ui + 1) + ' peserta ditetapkan: NIK harus 16 digit angka.');
+					}
+					if (uemail) {
+						if (uemail.indexOf('@') === -1 || !uemail.toLowerCase().endsWith('belajar.id')) {
+							return showErr('Baris ' + (ui + 1) + ' peserta ditetapkan: Email harus berakhiran belajar.id.');
+						}
+					}
+
+					undangan.push({
+						nama: unama,
+						nik: unik,
+						hp: uhp,
+						email_belajar: uemail
+					});
+				}
+			}
+
+			var btn = form.querySelector('button[type=submit]');
+			btn.disabled = true; btn.textContent = 'Menyimpan...';
+			api('admin/pelatihan', 'POST', {
+				nama: f.nama.value, penyelenggara: f.penyelenggara.value,
+				tanggal_mulai: f.tanggal_mulai.value, tanggal_selesai: f.tanggal_selesai.value,
+				lokasi: f.lokasi.value,
+				tipe_pj: f.tipe_pj ? f.tipe_pj.value : 'Penanggung Jawab',
+				penanggung_jawab: f.penanggung_jawab.value, keterangan: f.keterangan.value,
+				kode: f.kode.value, kelas: kelas, undangan: undangan
+			}).then(function (d) { window.location.href = d.url || C.list; })
+				.catch(function (err) { btn.disabled = false; btn.textContent = 'Simpan pelatihan'; showErr(err.message); });
+		});
+	}
+
+	/* Tab kelas & cetak */
+	var tabs = document.querySelectorAll('.kgtk-tab');
+	Array.prototype.forEach.call(tabs, function (t) {
+		t.addEventListener('click', function () {
+			var id = t.getAttribute('data-tab');
+			Array.prototype.forEach.call(tabs, function (x) { x.classList.toggle('is-active', x === t); });
+			Array.prototype.forEach.call(document.querySelectorAll('.kgtk-pane'), function (p) {
+				p.classList.toggle('is-active', p.getAttribute('data-pane') === id);
+			});
+			if (window.history && window.history.replaceState) {
+				window.history.replaceState(null, '', '#' + id);
+			}
+		});
+	});
+
+	if (window.location.hash) {
+		var activeHash = window.location.hash.replace('#', '');
+		var activeTabEl = document.querySelector('.kgtk-tab[data-tab="' + activeHash + '"]');
+		if (activeTabEl) {
+			activeTabEl.click();
+		}
+	}
+
+	/* Tambah peserta oleh admin */
+	var ft = document.getElementById('kgtk-form-tambah');
+	if (ft) {
+		var okBox = document.getElementById('kgtk-tambah-ok');
+		var erBox = document.getElementById('kgtk-tambah-error');
+		var info = document.getElementById('kgtk-tambah-info');
+		var selKelas = document.getElementById('kgtk-tambah-kelas');
+		var F = ft.elements;
+		var wrapJenisGtk = document.getElementById('kgtk-admin-wrap-jenis-gtk');
+		var sek = window.KGTKSekolah.create({ root: C.pubroot, kabkota: C.kabkota || [] });
+		document.getElementById('kgtk-sekolah-slot').appendChild(sek.node);
+		var FIELDS = ['nama', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'pendidikan', 'bank', 'rekening', 'npwp', 'pengalaman_jabatan', 'peran', 'jenis_gtk', 'nuptk', 'nip', 'hp', 'email', 'email_belajar', 'simpkb'];
+		var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		// Slot dan Jabatan hanya berlaku untuk peran Peserta.
+		var applyPeran = function () {
+			var pakaiSlot = F.peran.value === 'Peserta';
+			if (wrapJenisGtk) {
+				wrapJenisGtk.style.display = pakaiSlot ? '' : 'none';
+				if (!pakaiSlot && F.jenis_gtk) { F.jenis_gtk.value = ''; }
+			}
+			Array.prototype.forEach.call(selKelas.options, function (o) {
+				if (o.value !== '0') { o.disabled = pakaiSlot && o.getAttribute('data-penuh') === '1'; }
+			});
+			if (selKelas.selectedOptions[0] && selKelas.selectedOptions[0].disabled) { selKelas.value = '0'; }
+		};
+		F.peran.addEventListener('change', applyPeran);
+		applyPeran();
+		var tErr = function (m) { okBox.hidden = true; erBox.textContent = m; erBox.hidden = false; erBox.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+
+		['nik', 'nuptk', 'nip'].forEach(function (n) {
+			if (!F[n]) { return; }
+			var max = (n === 'nik' || n === 'nuptk') ? 16 : 18;
+			F[n].addEventListener('input', function () { F[n].value = F[n].value.replace(/\D/g, '').slice(0, max); });
+		});
+
+		// NIK 16 digit: isi otomatis dari biodata tersimpan (bila ada).
+		F.nik.addEventListener('input', function () {
+			info.hidden = true;
+			if (F.nik.value.length !== 16) { return; }
+			var nik = F.nik.value;
+			api('admin/guru?nik=' + encodeURIComponent(nik), 'GET').then(function (d) {
+				if (F.nik.value !== nik || !d.guru) { return; }
+				FIELDS.forEach(function (n) {
+					if (!F[n]) { return; }
+					if (d.guru[n] !== undefined && d.guru[n] !== null) {
+						F[n].value = d.guru[n];
+					} else if (n === 'nuptk' && d.guru.nisn) {
+						F[n].value = d.guru.nisn;
+					} else if (n === 'simpkb' && d.guru.email_guru) {
+						F[n].value = d.guru.email_guru;
+					}
+				});
+				sek.setValue(d.guru);
+				if (!d.guru.peran || !F.peran.querySelector('option[value="' + d.guru.peran + '"]')) { F.peran.value = 'Peserta'; }
+				applyPeran();
+				info.textContent = 'Data tersimpan dari pendaftaran sebelumnya sudah diisikan. Periksa dan ubah bila perlu.';
+				info.hidden = false;
+			}).catch(function () { /* diam: pengisian otomatis hanya bantuan */ });
+		});
+
+		ft.addEventListener('input', function (e) {
+			if (e.target && e.target.classList) {
+				e.target.classList.remove('is-invalid');
+			}
+		});
+		ft.addEventListener('change', function (e) {
+			if (e.target && e.target.classList) {
+				e.target.classList.remove('is-invalid');
+			}
+		});
+
+		ft.addEventListener('submit', function (e) {
+			e.preventDefault();
+			erBox.hidden = true; okBox.hidden = true;
+			var v = {};
+			['nik'].concat(FIELDS).forEach(function (n) { if (F[n]) { v[n] = F[n].value.trim(); } });
+			v.email = (v.email || '').toLowerCase();
+			v.email_belajar = (v.email_belajar || '').toLowerCase();
+			v.simpkb = v.simpkb || '';
+			v.nuptk = v.nuptk || '';
+			v.nisn = v.nuptk;
+			v.email_guru = v.simpkb;
+
+			// Reset indikator invalid sebelumnya
+			['nik'].concat(FIELDS).forEach(function (n) { if (F[n]) { F[n].classList.remove('is-invalid'); } });
+			if (sek.node) {
+				Array.prototype.forEach.call(sek.node.querySelectorAll('.kgtk-input'), function (inp) { inp.classList.remove('is-invalid'); });
+			}
+
+			var errors = [];
+			if (!/^\d{16}$/.test(v.nik)) {
+				errors.push({ label: 'NIK', msg: 'NIK harus 16 digit angka.', el: F.nik });
+			}
+			if (!v.nama) {
+				errors.push({ label: 'Nama Lengkap', msg: 'Nama lengkap wajib diisi.', el: F.nama });
+			}
+			if (!v.tempat_lahir) {
+				errors.push({ label: 'Tempat Lahir', msg: 'Tempat lahir wajib diisi.', el: F.tempat_lahir });
+			}
+			if (!v.tanggal_lahir) {
+				errors.push({ label: 'Tanggal Lahir', msg: 'Tanggal lahir wajib diisi.', el: F.tanggal_lahir });
+			}
+			if (!v.jenis_kelamin) {
+				errors.push({ label: 'Jenis Kelamin', msg: 'Pilih jenis kelamin.', el: F.jenis_kelamin });
+			}
+			if (!v.alamat) {
+				errors.push({ label: 'Alamat / Tempat Tinggal', msg: 'Alamat/tempat tinggal wajib diisi.', el: F.alamat });
+			}
+			if (!v.pendidikan) {
+				errors.push({ label: 'Pendidikan Terakhir', msg: 'Pilih pendidikan terakhir.', el: F.pendidikan });
+			}
+			if (!v.bank) {
+				errors.push({ label: 'Nama Bank', msg: 'Nama bank wajib diisi.', el: F.bank });
+			}
+			if (!v.rekening) {
+				errors.push({ label: 'Nomor Rekening', msg: 'Nomor rekening wajib diisi.', el: F.rekening });
+			}
+			if (!v.pengalaman_jabatan) {
+				errors.push({ label: 'Pengalaman Jabatan', msg: 'Pengalaman jabatan wajib diisi.', el: F.pengalaman_jabatan });
+			}
+			var se = sek.validate();
+			if (se) {
+				var sekTarget = sek.node ? (sek.node.querySelector('.kgtk-input:invalid') || sek.node.querySelector('.kgtk-input')) : null;
+				errors.push({ label: 'Asal Sekolah', msg: se, el: sekTarget });
+			}
+			var sv = sek.getValue();
+			v.kabkota = sv.kabkota; v.sekolah_id = sv.sekolah_id; v.sekolah = sv.sekolah;
+
+			if (!v.peran) {
+				errors.push({ label: 'Peran', msg: 'Pilih peran.', el: F.peran });
+			}
+			if (v.peran === 'Peserta' && !v.jenis_gtk) {
+				errors.push({ label: 'Jabatan', msg: 'Pilih Jabatan untuk peran Peserta.', el: F.jenis_gtk });
+			}
+			if (v.peran !== 'Peserta') { v.jenis_gtk = ''; }
+			if (v.nuptk && !/^\d{1,16}$/.test(v.nuptk)) {
+				errors.push({ label: 'NUPTK', msg: 'NUPTK harus berupa maksimal 16 digit angka (kosongkan jika tidak ada).', el: F.nuptk });
+			}
+			if (v.nip && !/^\d{18}$/.test(v.nip)) {
+				errors.push({ label: 'NIP', msg: 'NIP harus 18 digit angka (kosongkan jika tidak ada).', el: F.nip });
+			}
+			if (!/^\+?[0-9][0-9 \-]{6,18}[0-9]$/.test(v.hp)) {
+				errors.push({ label: 'No. HP/WhatsApp', msg: 'Nomor HP/WhatsApp tidak valid.', el: F.hp });
+			}
+			if (!EMAIL.test(v.email)) {
+				errors.push({ label: 'Email', msg: 'Email wajib diisi dengan format yang benar.', el: F.email });
+			}
+			if (!EMAIL.test(v.email_belajar) || !/@([a-z0-9-]+\.)*belajar\.id$/.test(v.email_belajar)) {
+				errors.push({ label: 'Email belajar.id', msg: 'Email belajar.id wajib diisi dan harus berakhiran belajar.id.', el: F.email_belajar });
+			}
+
+			if (errors.length > 0) {
+				errors.forEach(function (it) {
+					if (it.el) { it.el.classList.add('is-invalid'); }
+				});
+				var firstInvalid = errors[0].el;
+				tErr('Ada ' + errors.length + ' data yang belum terisi atau belum sesuai.');
+				modalAlert({
+					title: 'Data Belum Lengkap',
+					message: 'Mohon lengkapi atau perbaiki bagian berikut sebelum menyimpan peserta:',
+					type: 'warning',
+					confirmText: 'Lengkapi Data',
+					errors: errors
+				}).then(function () {
+					if (firstInvalid) {
+						firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						try { firstInvalid.focus(); } catch (errFocus) {}
+					}
+				});
+				return;
+			}
+			v.kelas_id = parseInt(selKelas.value, 10) || 0;
+
+			var btn = ft.querySelector('button[type=submit]');
+			btn.disabled = true; btn.textContent = 'Menyimpan...';
+			api('admin/pelatihan/' + ft.getAttribute('data-pelatihan') + '/peserta', 'POST', v).then(function (d) {
+				var h = d.hasil;
+				okBox.textContent = h.nama + ' berhasil didaftarkan ke ' + h.kelas_label + ', nomor urut ' + h.nomor + ' dari ' + h.slot + ' slot.';
+				okBox.hidden = false;
+				// Segarkan pilihan kelas (sisa slot), lalu kosongkan form untuk peserta berikutnya.
+				selKelas.textContent = '';
+				var o = document.createElement('option'); o.value = '0'; o.textContent = 'Otomatis (sesuai urutan kelas)'; selKelas.appendChild(o);
+				(d.kelas || []).forEach(function (k) {
+					var op = document.createElement('option');
+					op.value = String(k.id); op.setAttribute('data-penuh', k.sisa < 1 ? '1' : '0');
+					op.textContent = k.label + ' - ' + (k.sisa < 1 ? 'slot peserta penuh' : k.sisa + ' slot peserta tersisa');
+					selKelas.appendChild(op);
+				});
+				applyPeran();
+				ft.reset(); sek.setValue({}); applyPeran(); info.hidden = true;
+				F.nik.focus();
+				okBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}).catch(function (err) { tErr(err.message); })
+				.then(function () { btn.disabled = false; btn.textContent = 'Simpan peserta'; });
+		});
+	}
+
+	/* Sub-tab peran di dalam kelas */
+	document.addEventListener('click', function (e) {
+		var t = e.target.closest('.kgtk-subtab');
+		if (!t) { return; }
+		var pane = t.closest('.kgtk-pane'), id = t.getAttribute('data-sub');
+		Array.prototype.forEach.call(pane.querySelectorAll('.kgtk-subtab'), function (x) { x.classList.toggle('is-active', x === t); });
+		Array.prototype.forEach.call(pane.querySelectorAll('.kgtk-sub'), function (x) { x.classList.toggle('is-active', x.getAttribute('data-sub') === id); });
+	});
+
+	function clearPrinting() {
+		Array.prototype.forEach.call(document.querySelectorAll('.kgtk-printing'), function (p) { p.classList.remove('kgtk-printing'); });
+	}
+	function markPrinting(sub) {
+		if (!sub) { return; }
+		sub.classList.add('kgtk-printing');
+		var pane = sub.closest('.kgtk-pane');
+		if (pane) { pane.classList.add('kgtk-printing'); }
+	}
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest('[data-cetak]');
+		if (!b) { return; }
+		clearPrinting();
+		markPrinting(document.querySelector('.kgtk-sub[data-sub="' + b.getAttribute('data-cetak') + '"]'));
+		window.print();
+	});
+	// Ctrl+P manual: cetak lembar yang sedang tampil.
+	window.addEventListener('beforeprint', function () {
+		if (!document.querySelector('.kgtk-sub.kgtk-printing')) {
+			markPrinting(document.querySelector('.kgtk-pane.is-active .kgtk-sub.is-active'));
+		}
+	});
+	window.addEventListener('afterprint', clearPrinting);
+
+	/* ====================== Penempatan Kelas Peserta ====================== */
+
+	/* Helper pembaruan badge & statistik saat kelas diubah */
+	function updateTabAndFilterStats(stats, unassigned) {
+		// Update banner unassigned bila ada
+		var banner = document.querySelector('.kgtk-unassigned-banner');
+		if (banner) {
+			if (unassigned > 0) {
+				banner.style.display = '';
+				var st = banner.querySelector('strong');
+				if (st) { st.textContent = 'Ada ' + unassigned + ' guru yang baru mendaftar dan belum ditentukan kelasnya!'; }
+			} else {
+				banner.style.display = 'none';
+			}
+		}
+
+		// Update badge pada header & tab kelola-peserta
+		var headBadge = document.querySelector('.kgtk-kelola-head-badge .kgtk-badge');
+		if (headBadge) {
+			if (unassigned > 0) {
+				headBadge.className = 'kgtk-badge is-alert';
+				headBadge.textContent = unassigned + ' Belum Masuk Kelas';
+			} else {
+				headBadge.className = 'kgtk-badge is-open';
+				headBadge.textContent = 'Semua Terbagi Kelas';
+			}
+		}
+
+		var tabBadge = document.querySelector('[data-tab="kelola-peserta"] .kgtk-tab-badge');
+		if (tabBadge) {
+			if (unassigned > 0) {
+				tabBadge.textContent = unassigned + ' belum ada kelas';
+				tabBadge.classList.add('is-alert');
+			} else {
+				var totalRows = document.querySelectorAll('#kgtk-tbl-peserta tbody tr').length;
+				tabBadge.textContent = totalRows + ' guru';
+				tabBadge.classList.remove('is-alert');
+			}
+		}
+
+		// Update kartu statistik "Belum Ada Kelas"
+		var scardUnassigned = document.querySelector('.kgtk-scard[data-filter="0"]');
+		if (scardUnassigned) {
+			var num0 = scardUnassigned.querySelector('.kgtk-scard-num');
+			if (num0) { num0.textContent = String(unassigned); }
+			scardUnassigned.classList.toggle('is-warn', unassigned > 0);
+			var pill0 = scardUnassigned.querySelector('.kgtk-scard-pill');
+			if (unassigned > 0 && !pill0) {
+				var sp = document.createElement('span');
+				sp.className = 'kgtk-scard-pill';
+				sp.textContent = 'Perlu Penempatan';
+				scardUnassigned.appendChild(sp);
+			} else if (unassigned === 0 && pill0) {
+				pill0.remove();
+			}
+		}
+
+		// Update tombol filter "Belum Ada Kelas"
+		var fUnassigned = document.querySelector('.kgtk-fbtn[data-filter="0"] .kgtk-fcount');
+		if (fUnassigned) {
+			fUnassigned.textContent = String(unassigned);
+			var btn0 = fUnassigned.closest('.kgtk-fbtn');
+			if (btn0) { btn0.classList.toggle('is-warn', unassigned > 0); }
+		}
+
+		// Update filter, kartu, dan tab tiap kelas bila stats tersedia
+		if (Array.isArray(stats)) {
+			stats.forEach(function (k) {
+				// Tab kelas
+				var tab = document.querySelector('.kgtk-tab[data-tab="' + k.id + '"] small');
+				if (tab) { tab.textContent = k.terisi + '/' + k.slot; }
+
+				// Tombol filter
+				var fbtnCount = document.querySelector('.kgtk-fbtn[data-filter="' + k.id + '"] .kgtk-fcount');
+				if (fbtnCount) { fbtnCount.textContent = String(k.terisi); }
+
+				// Kartu statistik kelas
+				var scard = document.querySelector('.kgtk-scard[data-filter="' + k.id + '"]');
+				if (scard) {
+					var snum = scard.querySelector('.kgtk-scard-num');
+					if (snum) { snum.innerHTML = k.terisi + '<small>/' + k.slot + '</small>'; }
+					var sbar = scard.querySelector('.kgtk-scard-bar span');
+					if (sbar) {
+						var pct = Math.min(100, Math.round(k.terisi / Math.max(1, k.slot) * 100));
+						sbar.style.width = pct + '%';
+					}
+				}
+			});
+		}
+	}
+
+
+
+	/* Live search & filter peserta */
+	var searchInput = document.getElementById('kgtk-peserta-search');
+	var searchClear = document.getElementById('kgtk-search-clear');
+	var currentFilter = 'all';
+
+	function filterRows() {
+		var q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+		var rows = document.querySelectorAll('#kgtk-tbl-peserta tbody tr');
+		Array.prototype.forEach.call(rows, function (r) {
+			var text = r.getAttribute('data-search') || '';
+			var rowKelas = r.getAttribute('data-kelas');
+			var matchSearch = !q || text.indexOf(q) > -1;
+			var matchFilter = currentFilter === 'all' || rowKelas === currentFilter;
+			r.style.display = (matchSearch && matchFilter) ? '' : 'none';
+		});
+	}
+
+	function setActiveFilter(filterVal) {
+		currentFilter = filterVal;
+		// Sync filter buttons
+		var allBtns = document.querySelectorAll('.kgtk-fbtn');
+		Array.prototype.forEach.call(allBtns, function (b) {
+			b.classList.toggle('is-active', b.getAttribute('data-filter') === filterVal);
+		});
+		// Sync stat cards
+		var allScards = document.querySelectorAll('.kgtk-scard');
+		Array.prototype.forEach.call(allScards, function (s) {
+			s.classList.toggle('is-active', s.getAttribute('data-filter') === filterVal);
+		});
+		filterRows();
+	}
+
+	if (searchInput) {
+		searchInput.addEventListener('input', function () {
+			if (searchClear) {
+				searchClear.style.display = searchInput.value ? 'flex' : 'none';
+			}
+			filterRows();
+		});
+	}
+	if (searchClear) {
+		searchClear.addEventListener('click', function () {
+			if (searchInput) {
+				searchInput.value = '';
+				searchClear.style.display = 'none';
+				searchInput.focus();
+				filterRows();
+			}
+		});
+	}
+
+	// Klik tombol filter
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest('.kgtk-fbtn');
+		if (btn) {
+			if (btn.closest('#kgtk-undangan-container')) { return; }
+			setActiveFilter(btn.getAttribute('data-filter'));
+			return;
+		}
+		// Klik kartu statistik
+		var scard = e.target.closest('.kgtk-scard');
+		if (scard) {
+			if (scard.closest('#kgtk-undangan-container')) { return; }
+			setActiveFilter(scard.getAttribute('data-filter'));
+			return;
+		}
+	});
+
+	/* Salin NIK 1-klik */
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest('[data-copy-nik]');
+		if (!btn) { return; }
+		var nik = btn.getAttribute('data-copy-nik');
+		if (!nik) { return; }
+		var done = function () {
+			var oldTitle = btn.getAttribute('title') || 'Salin NIK';
+			var oldHtml = btn.innerHTML;
+			btn.innerHTML = '✓';
+			btn.classList.add('is-copied');
+			btn.setAttribute('title', 'Tersalin!');
+			setTimeout(function () {
+				btn.innerHTML = oldHtml;
+				btn.classList.remove('is-copied');
+				btn.setAttribute('title', oldTitle);
+			}, 1500);
+		};
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(nik).then(done, function () { fallbackCopy(nik, done); });
+		} else {
+			fallbackCopy(nik, done);
+		}
+		function fallbackCopy(text, cb) {
+			var ta = document.createElement('textarea');
+			ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+			document.body.appendChild(ta); ta.select();
+			try { document.execCommand('copy'); cb(); } catch (err) {}
+			document.body.removeChild(ta);
+		}
+	});
+
+	/* Update hitungan centang & bulk action UI */
+	function updateSelectedCounter() {
+		var checks = document.querySelectorAll('.kgtk-ps-check');
+		var checkedCount = 0;
+		Array.prototype.forEach.call(checks, function (c) {
+			var tr = c.closest('tr');
+			if (tr) {
+				tr.classList.toggle('is-selected', c.checked);
+			}
+			if (c.checked) { checkedCount++; }
+		});
+
+		var badge = document.getElementById('kgtk-selected-badge');
+		var applyBtn = document.getElementById('kgtk-bulk-apply');
+		var bulkToolbar = document.querySelector('.kgtk-bulk-toolbar');
+		if (bulkToolbar) {
+			bulkToolbar.classList.toggle('has-selected', checkedCount > 0);
+		}
+		if (badge) {
+			if (checkedCount > 0) {
+				badge.textContent = checkedCount + ' guru dipilih';
+				badge.style.display = 'inline-block';
+			} else {
+				badge.style.display = 'none';
+			}
+		}
+		if (applyBtn) {
+			applyBtn.disabled = (checkedCount === 0);
+		}
+
+		// Sync kedua checkbox header & toolbar (Pilih Semua)
+		var checkAll = document.getElementById('kgtk-check-all');
+		var thCheckAll = document.getElementById('kgtk-th-check-all');
+		var visibleChecks = Array.prototype.filter.call(checks, function (c) {
+			return c.closest('tr') && c.closest('tr').style.display !== 'none';
+		});
+		var allChecked = visibleChecks.length > 0 && visibleChecks.every(function (c) { return c.checked; });
+		if (checkAll) { checkAll.checked = allChecked; }
+		if (thCheckAll) { thCheckAll.checked = allChecked; }
+	}
+
+	// Listener centang per baris
+	document.addEventListener('change', function (e) {
+		if (e.target.classList.contains('kgtk-ps-check')) {
+			updateSelectedCounter();
+		}
+	});
+
+	// Klik baris peserta untuk mencentang nama secara langsung dan praktis
+	document.addEventListener('click', function (e) {
+		var tr = e.target.closest('#kgtk-tbl-peserta tbody tr');
+		if (!tr) { return; }
+		// Abaikan jika klik berasal dari link WhatsApp, tombol salin/hapus, atau checkbox itu sendiri
+		if (e.target.closest('a, button, input[type=checkbox]')) { return; }
+		var chk = tr.querySelector('.kgtk-ps-check');
+		if (chk) {
+			chk.checked = !chk.checked;
+			updateSelectedCounter();
+		}
+	});
+
+	/* Fungsi centang semua baris yang sedang tampil */
+	function toggleAllVisibleChecks(state) {
+		var checks = document.querySelectorAll('.kgtk-ps-check');
+		Array.prototype.forEach.call(checks, function (c) {
+			var tr = c.closest('tr');
+			if (tr && tr.style.display !== 'none') {
+				c.checked = state;
+			}
+		});
+		updateSelectedCounter();
+	}
+
+	var checkAll = document.getElementById('kgtk-check-all');
+	if (checkAll) {
+		checkAll.addEventListener('change', function () {
+			toggleAllVisibleChecks(checkAll.checked);
+		});
+	}
+
+	var thCheckAll = document.getElementById('kgtk-th-check-all');
+	if (thCheckAll) {
+		thCheckAll.addEventListener('change', function () {
+			toggleAllVisibleChecks(thCheckAll.checked);
+		});
+	}
+
+	/* Terapkan aksi masal (bulk assign kelas) */
+	var bulkApply = document.getElementById('kgtk-bulk-apply');
+	var bulkTarget = document.getElementById('kgtk-bulk-target');
+	if (bulkApply && bulkTarget) {
+		bulkApply.addEventListener('click', function () {
+			var val = bulkTarget.value;
+			if (val === '') {
+				return modalAlert({ title: 'Pilih Kelas Tujuan', message: 'Silakan pilih kelas tujuan terlebih dahulu.', type: 'warning' });
+			}
+			var targetKelasId = parseInt(val, 10);
+			var selectedIds = [];
+			var checks = document.querySelectorAll('.kgtk-ps-check:checked');
+			Array.prototype.forEach.call(checks, function (c) {
+				selectedIds.push(parseInt(c.value, 10));
+			});
+			if (!selectedIds.length) {
+				return modalAlert({ title: 'Pilih Guru', message: 'Centang minimal satu nama guru yang ingin dipindahkan kelasnya.', type: 'warning' });
+			}
+
+			var targetLabel = bulkTarget.options[bulkTarget.selectedIndex].textContent;
+			modalConfirm({
+				title: 'Pindahkan Kelas Guru',
+				message: 'Pindahkan ' + selectedIds.length + ' guru yang dipilih ke: ' + targetLabel + '?',
+				confirmText: 'Ya, Pindahkan',
+				cancelText: 'Batal',
+				type: 'primary'
+			}).then(function (ok) {
+				if (!ok) { return; }
+
+				bulkApply.disabled = true;
+				var oldText = bulkApply.textContent;
+				bulkApply.textContent = 'Menyimpan...';
+
+				var tbl = document.getElementById('kgtk-tbl-peserta');
+				var pelatihanId = tbl ? tbl.getAttribute('data-pelatihan') : '0';
+
+				api('admin/pelatihan/' + pelatihanId + '/bulk-kelas', 'POST', {
+					peserta_ids: selectedIds,
+					kelas_id: targetKelasId
+				}).then(function () {
+					window.location.reload();
+				}).catch(function (err) {
+					bulkApply.disabled = false;
+					bulkApply.textContent = oldText;
+					modalAlert({ title: 'Gagal Memindahkan', message: 'Gagal memproses pemindahan kelas: ' + err.message, type: 'danger' });
+				});
+			});
+		});
+	}
+
+	/* Hapus peserta tunggal */
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest('[data-del-peserta]');
+		if (!btn) { return; }
+		var id = btn.getAttribute('data-del-peserta');
+		var nama = btn.getAttribute('data-nama');
+		modalConfirm({
+			title: 'Hapus Peserta',
+			message: 'Hapus pendaftaran ' + nama + ' dari pelatihan ini?\n\nData peserta akan dihapus dari daftar hadir.',
+			confirmText: 'Ya, Hapus',
+			cancelText: 'Batal',
+			type: 'danger'
+		}).then(function (ok) {
+			if (!ok) { return; }
+			btn.disabled = true;
+			api('admin/peserta/' + id, 'DELETE').then(function (res) {
+				var tr = btn.closest('tr');
+				if (tr) { tr.remove(); }
+				// Segarkan nomor urut baris
+				var numCells = document.querySelectorAll('#kgtk-tbl-peserta tbody td:nth-child(2) .kgtk-row-num');
+				Array.prototype.forEach.call(numCells, function (span, idx) {
+					span.textContent = String(idx + 1) + '.';
+				});
+				updateSelectedCounter();
+				updateTabAndFilterStats(res.stats, res.unassigned);
+			}).catch(function (err) {
+				btn.disabled = false;
+				modalAlert({ title: 'Gagal Menghapus', message: 'Gagal menghapus: ' + err.message, type: 'danger' });
+			});
+		});
+	});
+
+	/* ==========================================================================
+	   PESERTA DITETAPKAN (KEMENTERIAN)
+	   ========================================================================== */
+	var undContainer = document.getElementById('kgtk-undangan-container');
+	if (undContainer) {
+		var pelatihanId = undContainer.getAttribute('data-pelatihan') || '0';
+		var undSearch = document.getElementById('kgtk-undangan-search');
+		var undSearchClear = document.getElementById('kgtk-undangan-search-clear');
+		var currentUndFilter = 'all';
+
+		var filterUndanganRows = function () {
+			var q = (undSearch ? undSearch.value : '').toLowerCase().trim();
+			var rows = document.querySelectorAll('#kgtk-tbl-undangan tbody tr:not(.kgtk-row-empty)');
+			var visNo = 1;
+			Array.prototype.forEach.call(rows, function (r) {
+				var text = (r.getAttribute('data-search') || '').toLowerCase();
+				var st = r.getAttribute('data-status') || '';
+				var matchSearch = !q || text.indexOf(q) > -1;
+				var matchFilter = currentUndFilter === 'all' || st === currentUndFilter;
+				if (matchSearch && matchFilter) {
+					r.style.display = '';
+					var numCell = r.querySelector('.kgtk-row-num');
+					if (numCell) { numCell.textContent = String(visNo++) + '.'; }
+				} else {
+					r.style.display = 'none';
+				}
+			});
+		};
+
+		var setUndFilter = function (fVal) {
+			currentUndFilter = fVal;
+			var fbtns = undContainer.querySelectorAll('.kgtk-fbtn');
+			Array.prototype.forEach.call(fbtns, function (b) {
+				b.classList.toggle('is-active', b.getAttribute('data-filter') === fVal);
+			});
+			var scards = undContainer.querySelectorAll('.kgtk-scard');
+			Array.prototype.forEach.call(scards, function (s) {
+				s.classList.toggle('is-active', s.getAttribute('data-filter') === fVal);
+			});
+			filterUndanganRows();
+		};
+
+		if (undSearch) {
+			undSearch.addEventListener('input', function () {
+				if (undSearchClear) {
+					undSearchClear.style.display = undSearch.value ? 'flex' : 'none';
+				}
+				filterUndanganRows();
+			});
+		}
+		if (undSearchClear) {
+			undSearchClear.addEventListener('click', function () {
+				if (undSearch) {
+					undSearch.value = '';
+					undSearchClear.style.display = 'none';
+					undSearch.focus();
+					filterUndanganRows();
+				}
+			});
+		}
+
+		undContainer.addEventListener('click', function (e) {
+			var b = e.target.closest('.kgtk-fbtn');
+			if (b) { setUndFilter(b.getAttribute('data-filter')); return; }
+			var s = e.target.closest('.kgtk-scard');
+			if (s) { setUndFilter(s.getAttribute('data-filter')); return; }
+		});
+
+		/* Salin daftar belum mendaftar */
+		var btnSalinBelum = document.getElementById('kgtk-btn-salin-belum');
+		if (btnSalinBelum) {
+			btnSalinBelum.addEventListener('click', function () {
+				var rows = document.querySelectorAll('#kgtk-tbl-undangan tbody tr[data-status="belum"]');
+				if (!rows.length) {
+					return modalAlert({ title: 'Semua Sudah Mendaftar', message: 'Tidak ada peserta ditetapkan yang berstatus belum mendaftar.', type: 'primary' });
+				}
+				var lines = ['DAFTAR PESERTA DITETAPKAN (BELUM MENDAFTAR):'];
+				Array.prototype.forEach.call(rows, function (r, idx) {
+					var nama = r.getAttribute('data-nama') || '(tanpa nama)';
+					var nik = r.getAttribute('data-nik') || '-';
+					var hp = r.getAttribute('data-hp') || '-';
+					var email = r.getAttribute('data-email') || '-';
+					var line = (idx + 1) + '. ' + nama;
+					var meta = [];
+					if (nik && nik !== '-') { meta.push('NIK: ' + nik); }
+					if (hp && hp !== '-') { meta.push('HP: ' + hp); }
+					if (email && email !== '-') { meta.push('Email: ' + email); }
+					if (meta.length) { line += ' (' + meta.join(', ') + ')'; }
+					lines.push(line);
+				});
+				copyText(lines.join('\n'), btnSalinBelum);
+			});
+		}
+
+		/* Modal Tambah / Ubah Undangan */
+		var modalUnd = document.getElementById('kgtk-modal-undangan');
+		var btnTambahUnd = document.getElementById('kgtk-btn-tambah-undangan');
+		var btnUndCancel = document.getElementById('kgtk-btn-undangan-cancel');
+		var btnUndSave = document.getElementById('kgtk-btn-undangan-save');
+		var undForm = document.getElementById('kgtk-form-undangan-modal');
+		var undTitle = document.getElementById('kgtk-undangan-form-title');
+		var undErr = document.getElementById('kgtk-undangan-modal-error');
+
+		var openUndModal = function (item) {
+			if (!modalUnd || !undForm) { return; }
+			if (undErr) { undErr.hidden = true; undErr.textContent = ''; }
+			if (item) {
+				undTitle.textContent = 'Ubah Peserta Ditetapkan';
+				undForm.elements.undangan_id.value = item.id;
+				undForm.elements.nama.value = item.nama || '';
+				undForm.elements.nik.value = item.nik || '';
+				undForm.elements.hp.value = item.hp || '';
+				undForm.elements.email_belajar.value = item.email_belajar || '';
+				undForm.elements.catatan.value = item.catatan || '';
+			} else {
+				undTitle.textContent = 'Tambah Peserta Ditetapkan';
+				undForm.reset();
+				undForm.elements.undangan_id.value = '0';
+			}
+			modalUnd.classList.add('is-visible');
+			undForm.elements.nama.focus();
+		};
+
+		var closeUndModal = function () {
+			if (modalUnd) { modalUnd.classList.remove('is-visible'); }
+		};
+
+		if (btnTambahUnd) {
+			btnTambahUnd.addEventListener('click', function () { openUndModal(null); });
+		}
+		if (btnUndCancel) {
+			btnUndCancel.addEventListener('click', closeUndModal);
+		}
+		if (modalUnd) {
+			modalUnd.addEventListener('click', function (e) {
+				if (e.target === modalUnd) { closeUndModal(); }
+			});
+		}
+
+		if (btnUndSave && undForm) {
+			btnUndSave.addEventListener('click', function () {
+				if (undErr) { undErr.hidden = true; }
+				var f = undForm.elements;
+				var undId = parseInt(f.undangan_id.value, 10);
+				var nama = f.nama.value.trim();
+				var nik = f.nik.value.trim();
+				var hp = f.hp.value.trim();
+				var email = f.email_belajar.value.trim();
+				var catatan = f.catatan.value.trim();
+
+				if (!nama && !nik && !hp && !email) {
+					undErr.textContent = 'Isi minimal salah satu dari: Nama, NIK, No. HP, atau Email belajar.id.';
+					undErr.hidden = false;
+					return;
+				}
+				if (nik && !/^\d{16}$/.test(nik)) {
+					undErr.textContent = 'NIK harus 16 digit angka.';
+					undErr.hidden = false;
+					return;
+				}
+				if (email && (email.indexOf('@') === -1 || !email.toLowerCase().endsWith('belajar.id'))) {
+					undErr.textContent = 'Email harus format email yang benar dan berakhiran belajar.id.';
+					undErr.hidden = false;
+					return;
+				}
+
+				btnUndSave.disabled = true;
+				var oldSaveText = btnUndSave.textContent;
+				btnUndSave.textContent = 'Menyimpan...';
+
+				var endpoint = undId > 0 ? ('admin/undangan/' + undId) : ('admin/pelatihan/' + pelatihanId + '/undangan');
+				var method = undId > 0 ? 'PUT' : 'POST';
+
+				api(endpoint, method, {
+					nama: nama,
+					nik: nik,
+					hp: hp,
+					email_belajar: email,
+					catatan: catatan
+				}).then(function () {
+					closeUndModal();
+					window.location.hash = 'peserta-ditetapkan';
+					window.location.reload();
+				}).catch(function (err) {
+					btnUndSave.disabled = false;
+					btnUndSave.textContent = oldSaveText;
+					undErr.textContent = err.message;
+					undErr.hidden = false;
+				});
+			});
+		}
+
+		/* Modal Hubungkan ke Peserta Terdaftar */
+		var modalHub = document.getElementById('kgtk-modal-hubungkan');
+		var hubInfo = document.getElementById('kgtk-hubungkan-info');
+		var hubErr = document.getElementById('kgtk-hubungkan-modal-error');
+		var selUnlinked = document.getElementById('kgtk-select-unlinked-peserta');
+		var btnHubCancel = document.getElementById('kgtk-btn-hubungkan-cancel');
+		var btnHubSave = document.getElementById('kgtk-btn-hubungkan-save');
+		var currentTargetUndId = 0;
+
+		var openHubModal = function (undId, tr) {
+			if (!modalHub || !selUnlinked) { return; }
+			currentTargetUndId = undId;
+			if (hubErr) { hubErr.hidden = true; hubErr.textContent = ''; }
+			var uNama = tr ? (tr.getAttribute('data-nama') || '(tanpa nama)') : '';
+			var uNik = tr ? (tr.getAttribute('data-nik') || '-') : '-';
+			if (hubInfo) {
+				hubInfo.innerHTML = 'Peserta Ditetapkan: <strong>' + esc(uNama) + '</strong> (NIK: <code>' + esc(uNik) + '</code>)';
+			}
+			selUnlinked.innerHTML = '<option value="">-- Memuat daftar peserta terdaftar... --</option>';
+			selUnlinked.disabled = true;
+			btnHubSave.disabled = true;
+			modalHub.classList.add('is-visible');
+
+			api('admin/pelatihan/' + pelatihanId + '/peserta-unlinked', 'GET').then(function (list) {
+				selUnlinked.disabled = false;
+				btnHubSave.disabled = false;
+				if (!list || !list.length) {
+					selUnlinked.innerHTML = '<option value="">-- Tidak ada peserta terdaftar yang belum terhubung --</option>';
+					return;
+				}
+				var opts = '<option value="">-- Pilih salah satu peserta terdaftar --</option>';
+				list.forEach(function (p) {
+					var pKet = p.nama + ' (NIK: ' + p.nik + (p.hp ? ', HP: ' + p.hp : '') + (p.kelas_label ? ', Kelas: ' + p.kelas_label : '') + ')';
+					opts += '<option value="' + p.id + '">' + esc(pKet) + '</option>';
+				});
+				selUnlinked.innerHTML = opts;
+			}).catch(function (err) {
+				selUnlinked.innerHTML = '<option value="">-- Gagal memuat daftar peserta --</option>';
+				if (hubErr) {
+					hubErr.textContent = err.message;
+					hubErr.hidden = false;
+				}
+			});
+		};
+
+		var closeHubModal = function () {
+			if (modalHub) { modalHub.classList.remove('is-visible'); }
+		};
+		if (btnHubCancel) { btnHubCancel.addEventListener('click', closeHubModal); }
+		if (modalHub) {
+			modalHub.addEventListener('click', function (e) {
+				if (e.target === modalHub) { closeHubModal(); }
+			});
+		}
+
+		if (btnHubSave) {
+			btnHubSave.addEventListener('click', function () {
+				var pesId = selUnlinked.value;
+				if (!pesId) {
+					hubErr.textContent = 'Pilih salah satu peserta terdaftar terlebih dahulu.';
+					hubErr.hidden = false;
+					return;
+				}
+				hubErr.hidden = true;
+				btnHubSave.disabled = true;
+				var oldHText = btnHubSave.textContent;
+				btnHubSave.textContent = 'Menghubungkan...';
+
+				api('admin/undangan/' + currentTargetUndId + '/hubungkan', 'POST', {
+					peserta_id: parseInt(pesId, 10)
+				}).then(function () {
+					closeHubModal();
+					window.location.hash = 'peserta-ditetapkan';
+					window.location.reload();
+				}).catch(function (err) {
+					btnHubSave.disabled = false;
+					btnHubSave.textContent = oldHText;
+					hubErr.textContent = err.message;
+					hubErr.hidden = false;
+				});
+			});
+		}
+
+		/* Sinkronkan ulang pencocokan */
+		var btnSinkron = document.getElementById('kgtk-btn-sinkron-undangan');
+		if (btnSinkron) {
+			btnSinkron.addEventListener('click', function () {
+				modalConfirm({
+					title: 'Sinkronkan Ulang',
+					message: 'Jalankan ulang pencocokan otomatis untuk seluruh peserta ditetapkan yang belum cocok?',
+					confirmText: 'Ya, Sinkronkan',
+					cancelText: 'Batal',
+					type: 'primary'
+				}).then(function (ok) {
+					if (!ok) { return; }
+					btnSinkron.disabled = true;
+					var oldSText = btnSinkron.textContent;
+					btnSinkron.textContent = 'Menyinkronkan...';
+					api('admin/pelatihan/' + pelatihanId + '/undangan/sinkron', 'POST').then(function (res) {
+						modalAlert({
+							title: 'Sinkronisasi Selesai',
+							message: 'Berhasil mencocokkan ' + res.matched + ' peserta baru.',
+							type: 'primary'
+						}).then(function () {
+							window.location.hash = 'peserta-ditetapkan';
+							window.location.reload();
+						});
+					}).catch(function (err) {
+						btnSinkron.disabled = false;
+						btnSinkron.textContent = oldSText;
+						modalAlert({ title: 'Gagal Menyinkronkan', message: err.message, type: 'danger' });
+					});
+				});
+			});
+		}
+
+		/* Modal Impor Excel/CSV */
+		var modalImp = document.getElementById('kgtk-modal-impor');
+		var btnImpOpen = document.getElementById('kgtk-btn-impor-undangan');
+		var btnImpCancel = document.getElementById('kgtk-btn-impor-cancel');
+		var btnImpNext = document.getElementById('kgtk-btn-impor-next');
+		var fileInput = document.getElementById('kgtk-impor-file-input');
+		var impErr = document.getElementById('kgtk-impor-modal-error');
+		var step1 = document.getElementById('kgtk-impor-step-1');
+		var step2 = document.getElementById('kgtk-impor-step-2');
+		var step3 = document.getElementById('kgtk-impor-step-3');
+		var mapNama = document.getElementById('kgtk-map-nama');
+		var mapNik = document.getElementById('kgtk-map-nik');
+		var mapHp = document.getElementById('kgtk-map-hp');
+		var mapEmail = document.getElementById('kgtk-map-email');
+		var impPreview = document.getElementById('kgtk-impor-preview');
+		var impResMsg = document.getElementById('kgtk-impor-result-msg');
+		var impReasonsWrap = document.getElementById('kgtk-impor-reasons-wrap');
+
+		var impStep = 1;
+		var impSessionKey = '';
+
+		var resetImpModal = function () {
+			impStep = 1;
+			impSessionKey = '';
+			if (fileInput) { fileInput.value = ''; }
+			if (impErr) { impErr.hidden = true; impErr.textContent = ''; }
+			if (step1) { step1.style.display = ''; }
+			if (step2) { step2.style.display = 'none'; }
+			if (step3) { step3.style.display = 'none'; }
+			if (btnImpNext) {
+				btnImpNext.textContent = 'Lanjutkan';
+				btnImpNext.disabled = false;
+			}
+			if (btnImpCancel) { btnImpCancel.style.display = ''; }
+		};
+
+		var closeImpModal = function () {
+			if (modalImp) { modalImp.classList.remove('is-visible'); }
+			resetImpModal();
+		};
+
+		if (btnImpOpen) {
+			btnImpOpen.addEventListener('click', function () {
+				resetImpModal();
+				if (modalImp) { modalImp.classList.add('is-visible'); }
+			});
+		}
+		if (btnImpCancel) { btnImpCancel.addEventListener('click', closeImpModal); }
+		if (modalImp) {
+			modalImp.addEventListener('click', function (e) {
+				if (e.target === modalImp) { closeImpModal(); }
+			});
+		}
+
+		if (btnImpNext) {
+			btnImpNext.addEventListener('click', function () {
+				if (impErr) { impErr.hidden = true; }
+				if (impStep === 1) {
+					if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+						impErr.textContent = 'Pilih berkas Excel (.xlsx, .xls) atau CSV terlebih dahulu.';
+						impErr.hidden = false;
+						return;
+					}
+					var file = fileInput.files[0];
+					var ext = file.name.split('.').pop().toLowerCase();
+					if (['xlsx', 'xls', 'csv'].indexOf(ext) === -1) {
+						impErr.textContent = 'Format berkas tidak didukung. Gunakan .xlsx, .xls, atau .csv.';
+						impErr.hidden = false;
+						return;
+					}
+					if (file.size > 10 * 1024 * 1024) {
+						impErr.textContent = 'Ukuran berkas melebihi batas 10 MB.';
+						impErr.hidden = false;
+						return;
+					}
+
+					btnImpNext.disabled = true;
+					btnImpNext.textContent = 'Mengunggah...';
+
+					var fd = new FormData();
+					fd.append('file', file);
+
+					fetch(C.root + 'admin/pelatihan/' + pelatihanId + '/undangan/upload', {
+						method: 'POST',
+						credentials: 'same-origin',
+						headers: { 'X-WP-Nonce': C.nonce },
+						body: fd
+					}).then(function (r) {
+						return r.json().then(function (d) {
+							if (!r.ok) { throw new Error(d.message || 'Gagal mengunggah berkas.'); }
+							return d;
+						});
+					}).then(function (data) {
+						impSessionKey = data.session_key;
+						var headers = data.headers || [];
+						var detected = data.detected || {};
+						var preview = data.preview || [];
+
+						var buildSelectOptions = function (selectedIdx) {
+							var optHtml = '<option value="-1">-- Lewati --</option>';
+							headers.forEach(function (h, i) {
+								var sel = (i === selectedIdx) ? ' selected' : '';
+								optHtml += '<option value="' + i + '"' + sel + '>' + esc(h || ('Kolom ' + (i + 1))) + '</option>';
+							});
+							return optHtml;
+						};
+
+						mapNama.innerHTML = buildSelectOptions(detected.nama !== false ? detected.nama : -1);
+						mapNik.innerHTML = buildSelectOptions(detected.nik !== false ? detected.nik : -1);
+						mapHp.innerHTML = buildSelectOptions(detected.hp !== false ? detected.hp : -1);
+						mapEmail.innerHTML = buildSelectOptions(detected.email_belajar !== false ? detected.email_belajar : -1);
+
+						if (impPreview) {
+							var prevHtml = '<table class="kgtk-table" style="font-size:12px;margin:0;"><thead><tr>';
+							headers.forEach(function (h) {
+								prevHtml += '<th>' + esc(h || '-') + '</th>';
+							});
+							prevHtml += '</tr></thead><tbody>';
+							preview.forEach(function (pRow) {
+								prevHtml += '<tr>';
+								for (var c = 0; c < headers.length; c++) {
+									prevHtml += '<td>' + esc(pRow[c] !== undefined ? pRow[c] : '') + '</td>';
+								}
+								prevHtml += '</tr>';
+							});
+							prevHtml += '</tbody></table>';
+							impPreview.innerHTML = prevHtml;
+						}
+
+						step1.style.display = 'none';
+						step2.style.display = '';
+						impStep = 2;
+						btnImpNext.disabled = false;
+						btnImpNext.textContent = 'Mulai Impor';
+					}).catch(function (err) {
+						btnImpNext.disabled = false;
+						btnImpNext.textContent = 'Lanjutkan';
+						impErr.textContent = err.message;
+						impErr.hidden = false;
+					});
+
+				} else if (impStep === 2) {
+					var vNama = parseInt(mapNama.value, 10);
+					var vNik = parseInt(mapNik.value, 10);
+					var vHp = parseInt(mapHp.value, 10);
+					var vEmail = parseInt(mapEmail.value, 10);
+
+					if (vNama < 0 && vNik < 0 && vHp < 0 && vEmail < 0) {
+						impErr.textContent = 'Minimal satu kolom (Nama, NIK, No. HP, atau Email belajar.id) wajib dipetakan.';
+						impErr.hidden = false;
+						return;
+					}
+
+					btnImpNext.disabled = true;
+					btnImpNext.textContent = 'Mengimpor data...';
+
+					api('admin/pelatihan/' + pelatihanId + '/undangan/import', 'POST', {
+						session_key: impSessionKey,
+						mapping: {
+							nama: vNama,
+							nik: vNik,
+							hp: vHp,
+							email_belajar: vEmail
+						}
+					}).then(function (res) {
+						step2.style.display = 'none';
+						step3.style.display = '';
+						impStep = 3;
+
+						if (impResMsg) {
+							impResMsg.innerHTML = '<strong>Impor Selesai!</strong><br>'
+								+ 'Berhasil mengimpor <strong>' + res.imported + '</strong> peserta ditetapkan '
+								+ 'dari total ' + res.total_rows + ' baris data.';
+						}
+
+						if (impReasonsWrap) {
+							if (res.skipped > 0 && res.reasons && res.reasons.length) {
+								var rHtml = '<strong>' + res.skipped + ' baris dilewati:</strong><ul style="margin:4px 0 0 16px;padding:0;list-style:disc;">';
+								res.reasons.slice(0, 50).forEach(function (reason) {
+									rHtml += '<li>' + esc(reason) + '</li>';
+								});
+								if (res.reasons.length > 50) {
+									rHtml += '<li>...dan ' + (res.reasons.length - 50) + ' baris lainnya.</li>';
+								}
+								rHtml += '</ul>';
+								impReasonsWrap.innerHTML = rHtml;
+								impReasonsWrap.style.display = '';
+							} else {
+								impReasonsWrap.style.display = 'none';
+							}
+						}
+
+						btnImpNext.disabled = false;
+						btnImpNext.textContent = 'Selesai';
+						if (btnImpCancel) { btnImpCancel.style.display = 'none'; }
+					}).catch(function (err) {
+						btnImpNext.disabled = false;
+						btnImpNext.textContent = 'Mulai Impor';
+						impErr.textContent = err.message;
+						impErr.hidden = false;
+					});
+
+				} else if (impStep === 3) {
+					closeImpModal();
+					window.location.hash = 'peserta-ditetapkan';
+					window.location.reload();
+				}
+			});
+		}
+
+		/* Row Action Event Delegations */
+		document.addEventListener('click', function (e) {
+			var editBtn = e.target.closest('[data-edit-undangan]');
+			if (editBtn) {
+				var trE = editBtn.closest('tr');
+				if (trE) {
+					openUndModal({
+						id: trE.getAttribute('data-id'),
+						nama: trE.getAttribute('data-nama'),
+						nik: trE.getAttribute('data-nik'),
+						hp: trE.getAttribute('data-hp'),
+						email_belajar: trE.getAttribute('data-email'),
+						catatan: trE.getAttribute('data-catatan')
+					});
+				}
+				return;
+			}
+
+			var delBtn = e.target.closest('[data-del-undangan]');
+			if (delBtn) {
+				var uIdD = delBtn.getAttribute('data-del-undangan');
+				var trD = delBtn.closest('tr');
+				var uNamaD = (trD ? trD.getAttribute('data-nama') : '') || 'calon peserta ini';
+				modalConfirm({
+					title: 'Hapus Peserta Ditetapkan',
+					message: 'Hapus ' + uNamaD + ' dari daftar peserta yang ditetapkan?',
+					confirmText: 'Ya, Hapus',
+					cancelText: 'Batal',
+					type: 'danger'
+				}).then(function (ok) {
+					if (!ok) { return; }
+					delBtn.disabled = true;
+					api('admin/undangan/' + uIdD, 'DELETE').then(function () {
+						window.location.hash = 'peserta-ditetapkan';
+						window.location.reload();
+					}).catch(function (err) {
+						delBtn.disabled = false;
+						modalAlert({ title: 'Gagal Menghapus', message: err.message, type: 'danger' });
+					});
+				});
+				return;
+			}
+
+			var konfBtn = e.target.closest('[data-konfirmasi]');
+			if (konfBtn) {
+				var uIdK = konfBtn.getAttribute('data-konfirmasi');
+				modalConfirm({
+					title: 'Konfirmasi Peserta',
+					message: 'Konfirmasi bahwa peserta ini sesuai dengan data penetapan?',
+					confirmText: 'Ya, Konfirmasi',
+					cancelText: 'Batal',
+					type: 'primary'
+				}).then(function (ok) {
+					if (!ok) { return; }
+					konfBtn.disabled = true;
+					api('admin/undangan/' + uIdK + '/konfirmasi', 'POST').then(function () {
+						window.location.hash = 'peserta-ditetapkan';
+						window.location.reload();
+					}).catch(function (err) {
+						konfBtn.disabled = false;
+						modalAlert({ title: 'Gagal Mengonfirmasi', message: err.message, type: 'danger' });
+					});
+				});
+				return;
+			}
+
+			var lepasBtn = e.target.closest('[data-lepas]');
+			if (lepasBtn) {
+				var uIdL = lepasBtn.getAttribute('data-lepas');
+				modalConfirm({
+					title: 'Lepas Hubungan',
+					message: 'Lepas hubungan antara peserta ditetapkan ini dengan peserta yang mendaftar?\nStatus akan kembali menjadi "Belum Mendaftar".',
+					confirmText: 'Ya, Lepas Hubungan',
+					cancelText: 'Batal',
+					type: 'warning'
+				}).then(function (ok) {
+					if (!ok) { return; }
+					lepasBtn.disabled = true;
+					api('admin/undangan/' + uIdL + '/lepas', 'POST').then(function () {
+						window.location.hash = 'peserta-ditetapkan';
+						window.location.reload();
+					}).catch(function (err) {
+						lepasBtn.disabled = false;
+						modalAlert({ title: 'Gagal Melepas Hubungan', message: err.message, type: 'danger' });
+					});
+				});
+				return;
+			}
+
+			var hubBtn = e.target.closest('[data-hubungkan]');
+			if (hubBtn) {
+				var uIdH = hubBtn.getAttribute('data-hubungkan');
+				var trH = hubBtn.closest('tr');
+				openHubModal(uIdH, trH);
+				return;
+			}
+		});
+	}
+
+	/* Modal Biodata Peserta */
+	var modalBio = document.getElementById('kgtk-modal-biodata');
+	if (modalBio) {
+			var bioNama = document.getElementById('kgtk-bio-nama');
+			var bioSub = document.getElementById('kgtk-bio-sub');
+			var bioBody = document.getElementById('kgtk-bio-body');
+			var btnBioPdf = document.getElementById('kgtk-btn-bio-pdf');
+			var btnBioCetak = document.getElementById('kgtk-btn-bio-cetak');
+			var btnBioClose = document.getElementById('kgtk-btn-bio-close');
+			var btnBioBatal = document.getElementById('kgtk-btn-bio-batal');
+			var activeBioData = null;
+
+			var closeBioModal = function () {
+				modalBio.classList.remove('is-visible');
+				activeBioData = null;
+			};
+
+			if (btnBioClose) { btnBioClose.addEventListener('click', closeBioModal); }
+			if (btnBioBatal) { btnBioBatal.addEventListener('click', closeBioModal); }
+			modalBio.addEventListener('click', function (e) {
+				if (e.target === modalBio) { closeBioModal(); }
+			});
+
+			var escHtml = function (s) {
+				return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+			};
+
+			document.addEventListener('click', function (e) {
+				var trigger = e.target.closest('[data-view-bio]');
+				if (!trigger) { return; }
+				e.preventDefault();
+				var tr = trigger.closest('tr');
+				if (!tr) { return; }
+				var raw = tr.getAttribute('data-biodata');
+				if (!raw) { return; }
+				try {
+					activeBioData = JSON.parse(raw);
+				} catch (err) {
+					return;
+				}
+
+				var b = activeBioData;
+				if (bioNama) { bioNama.textContent = b.nama; }
+				if (bioSub) { bioSub.textContent = (b.sekolah || '') + (b.kabkota && b.kabkota !== '-' ? ' · ' + b.kabkota : ''); }
+				if (btnBioPdf) { btnBioPdf.href = b.pdf_url || '#'; }
+
+				var waNum = (b.hp || '').replace(/^0/, '62').replace(/\D/g, '');
+				var waLink = waNum ? '<a href="https://wa.me/' + escHtml(waNum) + '" target="_blank" rel="noopener noreferrer" class="kgtk-wa-link" title="Kirim pesan WhatsApp"><span class="kgtk-wa-icon">&#128172;</span> ' + escHtml(b.hp) + '</a>' : escHtml(b.hp || '-');
+				var emailLink = b.email && b.email !== '-' ? '<a href="mailto:' + escHtml(b.email) + '" style="color:var(--blue);text-decoration:none;">' + escHtml(b.email) + '</a>' : '-';
+				var belajarLink = b.email_belajar && b.email_belajar !== '-' ? '<a href="mailto:' + escHtml(b.email_belajar) + '" style="color:var(--blue);text-decoration:none;">' + escHtml(b.email_belajar) + '</a>' : '-';
+
+				var rows = [
+					['Nama Lengkap', '<strong>' + escHtml(b.nama) + '</strong>'],
+					['NIK', '<div class="kgtk-nik-cell"><code class="kgtk-nik-code">' + escHtml(b.nik) + '</code><button type="button" class="kgtk-copy-btn" data-copy-nik="' + escHtml(b.nik) + '" title="Salin NIK">&#128203;</button></div>'],
+					['Tempat, Tanggal Lahir', escHtml((b.tempat_lahir && b.tempat_lahir !== '-' ? b.tempat_lahir + ', ' : '') + (b.tanggal_lahir || '-'))],
+					['Jenis Kelamin', escHtml(b.jenis_kelamin || '-')],
+					['NUPTK', escHtml(b.nuptk || '-')],
+					['NIP', escHtml(b.nip || '-')],
+					['Instansi', escHtml(b.sekolah || '-')],
+					['Kabupaten/Kota', escHtml(b.kabkota || '-')],
+					['Alamat / Tempat Tinggal', escHtml(b.alamat || '-')],
+					['Pendidikan Terakhir', escHtml(b.pendidikan || '-')],
+					['Jabatan', escHtml(b.jabatan || b.jenis_gtk || '-')],
+					['Nama Bank', escHtml(b.bank || '-')],
+					['Nomor Rekening', escHtml(b.rekening || '-')],
+					['NPWP', escHtml(b.npwp || '-')],
+					['Pengalaman Jabatan', escHtml(b.pengalaman_jabatan || '-')],
+					['Peran', '<span class="kgtk-badge ' + (b.peran === 'Peserta' ? 'is-peserta' : 'is-lain') + '">' + escHtml(b.peran || 'Peserta') + '</span>'],
+					['Kelas Saat Ini', '<span class="kgtk-badge ' + (b.kelas_id === 0 ? 'is-unassigned-tag' : 'is-assigned-tag') + '">' + escHtml(b.kelas_label || '-') + '</span>'],
+					['No. HP / WhatsApp', waLink],
+					['Email', emailLink],
+					['Email Belajar.id', belajarLink],
+					['SIMPKB', escHtml(b.simpkb || '-')],
+					['Pelatihan', escHtml(b.pelatihan || '-')],
+					['Waktu Mendaftar', '<span style="color:var(--muted);">' + escHtml(b.created_at || '-') + '</span>']
+				];
+
+				var h = '<table class="kgtk-table kgtk-table--bio" style="width:100%;border-collapse:collapse;margin:4px 0;"><tbody>';
+				rows.forEach(function (r) {
+					h += '<tr>';
+					h += '<td style="width:34%;font-weight:600;color:var(--muted);padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12.5px;vertical-align:middle;">' + r[0] + '</td>';
+					h += '<td style="width:3%;text-align:center;color:var(--muted);padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:12.5px;vertical-align:middle;">:</td>';
+					h += '<td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle;">' + r[1] + '</td>';
+					h += '</tr>';
+				});
+				h += '</tbody></table>';
+
+				if (bioBody) { bioBody.innerHTML = h; }
+				modalBio.classList.add('is-visible');
+			});
+
+			if (btnBioCetak) {
+				btnBioCetak.addEventListener('click', function () {
+					if (!activeBioData) { return; }
+					var b = activeBioData;
+					var peranUpper = (b.peran || 'PESERTA').toUpperCase();
+					var lokasiTxt = b.pelatihan_lok ? (b.pelatihan_lok.toLowerCase().indexOf('di ') === 0 ? b.pelatihan_lok : 'di ' + b.pelatihan_lok) : '';
+					var nipTxt = b.nip || '-';
+					var kabkotaTxt = b.kabkota && b.kabkota !== 'Lainnya' && b.kabkota !== '-' ? b.kabkota : 'Bintan';
+
+					var today = new Date();
+					var months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+					var tglCetak = today.getDate() + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
+
+					var ttlTxt = '-';
+					var tglFmt = b.tanggal_lahir || '';
+					if (tglFmt && /^\d{4}-\d{2}-\d{2}$/.test(tglFmt)) {
+						var pDate = tglFmt.split('-');
+						var mIdx = parseInt(pDate[1], 10) - 1;
+						if (mIdx >= 0 && mIdx < 12) {
+							tglFmt = parseInt(pDate[2], 10) + ' ' + months[mIdx] + ' ' + pDate[0];
+						}
+					}
+					if (b.tempat_lahir && b.tempat_lahir !== '-' && tglFmt && tglFmt !== '-') {
+						ttlTxt = b.tempat_lahir + ', ' + tglFmt;
+					} else if (b.tempat_lahir && b.tempat_lahir !== '-') {
+						ttlTxt = b.tempat_lahir;
+					} else if (tglFmt && tglFmt !== '-') {
+						ttlTxt = tglFmt;
+					}
+
+					var bioRows = [
+						['Nama lengkap', b.nama],
+						['Tempat, Tanggal Lahir', ttlTxt],
+						['NUPTK', b.nuptk || '-'],
+						['NIP', nipTxt],
+						['Instansi', b.sekolah || '-'],
+						['Kabupaten/Kota', b.kabkota || '-'],
+						['Jabatan', b.jabatan || b.jenis_gtk || '-'],
+						['No. HP/WhatsApp', b.hp || '-'],
+						['Nama Bank', b.bank || '-'],
+						['Nomor Rekening', b.rekening || '-'],
+						['Email', b.email || b.email_belajar || '-'],
+						['SIMPKB', b.simpkb || '-']
+					];
+
+					var trRows = bioRows.map(function (r) {
+						return '<tr><td class="lbl">' + escHtml(r[0]) + '</td><td class="sep">:</td><td class="val">' + escHtml(r[1] || '-') + '</td></tr>';
+					}).join('');
+
+					var kop = C.kop_html || '';
+
+					var html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Biodata - ' + escHtml(b.nama) + '</title>' +
+						'<style>' +
+						'@page{size:A4;margin:0.51cm 1.0cm}' +
+						'body{font-family:\'Times New Roman\',Times,Georgia,serif;margin:0;padding:0.51cm 1.0cm;color:#000;line-height:1.35;background:#fff}' +
+						'.kgtk-kop-wrap{width:100%;text-align:center;margin:0 auto 16px}' +
+						'.kgtk-kop-tbl{margin:0 auto;border-collapse:collapse;border:0;width:100%;max-width:760px}' +
+						'.kgtk-kop-tbl td{border:0!important;vertical-align:middle}' +
+						'.title-box{text-align:center;margin:8pt 0;font-family:\'Times New Roman\',Times,Georgia,serif}' +
+						'.title-main{font-size:16pt;font-weight:bold;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px}' +
+						'.title-sub{font-size:14pt;line-height:1.35;margin-bottom:2px;font-weight:bold}' +
+						'.title-date{font-size:14pt;margin-bottom:2px}' +
+						'.title-loc{font-size:14pt;margin-bottom:14pt}' +
+						'table.bio-box{width:100%;border-collapse:collapse;border:1.5px solid #000;margin-bottom:18px}' +
+						'table.bio-box td{padding:4.5px 8px;font-size:12pt;vertical-align:top;border:0!important}' +
+						'td.lbl{width:34%}' +
+						'td.sep{width:3%;text-align:center}' +
+						'td.val{width:63%}' +
+						'table.ttd-tbl{width:100%;border-collapse:collapse;margin-top:15px}' +
+						'table.ttd-tbl td{border:0!important;vertical-align:top}' +
+						'td.ttd-right{width:250px;text-align:center;font-size:12pt}' +
+						'.space{height:60px}' +
+						'@media print{body{padding:0!important}}' +
+						'</style></head><body>' +
+						kop +
+						'<div class="title-box">' +
+						'<div class="title-main">BIODATA ' + escHtml(peranUpper) + '</div>' +
+						'<div class="title-sub">' + escHtml(b.pelatihan) + '</div>' +
+						(b.pelatihan_tgl ? '<div class="title-date">' + escHtml(b.pelatihan_tgl) + '</div>' : '') +
+						(lokasiTxt ? '<div class="title-loc">' + escHtml(lokasiTxt) + '</div>' : '') +
+						'</div>' +
+						'<table class="bio-box">' + trRows + '</table>' +
+						'<table class="ttd-tbl"><tr><td>&nbsp;</td><td class="ttd-right">' +
+						'<div>' + escHtml(kabkotaTxt) + ', ' + escHtml(tglCetak) + '</div>' +
+						'<div class="space">&nbsp;</div>' +
+						'<div><u><strong>' + escHtml(b.nama) + '</strong></u></div>' +
+						'</td></tr></table>' +
+						'<script>window.onload=function(){window.print();}<\/script>' +
+						'</body></html>';
+
+					var w = window.open('', '_blank', 'width=800,height=750');
+					if (w) { w.document.write(html); w.document.close(); }
+				});
+			}
+		}
+
+	/* Modal Export PDF */
+	var btnExportPdf = document.getElementById('kgtk-btn-export-pdf');
+	var modalExportPdf = document.getElementById('kgtk-modal-export-pdf');
+	if (btnExportPdf && modalExportPdf) {
+		var btnCloseExport = document.getElementById('kgtk-btn-export-pdf-close');
+		var btnBatalExport = document.getElementById('kgtk-btn-export-pdf-batal');
+
+		var closeExportModal = function () {
+			modalExportPdf.classList.remove('is-visible');
+		};
+
+		btnExportPdf.addEventListener('click', function (e) {
+			e.preventDefault();
+			modalExportPdf.classList.add('is-visible');
+		});
+
+		if (btnCloseExport) { btnCloseExport.addEventListener('click', closeExportModal); }
+		if (btnBatalExport) { btnBatalExport.addEventListener('click', closeExportModal); }
+
+		modalExportPdf.addEventListener('click', function (e) {
+			if (e.target === modalExportPdf) {
+				closeExportModal();
+			}
+		});
+
+		var exportLinks = modalExportPdf.querySelectorAll('.kgtk-export-item');
+		Array.prototype.forEach.call(exportLinks, function (link) {
+			link.addEventListener('click', function () {
+				setTimeout(closeExportModal, 500);
+			});
+		});
+	}
+
+	/* Sinkronisasi Pilihan Hari / Tanggal Absen */
+	var dateSelects = document.querySelectorAll('.kgtk-select-tanggal-absen');
+	var exportDateSelect = document.getElementById('kgtk-export-pdf-tanggal');
+
+	var safeEsc = function (s) {
+		return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+	};
+
+	function updateExportLinksDate(val) {
+		var modalExport = document.getElementById('kgtk-modal-export-pdf');
+		if (!modalExport) { return; }
+		var links = modalExport.querySelectorAll('.kgtk-export-item');
+		Array.prototype.forEach.call(links, function (link) {
+			var href = link.getAttribute('href');
+			if (!href) { return; }
+			var re = /([?&])tanggal=[^&]*(&|$)/;
+			var cleanHref = href.replace(re, function (m, p1, p2) {
+				return p2 === '&' ? p1 : '';
+			}).replace(/(&|\?)$/, '');
+
+			if (val) {
+				var sep = cleanHref.indexOf('?') !== -1 ? '&' : '?';
+				link.setAttribute('href', cleanHref + sep + 'tanggal=' + encodeURIComponent(val));
+			} else {
+				link.setAttribute('href', cleanHref);
+			}
+		});
+	}
+
+	function updateAttendanceDate(val, label) {
+		if (!val) { val = 'all_days'; }
+
+		// 1. Sinkronisasi semua select dropdown tanggal di halaman
+		Array.prototype.forEach.call(dateSelects, function (sel) {
+			if (sel.value !== val) {
+				sel.value = val;
+			}
+		});
+
+		// 2. Sinkronisasi select dropdown di modal export PDF
+		if (exportDateSelect && exportDateSelect.value !== val) {
+			exportDateSelect.value = val;
+		}
+		updateExportLinksDate(val);
+
+		// 3. Tampilkan lembar yang sesuai pada setiap tab (.kgtk-sheet-day)
+		var sheetParents = document.querySelectorAll('.kgtk-sheet');
+		Array.prototype.forEach.call(sheetParents, function (sheet) {
+			var dayElements = sheet.querySelectorAll('.kgtk-sheet-day');
+			if (dayElements.length === 0) { return; }
+			var visibleList = [];
+			Array.prototype.forEach.call(dayElements, function (ds) {
+				var dayVal = ds.getAttribute('data-day');
+				var show = false;
+				if (val === 'all_days' || val === '' || val === 'all' || val === 'semua') {
+					show = (dayVal !== 'range');
+				} else if (val === 'range') {
+					show = (dayVal === 'range');
+				} else {
+					show = (dayVal === val);
+				}
+				ds.classList.toggle('is-hidden', !show);
+				ds.classList.remove('is-last-print-day');
+				if (show) {
+					visibleList.push(ds);
+				}
+			});
+			if (visibleList.length > 0) {
+				visibleList[visibleList.length - 1].classList.add('is-last-print-day');
+			}
+		});
+
+		// 4. Update teks label tombol Cetak di setiap subtab
+		var printButtons = document.querySelectorAll('[data-cetak]');
+		Array.prototype.forEach.call(printButtons, function (btn) {
+			var base = btn.getAttribute('data-base-label');
+			if (!base) {
+				base = btn.textContent.replace(/^[🖨️\s\uD83D\uDDA4\uFE0F]+/, '').replace(/\s*\([^)]*\)$/, '').trim();
+				btn.setAttribute('data-base-label', base);
+			}
+			var suffix = '';
+			if (val === 'all_days' || val === '' || val === 'all' || val === 'semua') {
+				suffix = ' (Semua Hari)';
+			} else if (val === 'range') {
+				suffix = ' (Rentang)';
+			} else if (label) {
+				var m = label.match(/^(Hari\s+ke-\d+)/i);
+				suffix = m ? ' (' + m[1] + ')' : ' (' + label + ')';
+			} else {
+				if (dateSelects.length > 0) {
+					var firstSel = dateSelects[0];
+					var opt = firstSel.querySelector('option[value="' + val + '"]');
+					if (opt && opt.textContent) {
+						var m2 = opt.textContent.match(/^(Hari\s+ke-\d+)/i);
+						suffix = m2 ? ' (' + m2[1] + ')' : '';
+					}
+				}
+			}
+			btn.innerHTML = '&#128424;&#65039; ' + safeEsc(base + suffix);
+		});
+
+		// 5. Update teks tanggal bila ada elemen .kgtk-doc-tanggal tunggal (fallback)
+		var docDates = document.querySelectorAll('.kgtk-sheet:not(:has(.kgtk-sheet-day)) .kgtk-doc-tanggal');
+		if (docDates.length === 0 && document.querySelectorAll('.kgtk-sheet-day').length === 0) {
+			docDates = document.querySelectorAll('.kgtk-doc-tanggal');
+		}
+		Array.prototype.forEach.call(docDates, function (el) {
+			if (label) {
+				el.textContent = label;
+			} else {
+				var def = el.getAttribute('data-tgl-default');
+				if (def) {
+					el.textContent = def;
+				}
+			}
+		});
+	}
+
+	if (dateSelects.length > 0) {
+		Array.prototype.forEach.call(dateSelects, function (sel) {
+			sel.addEventListener('change', function () {
+				var opt = this.options[this.selectedIndex];
+				var label = opt ? opt.getAttribute('data-label') : '';
+				updateAttendanceDate(this.value, label);
+			});
+		});
+		// Inisialisasi awal agar tombol cetak dan hari terakhir siap cetak
+		var initialSel = dateSelects[0];
+		var initialOpt = initialSel.options[initialSel.selectedIndex];
+		var initialLabel = initialOpt ? initialOpt.getAttribute('data-label') : '';
+		updateAttendanceDate(initialSel.value, initialLabel);
+	}
+
+	if (exportDateSelect) {
+		exportDateSelect.addEventListener('change', function () {
+			var opt = this.options[this.selectedIndex];
+			var label = opt ? opt.getAttribute('data-label') : '';
+			updateAttendanceDate(this.value, label);
+		});
+	}
+
+	/* Tutup modal jika tombol Escape ditekan */
+	document.addEventListener('keydown', function (e) {
+		if (e.key === 'Escape') {
+			var openOverlays = document.querySelectorAll('.kgtk-modal-overlay.is-visible');
+			Array.prototype.forEach.call(openOverlays, function (ov) {
+				ov.classList.remove('is-visible');
+			});
+		}
+	});
+})();

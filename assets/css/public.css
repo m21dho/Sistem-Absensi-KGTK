@@ -1,0 +1,222 @@
+/* Halaman peserta: disesuaikan dengan tampilan situs KGTK Kepri (banner gradien, menu samping, kartu putih). */
+.kgtk-app{max-width:1080px;margin:0 auto;padding:24px 16px 48px;font-family:var(--kgtk-font,inherit);color:var(--ink)}
+.kgtk-app .kgtk-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:1180px;margin:0 auto}
+
+/* Menu langkah (seperti menu samping di situs) */
+.kgtk-app .kgtk-side{padding:12px}
+.kgtk-app .kgtk-side-title{display:none;margin:4px 10px 10px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kgtk-app .kgtk-steps{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+.kgtk-app .kgtk-steps li{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;margin:0;padding:10px 6px;border-radius:12px;font-size:12px;font-weight:600;color:var(--muted);text-align:center}
+.kgtk-app .kgtk-steps .n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#e5e7eb;color:var(--muted);font-size:12px;font-weight:800}
+.kgtk-app .kgtk-steps li.is-now{background:var(--pill);color:var(--blue);font-weight:800}
+.kgtk-app .kgtk-steps li.is-now .n{background:var(--blue);color:#fff}
+.kgtk-app .kgtk-steps li.is-done .n{background:var(--ok);color:#fff}
+
+/* Banner */
+.kgtk-app .kgtk-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 24px 28px;color:#fff;background:linear-gradient(135deg,#0b2d56 0%,#0b5691 55%,#1c8aca 100%)}
+.kgtk-app .kgtk-hero::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:38px 38px}
+.kgtk-app .kgtk-hero::after{content:'';position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+.kgtk-app .kgtk-hero>*{position:relative;z-index:1}
+.kgtk-app .kgtk-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px}
+.kgtk-app .kgtk-crumb{padding:4px 12px;border-radius:99px;background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+.kgtk-app .kgtk-crumb.is-now{background:rgba(255,255,255,.28)}
+.kgtk-app .kgtk-crumb-sep{opacity:.6}
+.kgtk-app .kgtk-hero h1{margin:16px 0 10px;padding:0;border:0;color:#fff;font-size:clamp(28px,6vw,44px);line-height:1.08;font-weight:800;letter-spacing:-.01em}
+.kgtk-app .kgtk-hero h1 span{color:var(--yellow)}
+.kgtk-app .kgtk-hero p{max-width:600px;color:#dbe8f5;font-size:14px;line-height:1.6}
+
+/* Label bagian (garis biru di kiri, huruf kapital) */
+.kgtk-app .kgtk-label{display:flex;align-items:center;gap:10px;margin:28px 0 12px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
+.kgtk-app .kgtk-label::before{content:'';width:4px;height:18px;border-radius:2px;background:var(--blue)}
+
+/* Kartu dan isi */
+.kgtk-app .kgtk-card{margin-bottom:16px}
+.kgtk-app .kgtk-card h2{margin:0 0 4px;padding:0;font-size:20px;font-weight:800;color:var(--navy);line-height:1.3}
+.kgtk-app .kgtk-card .kgtk-muted{margin-bottom:16px;font-size:14px}
+.kgtk-app .kgtk-center{text-align:center}
+.kgtk-app select.kgtk-input{appearance:auto}
+.kgtk-app button[type=submit].kgtk-btn::after{content:'\2192';font-weight:800}
+.kgtk-app .kgtk-link{display:inline-block;background:none;border:0;padding:10px 0;color:var(--blue);font-weight:700;font-size:14px;font-family:inherit;text-decoration:underline;cursor:pointer}
+
+/* Kartu informasi pelatihan (biru tua seperti kartu "Pernyataan Visi") */
+.kgtk-app .kgtk-info{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#0b2d56 0%,#0b5691 100%)}
+.kgtk-app .kgtk-info h2{color:#fff}
+.kgtk-app .kgtk-info .row{margin-top:6px;font-size:14px;color:#eaf2fb}
+.kgtk-app .kgtk-info .row span{color:#9fc0de}
+.kgtk-app .kgtk-info .kgtk-ket{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.1);color:#eaf2fb;font-size:13px;white-space:pre-line}
+.kgtk-app .kgtk-info .kgtk-chip{background:rgba(255,255,255,.16);color:#fff}
+.kgtk-app .kgtk-info .kgtk-chip.is-full{background:rgba(251,191,36,.22);color:var(--amber)}
+.kgtk-app .kgtk-card .kgtk-slotnote{margin:10px 0 0;font-size:12px;color:#9fc0de}
+
+.kgtk-app .kgtk-note{margin:0 0 16px;padding:10px 12px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;color:#78350f;font-size:13px}
+
+/* Status dan hasil */
+.kgtk-app .kgtk-icon{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;margin-bottom:10px;border-radius:50%;background:var(--ok);color:#fff;font-size:30px;font-weight:800}
+.kgtk-app .kgtk-icon.is-info{background:var(--blue)}
+.kgtk-app .kgtk-icon.is-warn{background:var(--err)}
+.kgtk-app .kgtk-detail{margin:14px 0;text-align:left}
+.kgtk-app .kgtk-detail div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kgtk-app .kgtk-detail dt{color:var(--muted)}
+.kgtk-app .kgtk-detail dd{margin:0;text-align:right;font-weight:700;color:var(--navy)}
+.kgtk-app .kgtk-nomor{margin:6px 0 16px;padding:14px;border-radius:12px;background:var(--pill);color:var(--blue);font-weight:800}
+
+/* Layar lebar: menu langkah di kiri, seperti halaman Profil di situs */
+@media(min-width:900px){
+ .kgtk-app .kgtk-layout{grid-template-columns:240px minmax(0,1fr);align-items:start}
+ .kgtk-app .kgtk-side{position:sticky;top:96px;padding:14px}
+ .kgtk-app .kgtk-side-title{display:block}
+ .kgtk-app .kgtk-steps{flex-direction:column;gap:4px}
+ .kgtk-app .kgtk-steps li{flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;font-size:14px;text-align:left}
+ .kgtk-app .kgtk-steps li.is-now::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--blue)}
+ .kgtk-app .kgtk-hero{padding:34px 34px 36px}
+}
+
+/* Mode layar penuh: halaman keluar dari kolom konten tema dan selebar layar (header/footer tema tetap tampil). */
+.kgtk-app.kgtk-penuh{position:relative;left:50%;right:50%;width:100vw;max-width:100vw!important;margin-left:-50vw!important;margin-right:-50vw!important;padding:28px 20px 56px;background:var(--bg);box-sizing:border-box}
+body.kgtk-penuh{overflow-x:hidden}
+body.kgtk-penuh .entry-title,body.kgtk-penuh .page-title,body.kgtk-penuh .wp-block-post-title,body.kgtk-penuh .entry-header,body.kgtk-penuh .page-header,body.kgtk-penuh .post-thumbnail,body.kgtk-penuh .wp-block-post-featured-image{display:none!important}
+@media(min-width:900px){.kgtk-app.kgtk-penuh{padding:40px 32px 72px}}
+@media(max-width:768px){
+ .kgtk-app.kgtk-penuh{position:static!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important;padding:14px 10px 36px!important;box-sizing:border-box!important}
+}
+
+/* Radio options & pill button */
+.kgtk-app .kgtk-radios{display:flex;flex-wrap:wrap;gap:16px;margin:8px 0 14px}
+.kgtk-app .kgtk-radio{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer}
+.kgtk-app .kgtk-radio input[type=radio]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer}
+.kgtk-app .kgtk-pill-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:700;border:0;cursor:pointer;text-decoration:none;transition:background .2s}
+.kgtk-app .kgtk-pill-btn:hover{background:rgba(255,255,255,.35)}
+.kgtk-app .kgtk-riwayat-item{padding:14px 16px;margin-bottom:12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;text-align:left}
+.kgtk-app .kgtk-riwayat-item h3{margin:0 0 6px;font-size:16px;font-weight:800;color:var(--navy)}
+.kgtk-app .kgtk-actions-bar{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.kgtk-app .kgtk-actions-bar .kgtk-btn{flex:1 1 auto}
+.kgtk-app .kgtk-hero-bio-wrap{margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.kgtk-app .kgtk-hero-bio-btn{
+	display:inline-flex;
+	align-items:center;
+	gap:10px;
+	padding:11px 24px;
+	border-radius:99px;
+	background:#ffffff;
+	color:#0b2d56;
+	font-size:14.5px;
+	font-weight:800;
+	letter-spacing:-0.01em;
+	border:2px solid #ffffff;
+	cursor:pointer;
+	text-decoration:none;
+	box-shadow:0 4px 18px rgba(7,26,49,.35),0 2px 6px rgba(0,0,0,.15);
+	transition:all .2s cubic-bezier(.4,0,.2,1);
+}
+.kgtk-app .kgtk-hero-bio-btn:hover{
+	background:#f8fafc;
+	color:#0073aa;
+	transform:translateY(-2px);
+	box-shadow:0 8px 26px rgba(7,26,49,.45),0 4px 10px rgba(0,0,0,.2);
+}
+.kgtk-app .kgtk-hero-bio-btn:active{
+	transform:translateY(0);
+}
+.kgtk-app .kgtk-hero-bio-btn svg{
+	width:18px;
+	height:18px;
+	flex-shrink:0;
+	color:#0083C4;
+}
+.kgtk-app .kgtk-hero-bio-btn .kgtk-bio-btn-arrow{
+	display:inline-block;
+	font-size:15px;
+	font-weight:900;
+	transition:transform .2s ease;
+}
+.kgtk-app .kgtk-hero-bio-btn:hover .kgtk-bio-btn-arrow{
+	transform:translateX(3px);
+}
+.kgtk-app .kgtk-hero-bio-btn--back:hover .kgtk-bio-btn-arrow{
+	transform:translateX(-3px);
+}
+.kgtk-app .kgtk-hero-bio-hint{
+	font-size:13px;
+	color:#e0f2fe;
+	font-weight:500;
+	display:inline-block;
+}
+.kgtk-app .kgtk-riwayat-actions{margin-top:10px;display:flex;gap:8px}
+/* Header Atas (Top Header dengan Logo Kemendikdasmen KGTK) */
+.kgtk-app .kgtk-top-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;margin-bottom:20px;background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(15,42,74,.05),0 8px 24px rgba(15,42,74,.05);border:1px solid rgba(226,232,240,.9)}
+.kgtk-app .kgtk-top-header-brand{display:flex;align-items:center;gap:14px;user-select:none}
+.kgtk-app .kgtk-top-header-logo{height:46px;width:auto;max-width:260px;object-fit:contain;display:block}
+.kgtk-app .kgtk-top-header-tagline{display:none;border-left:1.5px solid var(--line);padding-left:14px;line-height:1.25}
+.kgtk-app .kgtk-tagline-title{font-size:13px;font-weight:800;color:var(--navy)}
+.kgtk-app .kgtk-tagline-sub{font-size:11.5px;font-weight:600;color:var(--muted)}
+.kgtk-app .kgtk-top-header-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;background:var(--pill);color:var(--blue);font-size:12.5px;font-weight:700;white-space:nowrap}
+.kgtk-app .kgtk-badge-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px rgba(30,127,92,.2)}
+@media(min-width:640px){.kgtk-app .kgtk-top-header-tagline{display:block}}
+
+/* Responsif Mobile Halaman Publik KGTK */
+@media(max-width:640px){
+	.kgtk-app{padding:12px 10px 36px;width:100%;max-width:100%;box-sizing:border-box}
+	.kgtk-app .kgtk-layout{gap:14px}
+	.kgtk-app .kgtk-side{padding:2px 0 6px}
+	.kgtk-app .kgtk-steps{gap:4px}
+	.kgtk-app .kgtk-steps li{padding:8px 4px;font-size:11px;border-radius:10px;gap:4px;line-height:1.2}
+	.kgtk-app .kgtk-steps .n{width:22px;height:22px;font-size:11px}
+	.kgtk-app .kgtk-hero{padding:18px 16px 20px;border-radius:16px}
+	.kgtk-app .kgtk-crumbs{font-size:11px;gap:6px}
+	.kgtk-app .kgtk-crumb{padding:3px 10px}
+	.kgtk-app .kgtk-hero h1{font-size:22px;line-height:1.2;margin:12px 0 8px}
+	.kgtk-app .kgtk-hero p{font-size:13px;line-height:1.5}
+	.kgtk-app .kgtk-hero-bio-wrap{margin-top:14px;flex-direction:column;align-items:stretch;gap:8px}
+	.kgtk-app .kgtk-hero-bio-btn{width:100%;justify-content:center;padding:12px 18px;font-size:14px;box-sizing:border-box}
+	.kgtk-app .kgtk-hero-bio-hint{text-align:center;font-size:12px}
+	.kgtk-app .kgtk-card h2{font-size:18px}
+	.kgtk-app .kgtk-label{margin:18px 0 10px;font-size:11.5px}
+	.kgtk-app button[type=submit].kgtk-btn,
+	.kgtk-app .kgtk-actions-bar .kgtk-btn{width:100%;min-height:46px;font-size:14.5px;justify-content:center}
+	.kgtk-app .kgtk-actions-bar{flex-direction:column;gap:8px}
+	.kgtk-app .kgtk-riwayat-actions{flex-direction:column;gap:6px}
+	.kgtk-app .kgtk-riwayat-actions .kgtk-btn{width:100%}
+	.kgtk-app .kgtk-footer-help{padding:16px 14px;margin-top:20px;border-radius:14px;flex-direction:column;align-items:stretch;gap:14px}
+	.kgtk-app .kgtk-footer-help-info{flex:1 1 auto;gap:12px}
+	.kgtk-app .kgtk-footer-help-icon{width:40px;height:40px}
+	.kgtk-app .kgtk-footer-help-icon svg{width:22px;height:22px}
+	.kgtk-app .kgtk-footer-help-title{font-size:14px}
+	.kgtk-app .kgtk-footer-help-sub{font-size:12px}
+	.kgtk-app .kgtk-footer-help-cta{width:100%;justify-content:center;padding:12px 18px;font-size:13.5px;box-sizing:border-box}
+}
+
+@media(max-width:480px){
+	.kgtk-app .kgtk-top-header{padding:10px 12px;gap:8px;border-radius:14px;margin-bottom:14px}
+	.kgtk-app .kgtk-top-header-logo{height:32px;max-width:170px}
+	.kgtk-app .kgtk-top-header-badge{font-size:10.5px;padding:4px 8px;gap:5px}
+	.kgtk-app .kgtk-badge-dot{width:6px;height:6px}
+	.kgtk-app .kgtk-detail div{flex-direction:column;align-items:flex-start;gap:3px;padding:8px 0}
+	.kgtk-app .kgtk-detail dd{text-align:left;word-break:break-word}
+	.kgtk-app .kgtk-nomor{font-size:14px;padding:12px 10px;word-break:break-all}
+}
+
+.kgtk-print-kop{display:none}
+
+@page {
+	size: A4;
+	margin: 0.51cm 1.0cm;
+}
+
+@media print{
+	@page {
+		size: A4;
+		margin: 0.51cm 1.0cm;
+	}
+ html, body{
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #fff !important;
+ }
+ #adminmenumain,#adminmenuback,#adminmenuwrap,#wpadminbar,#wpfooter,#screen-meta,#screen-meta-links,.notice,.update-nag,header,footer,.kgtk-hero,.kgtk-side,.kgtk-crumbs,.kgtk-label,.kgtk-steps,.kgtk-btn,.kgtk-link,.kgtk-pill-btn,.kgtk-hero-bio-btn,.kgtk-actions-bar,.kgtk-riwayat-actions,.kgtk-top-header,.kgtk-footer-help{display:none!important}
+ .kgtk-print-kop{display:block!important;margin:0 auto 16px;max-width:100%}
+ .kgtk-app,.kgtk-app.kgtk-penuh{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important;position:static!important;left:auto!important;right:auto!important;background:#fff!important}
+ .kgtk-app .kgtk-card{box-shadow:none!important;border:1px solid #000!important;page-break-inside:avoid}
+ .kgtk-app .kgtk-detail dd{color:#000!important}
+ /* Sembunyikan baris NIK saat cetak */
+ .kgtk-hide-print{display:none!important}
+}

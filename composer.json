@@ -1,0 +1,16 @@
+{
+	"name": "kgtk/kgtk-pelatihan",
+	"description": "Plugin WordPress pendaftaran pelatihan guru KGTK",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=7.4",
+		"phpoffice/phpspreadsheet": "^1.29",
+		"dompdf/dompdf": "^2.0"
+	},
+	"config": {
+		"platform": { "php": "7.4.33" },
+		"optimize-autoloader": true,
+		"sort-packages": true
+	}
+}
