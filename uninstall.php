@@ -9,7 +9,7 @@ if ( ! (int) get_option( 'kgtk_hapus_saat_uninstall', 0 ) ) {
 }
 
 global $wpdb;
-foreach ( array( 'undangan', 'peserta', 'kelas', 'pelatihan', 'guru' ) as $t ) {
+foreach ( array( 'panitia', 'notif', 'sertifikat', 'sertifikat_tpl', 'undangan', 'peserta', 'kelas', 'pelatihan', 'guru' ) as $t ) {
 	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}kgtk_{$t}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 }
 

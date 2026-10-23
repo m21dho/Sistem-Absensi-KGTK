@@ -22,6 +22,7 @@ class KGTK_Admin {
 		self::$hooks[] = add_menu_page( 'Pelatihan KGTK', 'Pelatihan KGTK', 'manage_options', 'kgtk-pelatihan', array( __CLASS__, 'page_main' ), 'dashicons-welcome-learn-more', 26 );
 		add_submenu_page( 'kgtk-pelatihan', 'Daftar pelatihan', 'Daftar pelatihan', 'manage_options', 'kgtk-pelatihan', array( __CLASS__, 'page_main' ) );
 		self::$hooks[] = add_submenu_page( 'kgtk-pelatihan', 'Buat pelatihan', 'Buat pelatihan', 'manage_options', 'kgtk-buat', array( __CLASS__, 'page_buat' ) );
+		self::$hooks[] = add_submenu_page( 'kgtk-pelatihan', 'Data Panitia', 'Data Panitia', 'manage_options', 'kgtk-panitia', array( __CLASS__, 'page_panitia' ) );
 		self::$hooks[] = add_submenu_page( 'kgtk-pelatihan', 'Rekap Guru', 'Rekap Guru', 'manage_options', 'kgtk-rekap-guru', array( 'KGTK_Sekolah_Admin', 'page_rekap_guru' ) );
 		self::$hooks[] = add_submenu_page( 'kgtk-pelatihan', 'Rekap Sekolah', 'Rekap Sekolah', 'manage_options', 'kgtk-rekap', array( 'KGTK_Sekolah_Admin', 'page_rekap' ) );
 		self::$hooks[] = add_submenu_page( 'kgtk-pelatihan', 'Data Sekolah', 'Data Sekolah', 'manage_options', 'kgtk-sekolah', array( 'KGTK_Sekolah_Admin', 'page_data' ) );
@@ -67,10 +68,14 @@ class KGTK_Admin {
 			return;
 		}
 		wp_enqueue_style( 'kgtk-font', 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', array(), null );
-		wp_enqueue_style( 'kgtk-common', KGTK_URL . 'assets/css/common.css', array(), KGTK_VERSION );
-		wp_enqueue_style( 'kgtk-admin', KGTK_URL . 'assets/css/admin.css', array( 'kgtk-common' ), KGTK_VERSION );
-		wp_enqueue_script( 'kgtk-sekolah', KGTK_URL . 'assets/js/sekolah.js', array(), KGTK_VERSION, true );
-		wp_enqueue_script( 'kgtk-admin', KGTK_URL . 'assets/js/admin.js', array( 'kgtk-sekolah' ), KGTK_VERSION, true );
+		$ver_admin_js   = file_exists( KGTK_PATH . 'assets/js/admin.js' ) ? filemtime( KGTK_PATH . 'assets/js/admin.js' ) : KGTK_VERSION;
+		$ver_admin_css  = file_exists( KGTK_PATH . 'assets/css/admin.css' ) ? filemtime( KGTK_PATH . 'assets/css/admin.css' ) : KGTK_VERSION;
+		$ver_common_css = file_exists( KGTK_PATH . 'assets/css/common.css' ) ? filemtime( KGTK_PATH . 'assets/css/common.css' ) : KGTK_VERSION;
+		$ver_sekolah_js = file_exists( KGTK_PATH . 'assets/js/sekolah.js' ) ? filemtime( KGTK_PATH . 'assets/js/sekolah.js' ) : KGTK_VERSION;
+		wp_enqueue_style( 'kgtk-common', KGTK_URL . 'assets/css/common.css', array(), $ver_common_css );
+		wp_enqueue_style( 'kgtk-admin', KGTK_URL . 'assets/css/admin.css', array( 'kgtk-common' ), $ver_admin_css );
+		wp_enqueue_script( 'kgtk-sekolah', KGTK_URL . 'assets/js/sekolah.js', array(), $ver_sekolah_js, true );
+		wp_enqueue_script( 'kgtk-admin', KGTK_URL . 'assets/js/admin.js', array( 'kgtk-sekolah' ), $ver_admin_js, true );
 		wp_localize_script(
 			'kgtk-admin',
 			'KGTK_ADMIN',
@@ -144,8 +149,8 @@ class KGTK_Admin {
 			. '<input type="text" class="kgtk-input" data-knama maxlength="30" placeholder="Nama kelas, mis. Kelas A" aria-label="Nama kelas" value="' . esc_attr( $nama ) . '">'
 			. '<label class="kgtk-slot">Slot <input type="number" class="kgtk-input" data-kslot min="1" max="2000" value="' . (int) $slot . '"></label>'
 			. '<div class="kgtk-row-actions">'
-			. '<button type="button" class="kgtk-iconbtn" data-move="up" title="Geser ke atas" aria-label="Geser ke atas">&#8593;</button>'
-			. '<button type="button" class="kgtk-iconbtn" data-move="down" title="Geser ke bawah" aria-label="Geser ke bawah">&#8595;</button>'
+			. '<button type="button" class="kgtk-iconbtn" data-up data-move="up" title="Geser ke atas" aria-label="Geser ke atas">&#8593;</button>'
+			. '<button type="button" class="kgtk-iconbtn" data-down data-move="down" title="Geser ke bawah" aria-label="Geser ke bawah">&#8595;</button>'
 			. '<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del title="Hapus kelas" aria-label="Hapus kelas">&times;</button>'
 			. '</div></div>';
 	}
@@ -202,11 +207,16 @@ class KGTK_Admin {
 			$bio_data = array(
 				'id'                 => (int) $item['peserta_id'],
 				'nama'               => $nama_tampil,
+				'gelar_depan'        => ! empty( $item['peserta_gelar_depan'] ) ? $item['peserta_gelar_depan'] : '',
+				'gelar_belakang'     => ! empty( $item['peserta_gelar_belakang'] ) ? $item['peserta_gelar_belakang'] : '',
 				'nik'                => $nik_tampil,
 				'tempat_lahir'       => ! empty( $item['peserta_tempat_lahir'] ) ? $item['peserta_tempat_lahir'] : '-',
 				'tanggal_lahir'      => ! empty( $item['peserta_tanggal_lahir'] ) ? $item['peserta_tanggal_lahir'] : '-',
 				'jenis_kelamin'      => ! empty( $item['peserta_jenis_kelamin'] ) ? $item['peserta_jenis_kelamin'] : '-',
 				'alamat'             => ! empty( $item['peserta_alamat'] ) ? $item['peserta_alamat'] : '-',
+				'alamat_instansi'    => ! empty( $item['peserta_alamat_instansi'] ) ? $item['peserta_alamat_instansi'] : '-',
+				'pangkat_golongan'   => ! empty( $item['peserta_pangkat_golongan'] ) ? $item['peserta_pangkat_golongan'] : '-',
+				'agama'              => ! empty( $item['peserta_agama'] ) ? $item['peserta_agama'] : '-',
 				'pendidikan'         => ! empty( $item['peserta_pendidikan'] ) ? $item['peserta_pendidikan'] : '-',
 				'npwp'               => ! empty( $item['peserta_npwp'] ) ? $item['peserta_npwp'] : '-',
 				'pengalaman_jabatan' => ! empty( $item['peserta_pengalaman_jabatan'] ) ? $item['peserta_pengalaman_jabatan'] : '-',
@@ -277,7 +287,7 @@ class KGTK_Admin {
 			$h .= '<button type="button" class="kgtk-iconbtn kgtk-iconbtn--link" data-hubungkan="' . (int) $item['id'] . '" title="Hubungkan ke peserta terdaftar">&#128279;</button>';
 		}
 
-		$h .= '<button type="button" class="kgtk-iconbtn" data-edit-undangan="' . (int) $item['id'] . '" title="Ubah">&#9998;</button>';
+		$h .= '<button type="button" class="kgtk-iconbtn" data-edit-undangan="' . (int) $item['id'] . '" title="Edit">&#9998;</button>';
 		$h .= '<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-undangan="' . (int) $item['id'] . '" title="Hapus">&#128465;&#65039;</button>';
 		$h .= '</div></td></tr>';
 
@@ -436,6 +446,7 @@ class KGTK_Admin {
 		}
 
 		$linked_map = KGTK_Undangan::linked_peserta_map( $p->id );
+		$panitia    = isset( $data['panitia'] ) ? $data['panitia'] : KGTK_Panitia::get_by_pelatihan( $p->id );
 
 		self::render_view(
 			'view-absen',
@@ -452,7 +463,8 @@ class KGTK_Admin {
 				'und_stats',
 				'kelas_map',
 				'linked_map',
-				'multi'
+				'multi',
+				'panitia'
 			)
 		);
 	}
@@ -478,8 +490,17 @@ class KGTK_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Anda tidak memiliki akses.' );
 		}
-		$kode = KGTK_Helpers::generate_kode();
-		self::render_view( 'view-buat', compact( 'kode' ) );
+		$kode              = KGTK_Helpers::generate_kode();
+		$panitia_tersimpan = KGTK_Panitia::get_all();
+		self::render_view( 'view-buat', compact( 'kode', 'panitia_tersimpan' ) );
+	}
+
+	public static function page_panitia() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Anda tidak memiliki akses.' );
+		}
+		$panitia_list = KGTK_Panitia::get_all();
+		self::render_view( 'view-panitia', compact( 'panitia_list' ) );
 	}
 
 	public static function page_pengaturan() {

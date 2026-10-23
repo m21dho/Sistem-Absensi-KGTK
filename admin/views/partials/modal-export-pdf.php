@@ -14,8 +14,32 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var string $tgl_default     Label rentang tanggal default.
  * @var string $tgl_param       Parameter tanggal default.
  */
+if ( ! isset( $daftar_hari ) ) {
+	$daftar_hari  = isset( $p ) ? KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai ) : array();
+	$is_multi_day = count( $daftar_hari ) > 1;
+	$tgl_default  = isset( $p ) ? KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ) : '';
+	$tgl_param    = $is_multi_day ? 'all_days' : '';
+}
+if ( ! isset( $peran_list ) ) {
+	$peran_list = array(
+		'Peserta'     => 'Daftar hadir seluruh peserta pelatihan',
+		'Panitia'     => 'Lembar khusus panitia pelaksana kegiatan',
+		'Fasilitator' => 'Lembar khusus fasilitator kegiatan',
+		'Pengajar'    => 'Lembar khusus pengajar / instruktur',
+		'Narasumber'  => 'Lembar khusus narasumber kegiatan',
+		'Pemateri'    => 'Lembar khusus pemateri kegiatan',
+	);
+}
+if ( ! isset( $counts_raw ) && isset( $p->id ) ) {
+	global $wpdb;
+	$tp_cnt = KGTK_DB::table( 'peserta' );
+	$counts_raw = (array) $wpdb->get_results(
+		$wpdb->prepare( "SELECT peran, COUNT(*) as cnt FROM {$tp_cnt} WHERE pelatihan_id = %d GROUP BY peran", $p->id ),
+		OBJECT_K
+	);
+}
 ?>
-<div class="kgtk-modal-overlay" id="kgtk-modal-export-pdf">
+<div class="kgtk-modal-overlay" id="kgtk-modal-export-pdf" style="display:none;">
 	<div class="kgtk-modal-dialog kgtk-ui" style="max-width:560px;width:95%;">
 		<div class="kgtk-modal-top" style="align-items:flex-start;">
 			<div class="kgtk-modal-icon is-primary">
@@ -64,6 +88,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<div class="kgtk-export-item-meta">
 							<span class="kgtk-export-badge is-featured"><?php echo (int) $total_pendaftar; ?> orang</span>
 							<span class="kgtk-export-item-btn">&#128229; Unduh</span>
+						</div>
+					</a>
+
+					<!-- Opsi Biodata Seluruh Peserta -->
+					<?php $url_bio_semua = KGTK_Export::semua_biodata_pdf_url( $p->id ); ?>
+					<a href="<?php echo esc_url( $url_bio_semua ); ?>" target="_blank" class="kgtk-export-item" data-skip-date="1" style="border-left: 3px solid #2563eb;">
+						<div class="kgtk-export-item-icon" style="background:#eff6ff;color:#2563eb;">&#128100;</div>
+						<div class="kgtk-export-item-info">
+							<div class="kgtk-export-item-title">Biodata Seluruh Peserta (Siap Cetak)</div>
+							<div class="kgtk-export-item-desc">Format resmi Kemendikdasmen (1 halaman per orang) siap print fisik</div>
+						</div>
+						<div class="kgtk-export-item-meta">
+							<span class="kgtk-export-badge is-featured"><?php echo (int) $total_pendaftar; ?> lembar</span>
+							<span class="kgtk-export-item-btn">&#128424;&#65039; Cetak / Unduh</span>
+						</div>
+					</a>
+
+					<!-- Opsi Daftar Tanda Terima Barang / Alat -->
+					<?php $url_tt_semua = KGTK_Export::tanda_terima_pdf_url( $p->id, 'Baju' ); ?>
+					<a href="<?php echo esc_url( $url_tt_semua ); ?>" target="_blank" class="kgtk-export-item" data-skip-date="1" style="border-left: 3px solid #f59e0b;">
+						<div class="kgtk-export-item-icon" style="background:#fef3c7;color:#d97706;">&#128230;</div>
+						<div class="kgtk-export-item-info">
+							<div class="kgtk-export-item-title">Daftar Tanda Terima Barang / Alat</div>
+							<div class="kgtk-export-item-desc">Format resmi tanda terima penyerahan barang / alat / baju peserta</div>
+						</div>
+						<div class="kgtk-export-item-meta">
+							<span class="kgtk-export-badge is-featured"><?php echo (int) $total_pendaftar; ?> peserta</span>
+							<span class="kgtk-export-item-btn">&#128424;&#65039; Cetak / Unduh</span>
 						</div>
 					</a>
 

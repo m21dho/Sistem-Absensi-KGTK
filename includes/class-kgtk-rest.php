@@ -8,6 +8,7 @@ require_once KGTK_PATH . 'includes/rest/class-kgtk-rest-public.php';
 require_once KGTK_PATH . 'includes/rest/class-kgtk-rest-admin-pelatihan.php';
 require_once KGTK_PATH . 'includes/rest/class-kgtk-rest-admin-peserta.php';
 require_once KGTK_PATH . 'includes/rest/class-kgtk-rest-admin-undangan.php';
+require_once KGTK_PATH . 'includes/rest/class-kgtk-rest-admin-panitia.php';
 
 /**
  * Main Router untuk REST API namespace kgtk/v1.
@@ -90,9 +91,34 @@ class KGTK_REST extends KGTK_REST_Base {
 			self::NS,
 			'/admin/pelatihan/(?P<id>\d+)',
 			array(
+				'methods'             => 'PUT',
+				'callback'            => array( 'KGTK_REST_Admin_Pelatihan', 'admin_update' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)',
+			array(
 				'methods'             => 'DELETE',
 				'callback'            => array( 'KGTK_REST_Admin_Pelatihan', 'admin_delete' ),
 				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/atk',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( 'KGTK_REST_Admin_Pelatihan', 'admin_get_atk' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'KGTK_REST_Admin_Pelatihan', 'admin_save_atk' ),
+					'permission_callback' => $admin,
+				),
 			)
 		);
 
@@ -158,6 +184,59 @@ class KGTK_REST extends KGTK_REST_Base {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( 'KGTK_REST_Admin_Undangan', 'admin_peserta_unlinked' ),
+				'permission_callback' => $admin,
+			)
+		);
+
+		/* ------------------ Endpoint Admin: Data Panitia ------------------ */
+
+		register_rest_route(
+			self::NS,
+			'/admin/panitia',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_panitia_list' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_tambah_panitia' ),
+					'permission_callback' => $admin,
+				),
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/panitia/(?P<id>\d+)',
+			array(
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_ubah_panitia' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_hapus_panitia' ),
+					'permission_callback' => $admin,
+				),
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/panitia',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_tambah_panitia_ke_pelatihan' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/panitia/(?P<peserta_id>\d+)',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_hapus_panitia_dari_pelatihan' ),
 				'permission_callback' => $admin,
 			)
 		);
@@ -250,6 +329,7 @@ class KGTK_REST extends KGTK_REST_Base {
 				'permission_callback' => $admin,
 			)
 		);
+
 	}
 
 	/* ====================== Backward Compatibility Proxies ====================== */
@@ -262,6 +342,8 @@ class KGTK_REST extends KGTK_REST_Base {
 
 	public static function admin_create( WP_REST_Request $req ) { return KGTK_REST_Admin_Pelatihan::admin_create( $req ); }
 	public static function admin_delete( WP_REST_Request $req ) { return KGTK_REST_Admin_Pelatihan::admin_delete( $req ); }
+	public static function admin_get_atk( WP_REST_Request $req ) { return KGTK_REST_Admin_Pelatihan::admin_get_atk( $req ); }
+	public static function admin_save_atk( WP_REST_Request $req ) { return KGTK_REST_Admin_Pelatihan::admin_save_atk( $req ); }
 
 	public static function admin_tambah_peserta( WP_REST_Request $req ) { return KGTK_REST_Admin_Peserta::admin_tambah_peserta( $req ); }
 	public static function admin_guru( WP_REST_Request $req ) { return KGTK_REST_Admin_Peserta::admin_guru( $req ); }

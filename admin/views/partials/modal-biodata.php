@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Partial View: Modal Biodata Peserta
  */
 ?>
-<div class="kgtk-modal-overlay" id="kgtk-modal-biodata">
+<div class="kgtk-modal-overlay" id="kgtk-modal-biodata" style="display:none;">
 	<div class="kgtk-modal-dialog kgtk-ui" style="max-width:580px;width:95%;">
 		<div class="kgtk-modal-top" style="align-items:flex-start;">
 			<div class="kgtk-modal-icon is-primary">

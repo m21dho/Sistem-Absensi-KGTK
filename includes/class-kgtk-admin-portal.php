@@ -474,6 +474,13 @@ class KGTK_Admin_Portal {
 				'active' => ( 'kgtk-buat' === $page ),
 			),
 			array(
+				'slug'   => 'kgtk-panitia',
+				'title'  => 'Data Panitia',
+				'icon'   => '&#128100;',
+				'url'    => self::portal_url( 'panitia' ),
+				'active' => ( 'kgtk-panitia' === $page ),
+			),
+			array(
 				'slug'   => 'kgtk-rekap-guru',
 				'title'  => 'Rekap Guru',
 				'icon'   => '&#128101;',
@@ -502,6 +509,10 @@ class KGTK_Admin_Portal {
 				'active' => ( 'kgtk-pengaturan' === $page ),
 			),
 		);
+		$ver_admin_css  = file_exists( KGTK_PATH . 'assets/css/admin.css' ) ? filemtime( KGTK_PATH . 'assets/css/admin.css' ) : KGTK_VERSION;
+		$ver_admin_js   = file_exists( KGTK_PATH . 'assets/js/admin.js' ) ? filemtime( KGTK_PATH . 'assets/js/admin.js' ) : KGTK_VERSION;
+		$ver_common_css = file_exists( KGTK_PATH . 'assets/css/common.css' ) ? filemtime( KGTK_PATH . 'assets/css/common.css' ) : KGTK_VERSION;
+		$ver_sekolah_js = file_exists( KGTK_PATH . 'assets/js/sekolah.js' ) ? filemtime( KGTK_PATH . 'assets/js/sekolah.js' ) : KGTK_VERSION;
 		?>
 		<!DOCTYPE html>
 		<html <?php language_attributes(); ?>>
@@ -512,8 +523,8 @@ class KGTK_Admin_Portal {
 			<link rel="preconnect" href="https://fonts.googleapis.com">
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 			<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/common.css?v=' . KGTK_VERSION ); ?>">
-			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/admin.css?v=' . KGTK_VERSION ); ?>">
+			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/common.css?v=' . $ver_common_css ); ?>">
+			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/admin.css?v=' . $ver_admin_css ); ?>">
 		</head>
 		<body class="kgtk-portal-body">
 			<!-- Header Portal Admin Mandiri -->
@@ -608,6 +619,8 @@ class KGTK_Admin_Portal {
 				// Router tampilan halaman portal
 				if ( 'kgtk-buat' === $page ) {
 					KGTK_Admin::page_buat();
+				} elseif ( 'kgtk-panitia' === $page ) {
+					KGTK_Admin::page_panitia();
 				} elseif ( 'kgtk-rekap-guru' === $page ) {
 					KGTK_Sekolah_Admin::page_rekap_guru();
 				} elseif ( 'kgtk-rekap' === $page ) {
@@ -657,8 +670,8 @@ class KGTK_Admin_Portal {
 					}
 				})();
 			</script>
-			<script src="<?php echo esc_url( KGTK_URL . 'assets/js/sekolah.js?v=' . KGTK_VERSION ); ?>"></script>
-			<script src="<?php echo esc_url( KGTK_URL . 'assets/js/admin.js?v=' . KGTK_VERSION ); ?>"></script>
+			<script src="<?php echo esc_url( KGTK_URL . 'assets/js/sekolah.js?v=' . $ver_sekolah_js ); ?>"></script>
+			<script src="<?php echo esc_url( KGTK_URL . 'assets/js/admin.js?v=' . $ver_admin_js ); ?>"></script>
 		</body>
 		</html>
 		<?php

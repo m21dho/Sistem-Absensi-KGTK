@@ -20,32 +20,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 	?>
 
 	<form id="kgtk-form-tambah" class="kgtk-card kgtk-form" data-pelatihan="<?php echo (int) $p->id; ?>" novalidate>
-		<p class="kgtk-muted">Untuk mendaftarkan guru yang kesulitan mendaftar sendiri. Isi sesuai data guru. Jika NIK pernah tersimpan, data terisi otomatis dan bisa diubah. Tanda * wajib diisi.</p>
+		<p class="kgtk-muted">Untuk mendaftarkan guru yang kesulitan mendaftar sendiri. Isi sesuai data guru. Jika NIK pernah tersimpan, data terisi otomatis dan bisa diedit. Tanda * wajib diisi.</p>
 		<div id="kgtk-tambah-ok" class="kgtk-ok" role="status" hidden></div>
 		<div id="kgtk-tambah-error" class="kgtk-alert" role="alert" hidden></div>
 
 		<?php echo KGTK_Admin::field( 'NIK (16 digit) *', 'nik', 'type="text" inputmode="numeric" maxlength="16" autocomplete="off" required' ); ?>
 		<div id="kgtk-tambah-info" class="kgtk-note" hidden></div>
-		<?php echo KGTK_Admin::field( 'Nama lengkap *', 'nama', 'type="text" maxlength="100" required' ); ?>
+		<label class="kgtk-field">
+			<span>Nama * <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">Hanya nama tanpa gelar</small></span>
+			<input type="text" class="kgtk-input" name="nama" maxlength="100" placeholder="Anggy Putri Oktavia" required>
+		</label>
+
+		<div class="kgtk-row2">
+			<?php echo KGTK_Admin::field( 'Gelar Depan', 'gelar_depan', 'type="text" maxlength="30" placeholder="mis. Dr. / Drs."' ); ?>
+			<?php echo KGTK_Admin::field( 'Gelar Belakang', 'gelar_belakang', 'type="text" maxlength="50" placeholder="mis. S.Pd. / S.I.Kom"' ); ?>
+		</div>
+
+		<label class="kgtk-field">
+			<span>NIP <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">*Hanya angka, tanpa spasi atau karakter lain</small></span>
+			<input type="text" class="kgtk-input" name="nip" inputmode="numeric" maxlength="18" placeholder="199602082025211022">
+			<small>18 digit angka NIP (kosongkan jika non-PNS/belum ada).</small>
+		</label>
 
 		<div class="kgtk-row2">
 			<?php echo KGTK_Admin::field( 'Tempat Lahir *', 'tempat_lahir', 'type="text" maxlength="80" required' ); ?>
 			<?php echo KGTK_Admin::field( 'Tanggal Lahir *', 'tanggal_lahir', 'type="date" required' ); ?>
 		</div>
 
+		<div class="kgtk-row2">
+			<label class="kgtk-field">
+				<span>Jenis Kelamin *</span>
+				<select class="kgtk-input" name="jenis_kelamin" required>
+					<option value="">-- Pilih Jenis Kelamin --</option>
+					<?php foreach ( KGTK_Helpers::JENIS_KELAMIN as $jk ) : ?>
+						<option value="<?php echo esc_attr( $jk ); ?>"><?php echo esc_html( $jk ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+			<label class="kgtk-field">
+				<span>Agama *</span>
+				<select class="kgtk-input" name="agama" required>
+					<option value="">-- Pilih Agama --</option>
+					<?php foreach ( KGTK_Helpers::AGAMA as $ag ) : ?>
+						<option value="<?php echo esc_attr( $ag ); ?>"><?php echo esc_html( $ag ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</label>
+		</div>
+
 		<label class="kgtk-field">
-			<span>Jenis Kelamin *</span>
-			<select class="kgtk-input" name="jenis_kelamin" required>
-				<option value="">-- Pilih Jenis Kelamin --</option>
-				<?php foreach ( KGTK_Helpers::JENIS_KELAMIN as $jk ) : ?>
-					<option value="<?php echo esc_attr( $jk ); ?>"><?php echo esc_html( $jk ); ?></option>
+			<span>Pangkat / Golongan</span>
+			<input type="text" class="kgtk-input" name="pangkat_golongan" list="kgtk-pangkat-list" placeholder="mis. Penata Muda (III/a) atau Non ASN">
+			<datalist id="kgtk-pangkat-list">
+				<?php foreach ( KGTK_Helpers::PANGKAT_GOLONGAN as $pg ) : ?>
+					<option value="<?php echo esc_attr( $pg ); ?>"></option>
 				<?php endforeach; ?>
-			</select>
+			</datalist>
+			<small>Pilih dari daftar atau ketik langsung (opsional untuk non-ASN).</small>
 		</label>
 
 		<label class="kgtk-field">
-			<span>Alamat / Tempat Tinggal *</span>
-			<textarea class="kgtk-input" name="alamat" rows="2" maxlength="500" required></textarea>
+			<span>Alamat Rumah / Tempat Tinggal *</span>
+			<textarea class="kgtk-input" name="alamat" rows="2" maxlength="500" required placeholder="Alamat rumah / domisili tempat tinggal"></textarea>
+		</label>
+
+		<label class="kgtk-field">
+			<span>Alamat Sekolah / Instansi *</span>
+			<textarea class="kgtk-input" name="alamat_instansi" rows="2" maxlength="500" required placeholder="Alamat lengkap instansi / tempat bertugas"></textarea>
 		</label>
 
 		<label class="kgtk-field">
@@ -72,10 +113,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<div class="kgtk-row2">
 			<?php echo KGTK_Admin::field( 'NUPTK (isi jika ada)', 'nuptk', 'type="text" inputmode="numeric" maxlength="16" autocomplete="off"', '16 digit angka (opsional).' ); ?>
-			<?php echo KGTK_Admin::field( 'NIP (isi jika ada)', 'nip', 'type="text" inputmode="numeric" maxlength="18" autocomplete="off"', '18 digit angka.' ); ?>
+			<?php echo KGTK_Admin::field( 'SIMPKB (isi jika ada)', 'simpkb', 'type="text" maxlength="100" autocomplete="off"', 'No. UKG / Akun SIMPKB (opsional).' ); ?>
 		</div>
-
-		<?php echo KGTK_Admin::field( 'SIMPKB (isi jika ada)', 'simpkb', 'type="text" maxlength="100" autocomplete="off"', 'No. UKG / Akun SIMPKB (opsional).' ); ?>
 		<div id="kgtk-sekolah-slot"></div>
 
 		<label class="kgtk-field">

@@ -13,13 +13,71 @@ class KGTK_Helpers {
 	const BARIS_PER_HALAMAN = 15;
 	/** Nilai kabupaten/kota untuk guru dari luar daftar sekolah. */
 	const KABKOTA_LAIN      = 'Lainnya';
-	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Peserta' );
+	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Peserta' );
+	const JABATAN_PANITIA = array( 'Ketua Panitia', 'Sekretaris', 'Bendahara', 'Seksi Acara', 'Seksi Konsumsi', 'Seksi Perlengkapan', 'Seksi Dokumentasi', 'Anggota Panitia' );
 	const JENIS_GTK = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
 	const JABATAN = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
 	const PENDIDIKAN = array( 'SMA/SMK Sederajat', 'D3', 'D4 / S1', 'S2', 'S3' );
 	const JENIS_KELAMIN = array( 'Laki-laki', 'Perempuan' );
+	const AGAMA = array( 'Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu' );
+	const PANGKAT_GOLONGAN = array(
+		'Non ASN / Honorer',
+		'Pengatur Muda (II/a)',
+		'Pengatur Muda Tk. I (II/b)',
+		'Pengatur (II/c)',
+		'Pengatur Tk. I (II/d)',
+		'Penata Muda (III/a)',
+		'Penata Muda Tk. I (III/b)',
+		'Penata (III/c)',
+		'Penata Tk. I (III/d)',
+		'Pembina (IV/a)',
+		'Pembina Tk. I (IV/b)',
+		'Pembina Utama Muda (IV/c)',
+		'Pembina Utama Madya (IV/d)',
+		'Pembina Utama (IV/e)',
+		'PPPK',
+		'Lainnya',
+	);
 
 	/* ---------- Format ---------- */
+
+	/**
+	 * Format nama lengkap beserta gelar depan dan gelar belakang bila ada.
+	 * Contoh: "Dr. Axel Dhanis Gusadi, S.I.Kom"
+	 *
+	 * @param string|object|array $nama_or_obj Objek peserta/guru, array data, atau string nama.
+	 * @param string              $gelar_depan Gelar depan (opsional).
+	 * @param string              $gelar_belakang Gelar belakang (opsional).
+	 * @return string
+	 */
+	public static function format_nama_gelar( $nama_or_obj, $gelar_depan = '', $gelar_belakang = '' ) {
+		$nama = '';
+		$gd   = '';
+		$gb   = '';
+
+		if ( is_object( $nama_or_obj ) ) {
+			$nama = isset( $nama_or_obj->nama ) ? trim( (string) $nama_or_obj->nama ) : '';
+			$gd   = isset( $nama_or_obj->gelar_depan ) ? trim( (string) $nama_or_obj->gelar_depan ) : '';
+			$gb   = isset( $nama_or_obj->gelar_belakang ) ? trim( (string) $nama_or_obj->gelar_belakang ) : '';
+		} elseif ( is_array( $nama_or_obj ) ) {
+			$nama = isset( $nama_or_obj['nama'] ) ? trim( (string) $nama_or_obj['nama'] ) : '';
+			$gd   = isset( $nama_or_obj['gelar_depan'] ) ? trim( (string) $nama_or_obj['gelar_depan'] ) : '';
+			$gb   = isset( $nama_or_obj['gelar_belakang'] ) ? trim( (string) $nama_or_obj['gelar_belakang'] ) : '';
+		} else {
+			$nama = trim( (string) $nama_or_obj );
+			$gd   = trim( (string) $gelar_depan );
+			$gb   = trim( (string) $gelar_belakang );
+		}
+
+		$out = $nama;
+		if ( '' !== $gd ) {
+			$out = $gd . ' ' . $out;
+		}
+		if ( '' !== $gb ) {
+			$out = $out . ', ' . $gb;
+		}
+		return trim( $out );
+	}
 
 	/** Nama kelas untuk ditampilkan: "Pagi" menjadi "Kelas Pagi", "Kelas A" tetap "Kelas A", kosong menjadi "Menunggu Penentuan Admin". */
 	public static function label_kelas( $nama ) {
@@ -38,6 +96,10 @@ class KGTK_Helpers {
 		return (int) gmdate( 'j', $t ) . ' ' . $bulan[ (int) gmdate( 'n', $t ) ] . ' ' . gmdate( 'Y', $t );
 	}
 
+	public static function format_tanggal_indo( $ymd ) {
+		return self::format_tanggal( $ymd );
+	}
+
 	/** "12 Mei 2026" atau "12 - 14 Mei 2026" atau "30 Mei - 2 Juni 2026". */
 	public static function rentang_tanggal( $mulai, $selesai ) {
 		if ( ! $selesai || $selesai === $mulai ) {
@@ -52,6 +114,99 @@ class KGTK_Helpers {
 			return $a[0] . ' ' . $a[1] . ' - ' . self::format_tanggal( $selesai );
 		}
 		return self::format_tanggal( $mulai ) . ' - ' . self::format_tanggal( $selesai );
+	}
+
+	public static function format_rentang_tanggal( $mulai, $selesai ) {
+		return self::rentang_tanggal( $mulai, $selesai );
+	}
+
+	/**
+	 * Daftar Kabupaten/Kota resmi di Kepulauan Riau untuk dropdown lokasi pelatihan.
+	 *
+	 * @return array
+	 */
+	public static function kabkota_pelatihan_list() {
+		$default = array(
+			'Kota Tanjungpinang',
+			'Kota Batam',
+			'Kabupaten Bintan',
+			'Kabupaten Karimun',
+			'Kabupaten Natuna',
+			'Kabupaten Lingga',
+			'Kabupaten Kepulauan Anambas',
+			'Luar Kepulauan Riau / Lainnya',
+		);
+		$db_list = self::kabkota_list();
+		if ( ! empty( $db_list ) ) {
+			foreach ( $db_list as $k ) {
+				$label = self::format_kabkota_label( $k );
+				if ( ! in_array( $label, $default, true ) && 'Lainnya' !== $label && '' !== $label ) {
+					$default[] = $label;
+				}
+			}
+		}
+		return $default;
+	}
+
+	/**
+	 * Tentukan nama Kabupaten/Kota tempat kegiatan pelatihan untuk tanggal tanda tangan dokumen.
+	 *
+	 * @param object|array|string $kabkota_or_pel Objek pelatihan, array, atau string kabkota.
+	 * @param string              $lokasi         Lokasi pelatihan jika argumen pertama berupa string kabkota.
+	 * @return string Nama Kabupaten/Kota tempat kegiatan (mis. "Tanjungpinang", "Batam", "Bintan").
+	 */
+	public static function kabkota_tempat_kegiatan( $kabkota_or_pel, $lokasi = '' ) {
+		$kab = '';
+		$lok = '';
+		if ( is_object( $kabkota_or_pel ) ) {
+			$kab = ! empty( $kabkota_or_pel->kabkota ) ? (string) $kabkota_or_pel->kabkota : '';
+			$lok = ! empty( $kabkota_or_pel->lokasi ) ? (string) $kabkota_or_pel->lokasi : '';
+		} elseif ( is_array( $kabkota_or_pel ) ) {
+			$kab = ! empty( $kabkota_or_pel['kabkota'] ) ? (string) $kabkota_or_pel['kabkota'] : '';
+			$lok = ! empty( $kabkota_or_pel['lokasi'] ) ? (string) $kabkota_or_pel['lokasi'] : '';
+		} else {
+			$kab = (string) $kabkota_or_pel;
+			$lok = (string) $lokasi;
+		}
+
+		$target = '' !== trim( $kab ) ? trim( $kab ) : trim( $lok );
+		if ( '' === $target ) {
+			return 'Bintan';
+		}
+
+		$low = strtolower( $target );
+
+		// Jika daring/online dan tidak ada kabkota pelatihan eksplisit, default ke Bintan
+		if ( '' === trim( $kab ) && ( false !== strpos( $low, 'zoom' ) || false !== strpos( $low, 'daring' ) || false !== strpos( $low, 'online' ) || false !== strpos( $low, 'lms' ) ) ) {
+			return 'Bintan';
+		}
+
+		// Deteksi kabupaten/kota di Kepri atau umum
+		if ( false !== strpos( $low, 'tanjungpinang' ) || false !== strpos( $low, 'tanjung pinang' ) ) {
+			return 'Tanjungpinang';
+		}
+		if ( false !== strpos( $low, 'batam' ) ) {
+			return 'Batam';
+		}
+		if ( false !== strpos( $low, 'bintan' ) ) {
+			return 'Bintan';
+		}
+		if ( false !== strpos( $low, 'karimun' ) ) {
+			return 'Karimun';
+		}
+		if ( false !== strpos( $low, 'natuna' ) ) {
+			return 'Natuna';
+		}
+		if ( false !== strpos( $low, 'lingga' ) ) {
+			return 'Lingga';
+		}
+		if ( false !== strpos( $low, 'anambas' ) ) {
+			return 'Kepulauan Anambas';
+		}
+
+		// Jika berupa teks lokasi lain, bersihkan prefix "Kota ", "Kab. ", "Kabupaten " jika ada
+		$clean = preg_replace( '/^(kota|kabupaten|kab\.)\s+/i', '', $target );
+		return ! empty( $clean ) ? $clean : $target;
 	}
 
 	/**
@@ -249,19 +404,19 @@ class KGTK_Helpers {
 				"SELECT ps.*, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS kelas_slot
 				 FROM {$tp} ps
 				 LEFT JOIN {$tk} k ON k.id = ps.kelas_id
-				 WHERE ps.pelatihan_id = %d
+				 WHERE ps.pelatihan_id = %d AND ps.peran != 'Panitia'
 				 ORDER BY ps.created_at DESC, ps.id DESC",
 				$pelatihan_id
 			)
 		);
 	}
 
-	/** Hitung peserta yang belum ditentukan kelasnya (kelas_id = 0). */
+	/** Hitung peserta yang belum ditentukan kelasnya (kelas_id = 0, tidak termasuk Panitia). */
 	public static function unassigned_count( $pelatihan_id ) {
 		global $wpdb;
 		$tp = KGTK_DB::table( 'peserta' );
 		return (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE pelatihan_id = %d AND kelas_id = 0", $pelatihan_id )
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE pelatihan_id = %d AND kelas_id = 0 AND peran != 'Panitia'", $pelatihan_id )
 		);
 	}
 
@@ -273,8 +428,10 @@ class KGTK_Helpers {
 
 		$where = $only_id ? $wpdb->prepare( 'WHERE k.pelatihan_id = %d', $only_id ) : '';
 		$rows  = $wpdb->get_results(
-			"SELECT k.id, k.pelatihan_id, k.nama, k.slot, k.urutan, SUM(CASE WHEN p.peran = 'Peserta' THEN 1 ELSE 0 END) AS terisi, SUM(CASE WHEN p.peran <> 'Peserta' THEN 1 ELSE 0 END) AS lain
-			 FROM {$k} k LEFT JOIN {$p} p ON p.kelas_id = k.id
+			"SELECT k.id, k.pelatihan_id, k.nama, k.slot, k.urutan,
+			        SUM(CASE WHEN p.peran = 'Peserta' THEN 1 ELSE 0 END) AS terisi,
+			        SUM(CASE WHEN p.peran <> 'Peserta' AND p.peran <> 'Panitia' AND p.peran IS NOT NULL THEN 1 ELSE 0 END) AS lain
+			 FROM {$k} k LEFT JOIN {$p} p ON p.kelas_id = k.id AND p.peran != 'Panitia'
 			 {$where}
 			 GROUP BY k.id, k.pelatihan_id, k.nama, k.slot, k.urutan
 			 ORDER BY k.pelatihan_id, k.urutan, k.id"
@@ -491,6 +648,35 @@ class KGTK_Helpers {
 				);
 			}
 		}
+
+		// Lembar Hadir Panitia Pelatihan (berlaku tingkat kegiatan/pelatihan, tidak terikat per kelas)
+		global $wpdb;
+		$panitia_rows = isset( $data['panitia'] ) ? $data['panitia'] : array();
+		if ( empty( $panitia_rows ) && isset( $data['pelatihan']->id ) ) {
+			$tp_pan = KGTK_DB::table( 'peserta' );
+			$panitia_rows = $wpdb->get_results(
+				$wpdb->prepare( "SELECT id, nik, nama, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$tp_pan} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", (int) $data['pelatihan']->id )
+			);
+		}
+
+		if ( ! empty( $panitia_rows ) || ( $is_filtered && 'panitia' === strtolower( $peran_filter ) ) ) {
+			if ( ! $is_filtered || 'panitia' === strtolower( $peran_filter ) ) {
+				$dummy_k = (object) array(
+					'id'    => 0,
+					'nama'  => 'Panitia Pelaksana',
+					'label' => 'Panitia Pelaksana',
+					'slot'  => 0,
+				);
+				$sheets[] = array(
+					'kelas'        => $dummy_k,
+					'peran'        => 'Panitia',
+					'rows'         => $panitia_rows,
+					'jumlah'       => ! empty( $panitia_rows ) ? max( 1, count( $panitia_rows ) ) : self::BARIS_PER_HALAMAN,
+					'tampil_kelas' => false,
+				);
+			}
+		}
+
 		return $sheets;
 	}
 
@@ -504,7 +690,7 @@ class KGTK_Helpers {
 		$kelas = self::kelas_stats( $pelatihan_id );
 		$p     = KGTK_DB::table( 'peserta' );
 		$rows  = $wpdb->get_results(
-			$wpdb->prepare( "SELECT kelas_id, nik, nama, sekolah, peran FROM {$p} WHERE pelatihan_id = %d ORDER BY id ASC", $pelatihan_id )
+			$wpdb->prepare( "SELECT kelas_id, nik, nama, sekolah, peran FROM {$p} WHERE pelatihan_id = %d AND peran != 'Panitia' ORDER BY id ASC", $pelatihan_id )
 		);
 		$by = array();
 		foreach ( (array) $rows as $r ) {
@@ -513,20 +699,68 @@ class KGTK_Helpers {
 		foreach ( $kelas as $k ) {
 			$k->peserta = isset( $by[ $k->id ] ) ? $by[ $k->id ] : array();
 		}
+
+		$panitia = $wpdb->get_results(
+			$wpdb->prepare( "SELECT id, nik, nama, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$p} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", $pelatihan_id )
+		);
+
 		return array(
 			'pelatihan' => $pel,
 			'kelas'     => $kelas,
+			'panitia'   => $panitia,
 		);
+	}
+
+	/** Daftar default perlengkapan ATK pengajar / fasilitator. */
+	public static function default_atk_items() {
+		return array(
+			array( 'nama' => 'Spidol Whiteboard Marker', 'jumlah' => '3', 'kuantitas' => 'Buah', 'keterangan' => 'Hitam & Biru' ),
+			array( 'nama' => 'Penghapus Whiteboard', 'jumlah' => '1', 'kuantitas' => 'Buah', 'keterangan' => 'Standar' ),
+			array( 'nama' => 'Kertas Plano', 'jumlah' => '10', 'kuantitas' => 'Lembar', 'keterangan' => 'Putih' ),
+			array( 'nama' => 'Sticky Notes / Post-it', 'jumlah' => '2', 'kuantitas' => 'Pad', 'keterangan' => 'Warna-warni' ),
+			array( 'nama' => 'Ballpoint / Pulpen', 'jumlah' => '1', 'kuantitas' => 'Kotak', 'keterangan' => 'Hitam' ),
+		);
+	}
+
+	/** Ambil daftar ATK untuk pelatihan tertentu. */
+	public static function get_atk_items( $pelatihan_id ) {
+		$items = get_option( 'kgtk_atk_items_' . (int) $pelatihan_id, null );
+		if ( null === $items || ! is_array( $items ) ) {
+			return self::default_atk_items();
+		}
+		return $items;
+	}
+
+	/** Simpan daftar ATK untuk pelatihan tertentu. */
+	public static function save_atk_items( $pelatihan_id, $items ) {
+		if ( ! is_array( $items ) ) {
+			$items = array();
+		}
+		$clean = array();
+		foreach ( $items as $it ) {
+			$nama = sanitize_text_field( $it['nama'] ?? '' );
+			if ( '' === $nama ) {
+				continue;
+			}
+			$clean[] = array(
+				'nama'       => $nama,
+				'jumlah'     => sanitize_text_field( (string) ( $it['jumlah'] ?? '1' ) ),
+				'kuantitas'  => sanitize_text_field( (string) ( $it['kuantitas'] ?? 'Buah' ) ),
+				'keterangan' => sanitize_text_field( (string) ( $it['keterangan'] ?? '' ) ),
+			);
+		}
+		update_option( 'kgtk_atk_items_' . (int) $pelatihan_id, $clean, false );
+		return $clean;
 	}
 
 	/** Kop surat Kemendikdasmen untuk tampilan web dan PDF export. */
 	public static function kop_html() {
-		$logo_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/logo-kemendikdasmen.svg' : '';
+		$logo_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/kemendikdasmen.png' : '';
 		$logo_src  = '';
 		if ( $logo_path && file_exists( $logo_path ) ) {
-			$logo_src = 'data:image/svg+xml;base64,' . base64_encode( (string) file_get_contents( $logo_path ) );
+			$logo_src = 'data:image/png;base64,' . base64_encode( (string) file_get_contents( $logo_path ) );
 		} elseif ( defined( 'KGTK_URL' ) ) {
-			$logo_src = KGTK_URL . 'assets/images/logo-kemendikdasmen.svg';
+			$logo_src = KGTK_URL . 'assets/images/kemendikdasmen.png';
 		}
 
 		$header_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/header-kemendikdasmen.png' : '';
@@ -545,7 +779,7 @@ class KGTK_Helpers {
 			$html .= '<img src="' . esc_attr( $logo_src ) . '" style="max-height:74px;width:auto;display:inline-block;vertical-align:middle;" alt="Kemendikdasmen" />';
 		}
 		$html .= '</td>';
-		$html .= '<td style="width:2.5px;background-color:#0083C4;padding:0;border:0;font-size:1px;">&nbsp;</td>';
+		$html .= '<td class="kgtk-kop-line" style="width:1px;max-width:1px;min-width:1px;background-color:#0083C4;padding:0;border:0;font-size:1px;line-height:1px;">&nbsp;</td>';
 		$html .= '<td style="width:49%;vertical-align:middle;padding:0 0 0 16px;border:0;text-align:left;">';
 		if ( $header_src ) {
 			$html .= '<img src="' . esc_attr( $header_src ) . '" style="max-height:80px;width:auto;display:inline-block;vertical-align:middle;" alt="Kementerian Pendidikan Dasar dan Menengah" />';

@@ -982,7 +982,7 @@ class KGTK_Sekolah_Admin {
 		echo '<th class="c-no">No</th>';
 		echo '<th>Guru & Kontak</th>';
 		echo '<th>NIK</th>';
-		echo '<th>Sekolah & Wilayah</th>';
+		echo '<th>Sekolah/Instansi & Wilayah</th>';
 		echo '<th>Jenis GTK / Peran</th>';
 		echo '<th>Pelatihan yang Diikuti</th>';
 		echo '</tr></thead><tbody>';
@@ -1148,7 +1148,7 @@ class KGTK_Sekolah_Admin {
 			'Nama Guru',
 			'NIP',
 			'NUPTK',
-			'Asal Sekolah',
+			'Asal Sekolah / Instansi',
 			'Kabupaten/Kota',
 			'Jenis GTK',
 			'Peran Terakhir',

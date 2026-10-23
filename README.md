@@ -6,17 +6,26 @@ Plugin WordPress (PHP murni, tanpa framework) untuk pendaftaran pelatihan guru. 
 
 ```
 kgtk-pelatihan/
-├── kgtk-pelatihan.php          File utama, hook aktivasi
+├── kgtk-pelatihan.php          File utama, hook aktivasi & cron
 ├── uninstall.php               Hapus data (opsional, lewat Pengaturan)
-├── composer.json               PhpSpreadsheet + Dompdf
+├── composer.json               PhpSpreadsheet + Dompdf + chillerlan/php-qrcode
 ├── includes/
 │   ├── class-kgtk-db.php       Tabel (dbDelta) + halaman pendaftaran
-│   ├── class-kgtk-helpers.php  Query bersama, format tanggal, kode, link
-│   ├── class-kgtk-rest.php     REST API kgtk/v1 + rate limit + transaksi
-│   └── class-kgtk-export.php   Export PDF & Excel (admin-post, cek capability + nonce)
-├── admin/class-kgtk-admin.php  Menu, daftar, buat, absen, pengaturan
+│   ├── class-kgtk-helpers.php  Query bersama, format tanggal, kode, link, IP
+│   ├── class-kgtk-panitia.php  CRUD Panitia Pelaksana
+│   ├── class-kgtk-undangan.php Pencocokan & sinkronisasi peserta ditetapkan
+│   ├── class-kgtk-rest.php     REST API router kgtk/v1 + middleware
+│   ├── class-kgtk-export.php   Export PDF & Excel daftar hadir, ATK, biodata
+│   ├── class-kgtk-admin-portal.php Halaman portal manajemen pelatihan & link cepat
+│   └── rest/                   Sub-controller REST modular
+│       ├── class-kgtk-rest-admin-pelatihan.php CRUD pelatihan & ATK admin
+│       ├── class-kgtk-rest-admin-peserta.php   Pengelolaan peserta & penempatan kelas
+│       ├── class-kgtk-rest-admin-undangan.php  Manajemen peserta ditetapkan & import Excel
+│       ├── class-kgtk-rest-admin-panitia.php   Master data panitia
+│       └── class-kgtk-rest-public.php          Endpoint pendaftaran publik, cek NIK, riwayat
+├── admin/                      Menu admin, view pelatihan, modal & pengaturan
 ├── public/class-kgtk-public.php Shortcode [kgtk_daftar]
-└── assets/{css,js}/            common, admin, public (di-enqueue hanya di halaman terkait)
+└── assets/{css,js}/            common, admin, public (gaya KGTK Kepri)
 ```
 
 ## Instal

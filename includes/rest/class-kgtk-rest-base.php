@@ -94,15 +94,16 @@ abstract class KGTK_REST_Base {
 	public static function pelatihan_payload( $p, $kelas ) {
 		$t = KGTK_Helpers::totals( $kelas );
 		return array(
-			'nama'          => $p->nama,
-			'penyelenggara' => $p->penyelenggara,
-			'tanggal'       => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
-			'lokasi'        => $p->lokasi,
-			'keterangan'    => (string) $p->keterangan,
-			'kode'          => $p->kode,
-			'kelas'         => self::kelas_payload( $kelas ),
-			'kabkota'       => KGTK_Helpers::kabkota_list(),
-			'penuh'         => $t['penuh'],
+			'nama'              => $p->nama,
+			'penyelenggara'     => $p->penyelenggara,
+			'tanggal'           => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
+			'lokasi'            => $p->lokasi,
+			'pelatihan_kabkota' => isset( $p->kabkota ) ? $p->kabkota : '',
+			'keterangan'        => (string) $p->keterangan,
+			'kode'              => $p->kode,
+			'kelas'             => self::kelas_payload( $kelas ),
+			'kabkota'           => KGTK_Helpers::kabkota_list(),
+			'penuh'             => $t['penuh'],
 		);
 	}
 
@@ -117,6 +118,7 @@ abstract class KGTK_REST_Base {
 			'kelas_label' => KGTK_Helpers::label_kelas( $kelas_nama ),
 			'tanggal'     => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
 			'lokasi'      => $p->lokasi,
+			'kabkota'     => isset( $p->kabkota ) ? $p->kabkota : '',
 			'nomor'       => (int) $nomor,
 			'slot'        => (int) $slot,
 		);

@@ -41,7 +41,7 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 			return self::err( 'nik', 'NIK harus 16 digit angka.', 422 );
 		}
 		$g   = KGTK_DB::table( 'guru' );
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT nama, nik, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb FROM {$g} WHERE nik = %s", $nik ), ARRAY_A );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT nama, gelar_depan, gelar_belakang, nik, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, alamat_instansi, pangkat_golongan, agama, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb FROM {$g} WHERE nik = %s", $nik ), ARRAY_A );
 		if ( $row ) {
 			$row['jabatan'] = $row['jenis_gtk'];
 			if ( empty( $row['nuptk'] ) && ! empty( $row['nisn'] ) ) {

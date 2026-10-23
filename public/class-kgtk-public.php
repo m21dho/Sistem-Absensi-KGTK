@@ -37,7 +37,7 @@ class KGTK_Public {
 		}
 	}
 
-	/** Tambahkan class pada <body> halaman pendaftaran agar CSS bisa menyembunyikan judul tema dan mencegah geser horizontal. */
+	/** Tambahkan class pada <body> halaman pendaftaran/verifikasi agar CSS bisa menyembunyikan judul tema dan mencegah geser horizontal. */
 	public static function body_class( $classes ) {
 		global $post;
 		if ( 'penuh' === self::lebar() && is_singular() && $post instanceof WP_Post && has_shortcode( $post->post_content, 'kgtk_daftar' ) ) {
@@ -54,10 +54,14 @@ class KGTK_Public {
 	}
 
 	private static function enqueue() {
-		wp_enqueue_style( 'kgtk-common', KGTK_URL . 'assets/css/common.css', array(), KGTK_VERSION );
-		wp_enqueue_style( 'kgtk-public', KGTK_URL . 'assets/css/public.css', array( 'kgtk-common' ), KGTK_VERSION );
-		wp_enqueue_script( 'kgtk-sekolah', KGTK_URL . 'assets/js/sekolah.js', array(), KGTK_VERSION, true );
-		wp_enqueue_script( 'kgtk-public', KGTK_URL . 'assets/js/public.js', array( 'kgtk-sekolah' ), KGTK_VERSION, true );
+		$ver_common_css = file_exists( KGTK_PATH . 'assets/css/common.css' ) ? filemtime( KGTK_PATH . 'assets/css/common.css' ) : KGTK_VERSION;
+		$ver_public_css = file_exists( KGTK_PATH . 'assets/css/public.css' ) ? filemtime( KGTK_PATH . 'assets/css/public.css' ) : KGTK_VERSION;
+		$ver_sekolah_js = file_exists( KGTK_PATH . 'assets/js/sekolah.js' ) ? filemtime( KGTK_PATH . 'assets/js/sekolah.js' ) : KGTK_VERSION;
+		$ver_public_js  = file_exists( KGTK_PATH . 'assets/js/public.js' ) ? filemtime( KGTK_PATH . 'assets/js/public.js' ) : KGTK_VERSION;
+		wp_enqueue_style( 'kgtk-common', KGTK_URL . 'assets/css/common.css', array(), $ver_common_css );
+		wp_enqueue_style( 'kgtk-public', KGTK_URL . 'assets/css/public.css', array( 'kgtk-common' ), $ver_public_css );
+		wp_enqueue_script( 'kgtk-sekolah', KGTK_URL . 'assets/js/sekolah.js', array(), $ver_sekolah_js, true );
+		wp_enqueue_script( 'kgtk-public', KGTK_URL . 'assets/js/public.js', array( 'kgtk-sekolah' ), $ver_public_js, true );
 		wp_localize_script(
 			'kgtk-public',
 			'KGTK_PUB',
@@ -65,7 +69,7 @@ class KGTK_Public {
 				'root'      => esc_url_raw( rest_url( 'kgtk/v1/' ) ),
 				'logoUrl'   => esc_url_raw( KGTK_URL . 'assets/images/logo-kemendikdasmen.svg' ),
 				'headerUrl' => esc_url_raw( KGTK_URL . 'assets/images/header-kemendikdasmen.png' ),
-				'waHelp'    => esc_attr( get_option( 'kgtk_wa_help', '08136798163' ) ),
+				'waHelp'          => esc_attr( get_option( 'kgtk_wa_help', '08136798163' ) ),
 			)
 		);
 	}

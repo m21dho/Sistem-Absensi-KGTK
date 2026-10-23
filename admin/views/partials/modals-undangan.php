@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 ?>
 <!-- Modal Tambah / Ubah Undangan -->
-<div class="kgtk-modal-overlay" id="kgtk-modal-undangan">
+<div class="kgtk-modal-overlay" id="kgtk-modal-undangan" style="display:none;">
 	<div class="kgtk-modal-dialog kgtk-ui" style="max-width:520px;">
 		<div class="kgtk-modal-top">
 			<div class="kgtk-modal-icon is-primary">
@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 </div>
 
 <!-- Modal Hubungkan ke Peserta -->
-<div class="kgtk-modal-overlay" id="kgtk-modal-hubungkan">
+<div class="kgtk-modal-overlay" id="kgtk-modal-hubungkan" style="display:none;">
 	<div class="kgtk-modal-dialog kgtk-ui" style="max-width:540px;">
 		<div class="kgtk-modal-top">
 			<div class="kgtk-modal-icon is-primary">
@@ -65,7 +65,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 </div>
 
 <!-- Modal Impor Excel/CSV -->
-<div class="kgtk-modal-overlay" id="kgtk-modal-impor">
+<div class="kgtk-modal-overlay" id="kgtk-modal-impor" style="display:none;">
 	<div class="kgtk-modal-dialog kgtk-ui" style="max-width:620px;">
 		<div class="kgtk-modal-top">
 			<div class="kgtk-modal-icon is-primary">

@@ -41,11 +41,12 @@ font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-s
 .kgtk-ui .kgtk-link{background:none;border:0;padding:4px 0 12px;color:var(--navy);font-weight:600;font-size:13px;font-family:inherit;text-decoration:underline;cursor:pointer}
 
 /* ---------- KGTK Modal / Bubble Dialog Bertema ---------- */
-.kgtk-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(11,45,86,.45);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .2s cubic-bezier(.16,1,.3,1),visibility .2s}
-.kgtk-modal-overlay.is-visible{opacity:1;visibility:visible}
-.kgtk-modal-dialog{background:#fff;border-radius:20px;width:100%;max-width:440px;padding:24px;box-shadow:0 24px 48px -12px rgba(11,45,86,.28),0 0 0 1px rgba(11,45,86,.06);transform:scale(.92) translateY(8px);transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.kgtk-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(11,45,86,.45);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:24px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s cubic-bezier(.16,1,.3,1),visibility .2s}
+.kgtk-modal-overlay:not(.is-visible){display:none!important;pointer-events:none!important;visibility:hidden!important;opacity:0!important;width:0!important;height:0!important;z-index:-9999!important}
+.kgtk-modal-overlay.is-visible{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;z-index:999999!important}
+.kgtk-modal-dialog{background:#fff;border-radius:20px;width:100%;max-width:440px;max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);margin:auto;padding:24px;box-shadow:0 24px 48px -12px rgba(11,45,86,.28),0 0 0 1px rgba(11,45,86,.06);display:flex;flex-direction:column;box-sizing:border-box;position:relative;transform:scale(.92) translateY(8px);transition:transform .22s cubic-bezier(.16,1,.3,1)}
 .kgtk-modal-overlay.is-visible .kgtk-modal-dialog{transform:scale(1) translateY(0)}
-.kgtk-modal-top{display:flex;align-items:flex-start;gap:16px}
+.kgtk-modal-top{display:flex;align-items:flex-start;gap:16px;flex-shrink:0}
 .kgtk-modal-icon{flex:0 0 46px;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center}
 .kgtk-modal-icon.is-primary{background:#eef6ff;color:var(--blue)}
 .kgtk-modal-icon.is-danger{background:#fbeae6;color:var(--err)}
@@ -55,10 +56,17 @@ font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-s
 .kgtk-modal-title{font-size:17px;font-weight:800;color:var(--navy);margin:0 0 6px!important;line-height:1.3}
 .kgtk-modal-desc{font-size:14px;color:#374151;line-height:1.55;word-break:break-word}
 .kgtk-modal-space{height:10px}
-.kgtk-modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+.kgtk-modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);flex-shrink:0}
 .kgtk-modal-actions .kgtk-btn{min-height:40px;padding:8px 20px;font-size:13.5px}
 .kgtk-btn--danger-solid{background:var(--err)!important;color:#fff!important;box-shadow:none!important}
 .kgtk-btn--danger-solid:hover{filter:brightness(.92);color:#fff!important}
+
+/* Container Scroll Isi Modal & Scrollbar Ramping */
+.kgtk-modal-body-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:6px;margin-right:-2px}
+.kgtk-modal-body-scroll::-webkit-scrollbar,.kgtk-modal-dialog::-webkit-scrollbar{width:6px;height:6px}
+.kgtk-modal-body-scroll::-webkit-scrollbar-track,.kgtk-modal-dialog::-webkit-scrollbar-track{background:transparent}
+.kgtk-modal-body-scroll::-webkit-scrollbar-thumb,.kgtk-modal-dialog::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+.kgtk-modal-body-scroll::-webkit-scrollbar-thumb:hover,.kgtk-modal-dialog::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 
 /* Indikator Input Tidak Valid & Daftar Error di Modal */
 .kgtk-ui .kgtk-input.is-invalid{border-color:var(--err)!important;background:#fff8f7!important}
@@ -73,8 +81,8 @@ font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-s
 	.kgtk-ui .kgtk-card{padding:16px 14px;border-radius:14px}
 	.kgtk-ui .kgtk-input{font-size:16px;min-height:44px}
 	.kgtk-ui .kgtk-btn{min-height:44px;padding:10px 18px}
-	.kgtk-modal-overlay{padding:12px;align-items:center}
-	.kgtk-modal-dialog{padding:18px 16px;border-radius:16px;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+	.kgtk-modal-overlay.is-visible{padding:12px;align-items:center}
+	.kgtk-modal-dialog{padding:18px 16px;border-radius:16px;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
 	.kgtk-modal-top{gap:12px}
 	.kgtk-modal-icon{flex:0 0 40px;width:40px;height:40px;border-radius:12px}
 	.kgtk-modal-icon svg{width:20px;height:20px}

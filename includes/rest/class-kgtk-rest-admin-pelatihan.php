@@ -22,6 +22,7 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		$mulai   = self::str( $in, 'tanggal_mulai' );
 		$selesai = self::str( $in, 'tanggal_selesai' );
 		$lokasi  = self::str( $in, 'lokasi' );
+		$kabkota = self::str( $in, 'kabkota' );
 		$pj      = self::str( $in, 'penanggung_jawab' );
 		$tipe_pj = self::str( $in, 'tipe_pj' );
 		if ( ! in_array( $tipe_pj, array( 'Penanggung Jawab', 'Ketua' ), true ) ) {
@@ -41,6 +42,9 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		}
 		if ( self::len( $lokasi ) > 255 ) {
 			return self::err( 'lokasi', 'Lokasi maksimal 255 karakter.', 422 );
+		}
+		if ( self::len( $kabkota ) > 80 ) {
+			return self::err( 'kabkota', 'Kabupaten/Kota maksimal 80 karakter.', 422 );
 		}
 		if ( self::len( $ket ) > 2000 ) {
 			return self::err( 'keterangan', 'Keterangan maksimal 2000 karakter.', 422 );
@@ -130,13 +134,14 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 				'tanggal_mulai'   => $mulai,
 				'tanggal_selesai' => $selesai,
 				'lokasi'          => $lokasi,
+				'kabkota'         => $kabkota,
 				'penanggung_jawab' => $pj,
 				'tipe_pj'          => $tipe_pj,
 				'keterangan'      => $ket,
 				'kode'            => $kode,
 				'created_at'      => current_time( 'mysql' ),
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		$id = $ok ? (int) $wpdb->insert_id : 0;
 		if ( $id ) {
@@ -181,6 +186,37 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 				}
 			}
 		}
+
+		// Panitia (opsional).
+		$panitia_raw   = isset( $in['panitia'] ) && is_array( $in['panitia'] ) ? $in['panitia'] : array();
+		$panitia_valid = array();
+		foreach ( $panitia_raw as $row_p ) {
+			if ( ! is_array( $row_p ) ) {
+				continue;
+			}
+			$p_nama = self::str( $row_p, 'nama' );
+			if ( '' === $p_nama ) {
+				continue;
+			}
+			$panitia_valid[] = array(
+				'nama'     => $p_nama,
+				'jabatan'  => self::str( $row_p, 'jabatan' ) ?: ( self::str( $row_p, 'tugas' ) ?: 'Panitia Pelaksana' ),
+				'nik'      => preg_replace( '/\D/', '', self::str( $row_p, 'nik' ) ),
+				'nip'      => preg_replace( '/\D/', '', self::str( $row_p, 'nip' ) ),
+				'nuptk'    => preg_replace( '/\D/', '', self::str( $row_p, 'nuptk' ) ),
+				'hp'       => self::str( $row_p, 'hp' ),
+				'instansi' => self::str( $row_p, 'instansi' ),
+				'kabkota'  => self::str( $row_p, 'kabkota' ),
+				'email'    => self::str( $row_p, 'email' ),
+				'bank'     => self::str( $row_p, 'bank' ),
+				'rekening' => self::str( $row_p, 'rekening' ),
+				'npwp'     => self::str( $row_p, 'npwp' ),
+			);
+		}
+
+		if ( $id && ! empty( $panitia_valid ) ) {
+			KGTK_Panitia::tambah_ke_pelatihan( $id, $panitia_valid );
+		}
 		$wpdb->suppress_errors( false );
 
 		if ( ! $id ) {
@@ -195,6 +231,106 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 				'url' => KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => $id ) ),
 			),
 			201
+		);
+	}
+
+	public static function admin_update( WP_REST_Request $req ) {
+		global $wpdb;
+		$id = absint( $req['id'] );
+		$existing = KGTK_Helpers::get_by_id( $id );
+		if ( ! $existing ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+
+		$in = self::params( $req );
+
+		$nama    = self::str( $in, 'nama' );
+		$penyel  = self::str( $in, 'penyelenggara' );
+		$mulai   = self::str( $in, 'tanggal_mulai' );
+		$selesai = self::str( $in, 'tanggal_selesai' );
+		$lokasi  = self::str( $in, 'lokasi' );
+		$kabkota = self::str( $in, 'kabkota' );
+		$pj      = self::str( $in, 'penanggung_jawab' );
+		$tipe_pj = self::str( $in, 'tipe_pj' );
+		if ( ! in_array( $tipe_pj, array( 'Penanggung Jawab', 'Ketua' ), true ) ) {
+			$tipe_pj = 'Penanggung Jawab';
+		}
+		$ket     = isset( $in['keterangan'] ) && is_scalar( $in['keterangan'] ) ? sanitize_textarea_field( (string) $in['keterangan'] ) : '';
+		$kode    = KGTK_Helpers::normalize_kode( self::str( $in, 'kode' ) );
+
+		if ( '' === $nama ) {
+			return self::err( 'nama', 'Nama pelatihan wajib diisi.', 422 );
+		}
+		if ( self::len( $nama ) > 200 || self::len( $penyel ) > 200 ) {
+			return self::err( 'nama', 'Nama pelatihan dan penyelenggara maksimal 200 karakter.', 422 );
+		}
+		if ( self::len( $pj ) > 150 ) {
+			return self::err( 'penanggung_jawab', 'Nama penanggung jawab maksimal 150 karakter.', 422 );
+		}
+		if ( self::len( $lokasi ) > 255 ) {
+			return self::err( 'lokasi', 'Lokasi maksimal 255 karakter.', 422 );
+		}
+		if ( self::len( $kabkota ) > 80 ) {
+			return self::err( 'kabkota', 'Kabupaten/Kota maksimal 80 karakter.', 422 );
+		}
+		if ( self::len( $ket ) > 2000 ) {
+			return self::err( 'keterangan', 'Keterangan maksimal 2000 karakter.', 422 );
+		}
+		if ( ! self::valid_date( $mulai ) ) {
+			return self::err( 'tanggal_mulai', 'Tanggal mulai wajib diisi dengan benar.', 422 );
+		}
+		if ( '' === $selesai ) {
+			$selesai = $mulai;
+		}
+		if ( ! self::valid_date( $selesai ) ) {
+			return self::err( 'tanggal_selesai', 'Tanggal selesai tidak valid.', 422 );
+		}
+		if ( $selesai < $mulai ) {
+			return self::err( 'tanggal_selesai', 'Tanggal selesai tidak boleh sebelum tanggal mulai.', 422 );
+		}
+		if ( '' === $kode || ! preg_match( '/^[A-Za-z0-9-]{3,20}$/', $kode ) ) {
+			return self::err( 'kode', 'Kode pelatihan harus 3-20 karakter: huruf, angka, tanda hubung.', 422 );
+		}
+
+		// Periksa jika kode diubah ke kode yang sudah dipakai kegiatan lain
+		if ( $kode !== $existing->kode ) {
+			$tp = KGTK_DB::table( 'pelatihan' );
+			$ada = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tp} WHERE kode = %s AND id != %d", $kode, $id ) );
+			if ( $ada ) {
+				return self::err( 'kode', 'Kode pelatihan ' . $kode . ' sudah dipakai kegiatan lain.', 422 );
+			}
+		}
+
+		$tp = KGTK_DB::table( 'pelatihan' );
+		$ok = $wpdb->update(
+			$tp,
+			array(
+				'nama'             => $nama,
+				'penyelenggara'    => $penyel,
+				'tanggal_mulai'    => $mulai,
+				'tanggal_selesai'  => $selesai,
+				'lokasi'           => $lokasi,
+				'kabkota'          => $kabkota,
+				'penanggung_jawab' => $pj,
+				'tipe_pj'          => $tipe_pj,
+				'keterangan'       => $ket,
+				'kode'             => $kode,
+			),
+			array( 'id' => $id ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		if ( false === $ok ) {
+			return self::err( 'gagal', 'Gagal memperbarui pelatihan.', 500 );
+		}
+
+		return self::respond(
+			array(
+				'id'  => $id,
+				'ok'  => true,
+				'url' => KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => $id ) ),
+			)
 		);
 	}
 
@@ -215,5 +351,39 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		}
 		$wpdb->query( 'COMMIT' );
 		return self::respond( array( 'deleted' => true ) );
+	}
+
+	public static function admin_get_atk( WP_REST_Request $req ) {
+		$id = absint( $req['id'] );
+		$p  = KGTK_Helpers::get_by_id( $id );
+		if ( ! $p ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+		$items = KGTK_Helpers::get_atk_items( $id );
+		return self::respond(
+			array(
+				'pelatihan_id' => $id,
+				'items'        => $items,
+			)
+		);
+	}
+
+	public static function admin_save_atk( WP_REST_Request $req ) {
+		$id = absint( $req['id'] );
+		$p  = KGTK_Helpers::get_by_id( $id );
+		if ( ! $p ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+		$in    = self::params( $req );
+		$raw   = isset( $in['items'] ) && is_array( $in['items'] ) ? $in['items'] : array();
+		$saved = KGTK_Helpers::save_atk_items( $id, $raw );
+		return self::respond(
+			array(
+				'ok'           => true,
+				'pelatihan_id' => $id,
+				'items'        => $saved,
+				'pesan'        => 'Daftar ATK berhasil disimpan.',
+			)
+		);
 	}
 }

@@ -69,8 +69,8 @@
 		var node = el('div', { class: 'kgtk-sekolah' });
 
 		/* ---- isian manual (juga satu-satunya isian bila data sekolah belum ada) ---- */
-		var manualInput = el('input', { class: 'kgtk-input', type: 'text', id: id + '-manual', maxlength: 200, placeholder: 'Ketik nama sekolah atau NPSN Sekolah', autocomplete: 'off' });
-		var manualWrap = el('label', { class: 'kgtk-field', for: id + '-manual' }, [el('span', { text: hasList ? 'Nama sekolah (diketik) *' : 'Asal sekolah *' }), manualInput]);
+		var manualInput = el('input', { class: 'kgtk-input', type: 'text', id: id + '-manual', maxlength: 200, placeholder: 'Ketik nama sekolah/instansi atau NPSN', autocomplete: 'off' });
+		var manualWrap = el('label', { class: 'kgtk-field', for: id + '-manual' }, [el('span', { text: hasList ? 'Nama sekolah/instansi (diketik) *' : 'Asal sekolah/instansi *' }), manualInput]);
 
 		if (!hasList) {
 			node.appendChild(manualWrap);
@@ -78,7 +78,7 @@
 				node: node,
 				getValue: function () { return { kabkota: '', sekolah_id: 0, sekolah: manualInput.value.trim() }; },
 				setValue: function (v) { manualInput.value = (v && v.sekolah) || ''; },
-				validate: function () { return manualInput.value.trim() ? '' : 'Asal sekolah wajib diisi.'; }
+				validate: function () { return manualInput.value.trim() ? '' : 'Asal sekolah/instansi wajib diisi.'; }
 			};
 		}
 
@@ -89,12 +89,12 @@
 		node.appendChild(el('label', { class: 'kgtk-field', for: id + '-kab' }, [el('span', { text: 'Kabupaten/Kota *' }), kabSel]));
 
 		/* ---- pencarian sekolah ---- */
-		var cari = el('input', { class: 'kgtk-input', type: 'text', id: id + '-cari', placeholder: 'Ketik untuk mencari sekolah atau NPSN', autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id + '-list' });
+		var cari = el('input', { class: 'kgtk-input', type: 'text', id: id + '-cari', placeholder: 'Ketik untuk mencari sekolah/instansi atau NPSN', autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id + '-list' });
 		var list = el('ul', { class: 'kgtk-combo-list', id: id + '-list', role: 'listbox', hidden: true });
 		var info = el('small', { class: 'kgtk-combo-info' });
 		var toggle = el('button', { type: 'button', class: 'kgtk-link' });
 		var comboBox = el('div', { class: 'kgtk-field' }, [
-			el('label', { for: id + '-cari' }, [el('span', { text: 'Asal sekolah *' })]),
+			el('label', { for: id + '-cari' }, [el('span', { text: 'Asal sekolah/instansi *' })]),
 			el('div', { class: 'kgtk-combo' }, [cari, list]),
 			info
 		]);
@@ -109,7 +109,7 @@
 			comboBox.hidden = !ada || man;
 			manualWrap.hidden = !ada || !man;
 			toggle.hidden = !ada || lain;
-			toggle.textContent = st.manual ? 'Pilih sekolah dari daftar' : 'Sekolah saya tidak ada di daftar';
+			toggle.textContent = st.manual ? 'Pilih sekolah/instansi dari daftar' : 'Sekolah/instansi saya tidak ada di daftar';
 		}
 
 		function tutup() { list.hidden = true; cari.setAttribute('aria-expanded', 'false'); st.active = -1; }
@@ -133,8 +133,8 @@
 				li.addEventListener('mousedown', function (e) { e.preventDefault(); pilih(s); });
 				list.appendChild(li);
 			});
-			if (!tampil.length) { list.appendChild(el('li', { class: 'kgtk-combo-empty', text: 'Tidak ada sekolah yang cocok.' })); }
-			if (hasil.length > tampil.length) { list.appendChild(el('li', { class: 'kgtk-combo-empty', text: 'Menampilkan 40 dari ' + hasil.length + ' sekolah. Ketik untuk mempersempit.' })); }
+			if (!tampil.length) { list.appendChild(el('li', { class: 'kgtk-combo-empty', text: 'Tidak ada sekolah/instansi yang cocok.' })); }
+			if (hasil.length > tampil.length) { list.appendChild(el('li', { class: 'kgtk-combo-empty', text: 'Menampilkan 40 dari ' + hasil.length + ' sekolah/instansi. Ketik untuk mempersempit.' })); }
 			st.shown = tampil;
 			list.hidden = false;
 			cari.setAttribute('aria-expanded', 'true');
@@ -188,8 +188,8 @@
 			},
 			validate: function () {
 				if (!st.kab) { return 'Pilih kabupaten/kota.'; }
-				if (manualMode()) { return manualInput.value.trim() ? '' : 'Ketik nama sekolah Anda.'; }
-				return st.sel ? '' : 'Pilih sekolah dari daftar, atau pilih "Sekolah saya tidak ada di daftar".';
+				if (manualMode()) { return manualInput.value.trim() ? '' : 'Ketik nama sekolah/instansi Anda.'; }
+				return st.sel ? '' : 'Pilih sekolah/instansi dari daftar, atau pilih "Sekolah/instansi saya tidak ada di daftar".';
 			},
 			setValue: function (v) {
 				v = v || {};

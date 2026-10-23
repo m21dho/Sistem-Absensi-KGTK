@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       KGTK Pelatihan
  * Description:       Pendaftaran pelatihan guru dengan kode pelatihan dan NIK, daftar hadir per kelas, cetak, serta export PDF dan Excel.
- * Version:           1.0.0
+ * Version:           1.0.28
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            KGTK
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KGTK_VERSION', '1.0.12' );
+define( 'KGTK_VERSION', '1.0.28' );
 define( 'KGTK_FILE', __FILE__ );
 define( 'KGTK_PATH', plugin_dir_path( __FILE__ ) );
 define( 'KGTK_URL', plugin_dir_url( __FILE__ ) );
@@ -26,6 +26,7 @@ if ( file_exists( KGTK_PATH . 'vendor/autoload.php' ) ) {
 
 require_once KGTK_PATH . 'includes/class-kgtk-db.php';
 require_once KGTK_PATH . 'includes/class-kgtk-helpers.php';
+require_once KGTK_PATH . 'includes/class-kgtk-panitia.php';
 require_once KGTK_PATH . 'includes/class-kgtk-undangan.php';
 require_once KGTK_PATH . 'includes/class-kgtk-rest.php';
 require_once KGTK_PATH . 'includes/class-kgtk-export.php';

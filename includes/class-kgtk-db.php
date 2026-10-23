@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KGTK_DB {
 
-	const VERSION = '11';
+	const VERSION = '17';
 
 	public static function table( $name ) {
 		global $wpdb;
@@ -41,6 +41,7 @@ class KGTK_DB {
   tanggal_mulai date NOT NULL,
   tanggal_selesai date NOT NULL,
   lokasi varchar(255) NOT NULL DEFAULT '',
+  kabkota varchar(80) NOT NULL DEFAULT '',
   penanggung_jawab varchar(150) NOT NULL DEFAULT '',
   tipe_pj varchar(50) NOT NULL DEFAULT 'Penanggung Jawab',
   keterangan text,
@@ -66,10 +67,15 @@ class KGTK_DB {
   kelas_id bigint(20) unsigned NOT NULL,
   nik char(16) NOT NULL,
   nama varchar(100) NOT NULL,
+  gelar_depan varchar(30) NOT NULL DEFAULT '',
+  gelar_belakang varchar(50) NOT NULL DEFAULT '',
   tempat_lahir varchar(80) NOT NULL DEFAULT '',
   tanggal_lahir varchar(30) NOT NULL DEFAULT '',
   jenis_kelamin varchar(20) NOT NULL DEFAULT '',
   alamat text NULL,
+  alamat_instansi text NULL,
+  pangkat_golongan varchar(80) NOT NULL DEFAULT '',
+  agama varchar(30) NOT NULL DEFAULT '',
   pendidikan varchar(50) NOT NULL DEFAULT '',
   bank varchar(60) NOT NULL DEFAULT '',
   rekening varchar(50) NOT NULL DEFAULT '',
@@ -101,10 +107,15 @@ class KGTK_DB {
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   nik char(16) NOT NULL,
   nama varchar(100) NOT NULL,
+  gelar_depan varchar(30) NOT NULL DEFAULT '',
+  gelar_belakang varchar(50) NOT NULL DEFAULT '',
   tempat_lahir varchar(80) NOT NULL DEFAULT '',
   tanggal_lahir varchar(30) NOT NULL DEFAULT '',
   jenis_kelamin varchar(20) NOT NULL DEFAULT '',
   alamat text NULL,
+  alamat_instansi text NULL,
+  pangkat_golongan varchar(80) NOT NULL DEFAULT '',
+  agama varchar(30) NOT NULL DEFAULT '',
   pendidikan varchar(50) NOT NULL DEFAULT '',
   bank varchar(60) NOT NULL DEFAULT '',
   rekening varchar(50) NOT NULL DEFAULT '',
@@ -161,6 +172,29 @@ class KGTK_DB {
   KEY peserta_id (peserta_id)
 ) ENGINE=InnoDB $c;";
 
+
+		$sql[] = "CREATE TABLE {$p}kgtk_panitia (
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  nama varchar(100) NOT NULL,
+  jabatan varchar(100) NOT NULL DEFAULT 'Panitia Pelaksana',
+  nik char(16) NOT NULL DEFAULT '',
+  nip varchar(20) NOT NULL DEFAULT '',
+  nuptk varchar(20) NOT NULL DEFAULT '',
+  instansi varchar(200) NOT NULL DEFAULT '',
+  kabkota varchar(80) NOT NULL DEFAULT '',
+  hp varchar(20) NOT NULL DEFAULT '',
+  email varchar(100) NOT NULL DEFAULT '',
+  bank varchar(60) NOT NULL DEFAULT '',
+  rekening varchar(50) NOT NULL DEFAULT '',
+  npwp varchar(30) NOT NULL DEFAULT '',
+  catatan text NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (id),
+  KEY nik (nik),
+  KEY nama (nama)
+) ENGINE=InnoDB $c;";
+
 		foreach ( $sql as $q ) {
 			dbDelta( $q );
 		}
@@ -179,6 +213,12 @@ class KGTK_DB {
 		$col_tipe_pj = $wpdb->get_results( "SHOW COLUMNS FROM {$p}kgtk_pelatihan LIKE 'tipe_pj'" );
 		if ( empty( $col_tipe_pj ) ) {
 			$wpdb->query( "ALTER TABLE {$p}kgtk_pelatihan ADD tipe_pj varchar(50) NOT NULL DEFAULT 'Penanggung Jawab' AFTER penanggung_jawab" );
+		}
+
+		// Kolom kabkota pada kgtk_pelatihan.
+		$col_kabkota_pel = $wpdb->get_results( "SHOW COLUMNS FROM {$p}kgtk_pelatihan LIKE 'kabkota'" );
+		if ( empty( $col_kabkota_pel ) ) {
+			$wpdb->query( "ALTER TABLE {$p}kgtk_pelatihan ADD kabkota varchar(80) NOT NULL DEFAULT '' AFTER lokasi" );
 		}
 
 		// Kolom nuptk dan simpkb pada kgtk_peserta dan kgtk_guru.
@@ -209,12 +249,17 @@ class KGTK_DB {
 			$wpdb->query( "ALTER TABLE {$p}kgtk_peserta ADD terverifikasi tinyint(1) NOT NULL DEFAULT 1 AFTER simpkb" );
 		}
 
-		// Kolom biodata baru: tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, pendidikan, bank, rekening, npwp, pengalaman_jabatan.
+		// Kolom biodata: gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, alamat_instansi, pangkat_golongan, agama, pendidikan, bank, rekening, npwp, pengalaman_jabatan.
 		$new_cols = array(
+			'gelar_depan'        => "varchar(30) NOT NULL DEFAULT ''",
+			'gelar_belakang'     => "varchar(50) NOT NULL DEFAULT ''",
 			'tempat_lahir'       => "varchar(80) NOT NULL DEFAULT ''",
 			'tanggal_lahir'      => "varchar(30) NOT NULL DEFAULT ''",
 			'jenis_kelamin'      => "varchar(20) NOT NULL DEFAULT ''",
 			'alamat'             => 'text NULL',
+			'alamat_instansi'    => 'text NULL',
+			'pangkat_golongan'   => "varchar(80) NOT NULL DEFAULT ''",
+			'agama'              => "varchar(30) NOT NULL DEFAULT ''",
 			'pendidikan'         => "varchar(50) NOT NULL DEFAULT ''",
 			'bank'               => "varchar(60) NOT NULL DEFAULT ''",
 			'rekening'           => "varchar(50) NOT NULL DEFAULT ''",
@@ -231,6 +276,9 @@ class KGTK_DB {
 				}
 			}
 		}
+
+		// Pastikan panitia tidak terikat ke kelas peserta (kelas_id = 0)
+		$wpdb->query( "UPDATE {$p}kgtk_peserta SET kelas_id = 0 WHERE peran = 'Panitia' AND kelas_id != 0" );
 
 		update_option( 'kgtk_db_version', self::VERSION );
 	}

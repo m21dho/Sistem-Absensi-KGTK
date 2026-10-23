@@ -1,6 +1,36 @@
+/* Sembunyikan judul halaman & header bawaan theme WordPress jika ada form [kgtk_daftar] pada halaman */
+body:has(#kgtk-app) .wp-block-post-title,
+body:has(#kgtk-app) .entry-title,
+body:has(#kgtk-app) .page-title,
+body:has(#kgtk-app) header.entry-header,
+body:has(#kgtk-app) header.wp-block-template-part,
+body:has(#kgtk-app) .wp-block-template-part:has(header),
+body:has(#kgtk-app) > header,
+body:has(#kgtk-app) .site-header,
+body:has(#kgtk-app) #masthead,
+.kgtk-penuh .wp-block-post-title,
+.kgtk-penuh .entry-title,
+.kgtk-penuh .page-title,
+.kgtk-penuh header.entry-header,
+.kgtk-penuh header.wp-block-template-part,
+.kgtk-penuh .wp-block-template-part:has(header),
+.kgtk-penuh > header,
+.kgtk-penuh .site-header,
+.kgtk-penuh #masthead {
+	display: none !important;
+}
+
+body.kgtk-penuh,
+body:has(#kgtk-app),
+body.kgtk-penuh .wp-site-blocks,
+body:has(#kgtk-app) .wp-site-blocks {
+	padding-top: 0 !important;
+	margin-top: 0 !important;
+}
+
 /* Halaman peserta: disesuaikan dengan tampilan situs KGTK Kepri (banner gradien, menu samping, kartu putih). */
-.kgtk-app{max-width:1080px;margin:0 auto;padding:24px 16px 48px;font-family:var(--kgtk-font,inherit);color:var(--ink)}
-.kgtk-app .kgtk-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:1180px;margin:0 auto}
+.kgtk-app{max-width:1080px;margin:0 auto;padding:12px 16px 40px;font-family:var(--kgtk-font,inherit);color:var(--ink)}
+.kgtk-app .kgtk-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:1180px;margin:0 auto}
 
 /* Menu langkah (seperti menu samping di situs) */
 .kgtk-app .kgtk-side{padding:12px}
@@ -13,7 +43,7 @@
 .kgtk-app .kgtk-steps li.is-done .n{background:var(--ok);color:#fff}
 
 /* Banner */
-.kgtk-app .kgtk-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 24px 28px;color:#fff;background:linear-gradient(135deg,#0b2d56 0%,#0b5691 55%,#1c8aca 100%)}
+.kgtk-app .kgtk-hero{position:relative;overflow:hidden;border-radius:18px;padding:20px 22px 22px;color:#fff;background:linear-gradient(135deg,#0b2d56 0%,#0b5691 55%,#1c8aca 100%)}
 .kgtk-app .kgtk-hero::before{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:38px 38px}
 .kgtk-app .kgtk-hero::after{content:'';position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
 .kgtk-app .kgtk-hero>*{position:relative;z-index:1}
@@ -21,9 +51,9 @@
 .kgtk-app .kgtk-crumb{padding:4px 12px;border-radius:99px;background:rgba(255,255,255,.14);color:#fff;font-weight:600}
 .kgtk-app .kgtk-crumb.is-now{background:rgba(255,255,255,.28)}
 .kgtk-app .kgtk-crumb-sep{opacity:.6}
-.kgtk-app .kgtk-hero h1{margin:16px 0 10px;padding:0;border:0;color:#fff;font-size:clamp(28px,6vw,44px);line-height:1.08;font-weight:800;letter-spacing:-.01em}
+.kgtk-app .kgtk-hero h1{margin:12px 0 8px;padding:0;border:0;color:#fff;font-size:clamp(24px,4.5vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.01em}
 .kgtk-app .kgtk-hero h1 span{color:var(--yellow)}
-.kgtk-app .kgtk-hero p{max-width:600px;color:#dbe8f5;font-size:14px;line-height:1.6}
+.kgtk-app .kgtk-hero p{max-width:600px;color:#dbe8f5;font-size:13.5px;line-height:1.5;margin-bottom:0}
 
 /* Label bagian (garis biru di kiri, huruf kapital) */
 .kgtk-app .kgtk-label{display:flex;align-items:center;gap:10px;margin:28px 0 12px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
@@ -72,8 +102,13 @@
 }
 
 /* Mode layar penuh: halaman keluar dari kolom konten tema dan selebar layar (header/footer tema tetap tampil). */
-.kgtk-app.kgtk-penuh{position:relative;left:50%;right:50%;width:100vw;max-width:100vw!important;margin-left:-50vw!important;margin-right:-50vw!important;padding:28px 20px 56px;background:var(--bg);box-sizing:border-box}
+.kgtk-app.kgtk-penuh{position:relative;left:50%;right:50%;width:100vw!important;max-width:100vw!important;margin-left:-50vw!important;margin-right:-50vw!important;padding:28px 20px 56px;background:var(--bg);box-sizing:border-box}
 body.kgtk-penuh{overflow-x:hidden}
+/* Netralkan pembatas lebar kolom konten tema (blok/klasik) agar halaman peserta bisa melebar. */
+body.kgtk-penuh :is(main,#primary,#content,.site-main,.site-content,.content-area),
+body.kgtk-penuh :is(main,#primary,#content,.site-main,.site-content,.content-area) :is(.entry-content,.wp-block-post-content,.wp-block-group,article,.post,.page,.hentry){max-width:none!important}
+body.kgtk-penuh :is(main,#primary,#content) :is(.entry-content,.wp-block-post-content).is-layout-constrained{width:100%!important}
+body.kgtk-penuh .kgtk-app .kgtk-layout{max-width:1240px}
 body.kgtk-penuh .entry-title,body.kgtk-penuh .page-title,body.kgtk-penuh .wp-block-post-title,body.kgtk-penuh .entry-header,body.kgtk-penuh .page-header,body.kgtk-penuh .post-thumbnail,body.kgtk-penuh .wp-block-post-featured-image{display:none!important}
 @media(min-width:900px){.kgtk-app.kgtk-penuh{padding:40px 32px 72px}}
 @media(max-width:768px){
@@ -153,6 +188,138 @@ body.kgtk-penuh .entry-title,body.kgtk-penuh .page-title,body.kgtk-penuh .wp-blo
 .kgtk-app .kgtk-badge-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px rgba(30,127,92,.2)}
 @media(min-width:640px){.kgtk-app .kgtk-top-header-tagline{display:block}}
 
+/* Banner Bantuan WhatsApp (Footer Help) */
+.kgtk-app .kgtk-footer-help {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 20px 26px;
+	margin-top: 32px;
+	background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+	border: 1.5px solid #bbf7d0;
+	border-left: 6px solid #22c55e;
+	border-radius: 18px;
+	box-shadow: 0 4px 18px rgba(34, 197, 94, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+	box-sizing: border-box;
+}
+.kgtk-app .kgtk-footer-help-info {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex: 1 1 auto;
+}
+.kgtk-app .kgtk-footer-help-icon {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	background: #22c55e;
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+}
+.kgtk-app .kgtk-footer-help-icon svg {
+	width: 28px;
+	height: 28px;
+	fill: currentColor;
+	display: block;
+}
+.kgtk-app .kgtk-footer-help-text {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+.kgtk-app .kgtk-footer-help-title {
+	font-size: 15.5px;
+	font-weight: 800;
+	color: #14532d;
+	line-height: 1.3;
+}
+.kgtk-app .kgtk-footer-help-sub {
+	font-size: 13.5px;
+	color: #166534;
+	line-height: 1.5;
+}
+.kgtk-app .kgtk-footer-help-sub strong {
+	color: #0f172a;
+	font-weight: 800;
+}
+.kgtk-app .kgtk-footer-help-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+	color: #ffffff !important;
+	text-decoration: none !important;
+	font-weight: 700;
+	font-size: 14.5px;
+	padding: 12px 24px;
+	border-radius: 99px;
+	box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+	transition: all 0.2s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+}
+.kgtk-app .kgtk-footer-help-cta svg {
+	width: 20px;
+	height: 20px;
+	fill: currentColor;
+	display: block;
+}
+.kgtk-app .kgtk-footer-help-cta:hover {
+	background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(34, 197, 94, 0.45);
+	color: #ffffff !important;
+	text-decoration: none !important;
+}
+.kgtk-app .kgtk-footer-help-cta:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+/* Floating WhatsApp Button (Dihilangkan sesuai permintaan) */
+.kgtk-app .kgtk-wa-float {
+	display: none !important;
+}
+.kgtk-app .kgtk-wa-float-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.kgtk-app .kgtk-wa-float-icon svg {
+	width: 24px;
+	height: 24px;
+	fill: #ffffff;
+	display: block;
+}
+.kgtk-app .kgtk-wa-float:hover {
+	background: #1eb956;
+	color: #ffffff !important;
+	transform: translateY(-3px) scale(1.03);
+	box-shadow: 0 8px 24px rgba(37, 211, 102, 0.55), 0 3px 8px rgba(0, 0, 0, 0.15);
+	text-decoration: none !important;
+}
+.kgtk-app .kgtk-wa-float:active {
+	transform: translateY(0) scale(0.98);
+}
+@media(max-width:480px){
+	.kgtk-app .kgtk-wa-float{
+		bottom: 16px;
+		right: 16px;
+		padding: 12px;
+		border-radius: 50%;
+	}
+	.kgtk-app .kgtk-wa-float-label{
+		display: none;
+	}
+}
+
 /* Responsif Mobile Halaman Publik KGTK */
 @media(max-width:640px){
 	.kgtk-app{padding:12px 10px 36px;width:100%;max-width:100%;box-sizing:border-box}
@@ -212,7 +379,7 @@ body.kgtk-penuh .entry-title,body.kgtk-penuh .page-title,body.kgtk-penuh .wp-blo
   padding: 0 !important;
   background: #fff !important;
  }
- #adminmenumain,#adminmenuback,#adminmenuwrap,#wpadminbar,#wpfooter,#screen-meta,#screen-meta-links,.notice,.update-nag,header,footer,.kgtk-hero,.kgtk-side,.kgtk-crumbs,.kgtk-label,.kgtk-steps,.kgtk-btn,.kgtk-link,.kgtk-pill-btn,.kgtk-hero-bio-btn,.kgtk-actions-bar,.kgtk-riwayat-actions,.kgtk-top-header,.kgtk-footer-help{display:none!important}
+ #adminmenumain,#adminmenuback,#adminmenuwrap,#wpadminbar,#wpfooter,#screen-meta,#screen-meta-links,.notice,.update-nag,header,footer,.kgtk-hero,.kgtk-side,.kgtk-crumbs,.kgtk-label,.kgtk-steps,.kgtk-btn,.kgtk-link,.kgtk-pill-btn,.kgtk-hero-bio-btn,.kgtk-actions-bar,.kgtk-riwayat-actions,.kgtk-top-header,.kgtk-footer-help,.kgtk-wa-float{display:none!important}
  .kgtk-print-kop{display:block!important;margin:0 auto 16px;max-width:100%}
  .kgtk-app,.kgtk-app.kgtk-penuh{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important;position:static!important;left:auto!important;right:auto!important;background:#fff!important}
  .kgtk-app .kgtk-card{box-shadow:none!important;border:1px solid #000!important;page-break-inside:avoid}

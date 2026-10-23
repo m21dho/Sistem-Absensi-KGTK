@@ -118,7 +118,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		}
 
 		$tg       = KGTK_DB::table( 'guru' );
-		$guru_row = $wpdb->get_row( $wpdb->prepare( "SELECT nama, nik, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb FROM {$tg} WHERE nik = %s", $nik ), ARRAY_A );
+		$guru_row = $wpdb->get_row( $wpdb->prepare( "SELECT nama, gelar_depan, gelar_belakang, nik, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, alamat_instansi, pangkat_golongan, agama, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb FROM {$tg} WHERE nik = %s", $nik ), ARRAY_A );
 		if ( $guru_row ) {
 			$guru_row['jabatan'] = $guru_row['jenis_gtk'];
 			if ( empty( $guru_row['nuptk'] ) && ! empty( $guru_row['nisn'] ) ) {
@@ -252,8 +252,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT ps.id, ps.kelas_id, ps.peran, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS slot,
-				        pl.nama AS pelatihan_nama, pl.penyelenggara, pl.tanggal_mulai, pl.tanggal_selesai, pl.lokasi
+				"SELECT ps.id AS peserta_id, ps.pelatihan_id, ps.kelas_id, ps.peran, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS slot,
+				        pl.nama AS pelatihan_nama, pl.penyelenggara, pl.tanggal_mulai, pl.tanggal_selesai, pl.lokasi, pl.kabkota AS pelatihan_kabkota
 				 FROM {$tp} ps
 				 INNER JOIN {$tpel} pl ON pl.id = ps.pelatihan_id
 				 LEFT JOIN {$tk} k ON k.id = ps.kelas_id
@@ -266,13 +266,16 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$riwayat = array();
 		foreach ( (array) $rows as $r ) {
 			$nomor = ( (int) $r->kelas_id > 0 ) ? (int) $wpdb->get_var(
-				$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE kelas_id = %d AND peran = %s AND id <= %d", $r->kelas_id, $r->peran, $r->id )
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE kelas_id = %d AND peran = %s AND id <= %d", $r->kelas_id, $r->peran, $r->peserta_id )
 			) : 0;
+
 			$riwayat[] = array(
+				'pelatihan_id'  => (int) $r->pelatihan_id,
 				'nama'          => $r->pelatihan_nama,
 				'penyelenggara' => $r->penyelenggara,
 				'tanggal'       => KGTK_Helpers::rentang_tanggal( $r->tanggal_mulai, $r->tanggal_selesai ),
 				'lokasi'        => $r->lokasi,
+				'kabkota'       => isset( $r->pelatihan_kabkota ) ? $r->pelatihan_kabkota : '',
 				'kelas'         => $r->kelas_nama,
 				'kelas_label'   => KGTK_Helpers::label_kelas( $r->kelas_nama ),
 				'peran'         => $r->peran,
@@ -301,7 +304,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$manual = $d['sekolah'];
 		$tulis  = function () use ( $manual ) {
 			if ( '' === $manual || self::len( $manual ) > 200 ) {
-				return self::err( 'sekolah', 'Asal sekolah wajib diisi (maksimal 200 karakter).', 422 );
+				return self::err( 'sekolah', 'Asal sekolah/instansi wajib diisi (maksimal 200 karakter).', 422 );
 			}
 			return true;
 		};
@@ -327,7 +330,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			$t   = KGTK_DB::table( 'sekolah' );
 			$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, nama FROM {$t} WHERE id = %d AND kabkota = %s", $d['sekolah_id'], $kab ) );
 			if ( ! $row ) {
-				return self::err( 'sekolah', 'Sekolah tidak ditemukan pada kabupaten/kota yang dipilih.', 422 );
+				return self::err( 'sekolah', 'Sekolah/instansi tidak ditemukan pada kabupaten/kota yang dipilih.', 422 );
 			}
 			return array( 'kabkota' => $kab, 'sekolah_id' => (int) $row->id, 'sekolah' => $row->nama );
 		}
@@ -340,10 +343,15 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$d = array(
 			'nik'                => self::str( $in, 'nik' ),
 			'nama'               => self::str( $in, 'nama' ),
+			'gelar_depan'        => self::str( $in, 'gelar_depan' ),
+			'gelar_belakang'     => self::str( $in, 'gelar_belakang' ),
 			'tempat_lahir'       => self::str( $in, 'tempat_lahir' ),
 			'tanggal_lahir'      => self::str( $in, 'tanggal_lahir' ),
 			'jenis_kelamin'      => self::str( $in, 'jenis_kelamin' ),
 			'alamat'             => isset( $in['alamat'] ) && is_scalar( $in['alamat'] ) ? sanitize_textarea_field( (string) $in['alamat'] ) : '',
+			'alamat_instansi'    => isset( $in['alamat_instansi'] ) && is_scalar( $in['alamat_instansi'] ) ? sanitize_textarea_field( (string) $in['alamat_instansi'] ) : '',
+			'pangkat_golongan'   => self::str( $in, 'pangkat_golongan' ),
+			'agama'              => self::str( $in, 'agama' ),
 			'pendidikan'         => self::str( $in, 'pendidikan' ),
 			'bank'               => self::str( $in, 'bank' ),
 			'rekening'           => self::str( $in, 'rekening' ),
@@ -357,11 +365,12 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			'hp'                 => self::str( $in, 'hp' ),
 			'nisn'               => ! empty( $in['nuptk'] ) ? self::str( $in, 'nuptk' ) : self::str( $in, 'nisn' ),
 			'nuptk'              => ! empty( $in['nuptk'] ) ? self::str( $in, 'nuptk' ) : self::str( $in, 'nisn' ),
-			'nip'                => self::str( $in, 'nip' ),
+			'nip'                => preg_replace( '/\D/', '', self::str( $in, 'nip' ) ),
 			'email'              => self::mail( $in, 'email' ),
 			'email_belajar'      => self::mail( $in, 'email_belajar' ),
 			'email_guru'         => ! empty( $in['simpkb'] ) ? self::str( $in, 'simpkb' ) : self::str( $in, 'email_guru' ),
 			'simpkb'             => ! empty( $in['simpkb'] ) ? self::str( $in, 'simpkb' ) : self::str( $in, 'email_guru' ),
+			'setuju_kirim'       => ! empty( $in['setuju_kirim'] ) ? 1 : 0,
 		);
 
 		if ( ! preg_match( '/^\d{16}$/', $d['nik'] ) ) {
@@ -369,6 +378,12 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		}
 		if ( '' === $d['nama'] || self::len( $d['nama'] ) > 100 ) {
 			return self::err( 'nama', 'Nama lengkap wajib diisi (maksimal 100 karakter).', 422 );
+		}
+		if ( '' !== $d['gelar_depan'] && self::len( $d['gelar_depan'] ) > 30 ) {
+			return self::err( 'gelar_depan', 'Gelar depan maksimal 30 karakter.', 422 );
+		}
+		if ( '' !== $d['gelar_belakang'] && self::len( $d['gelar_belakang'] ) > 50 ) {
+			return self::err( 'gelar_belakang', 'Gelar belakang maksimal 50 karakter.', 422 );
 		}
 		if ( '' === $d['tempat_lahir'] || self::len( $d['tempat_lahir'] ) > 80 ) {
 			return self::err( 'tempat_lahir', 'Tempat lahir wajib diisi (maksimal 80 karakter).', 422 );
@@ -380,7 +395,16 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			return self::err( 'jenis_kelamin', 'Pilih jenis kelamin: ' . implode( ', ', KGTK_Helpers::JENIS_KELAMIN ) . '.', 422 );
 		}
 		if ( '' === $d['alamat'] || self::len( $d['alamat'] ) > 500 ) {
-			return self::err( 'alamat', 'Alamat/tempat tinggal wajib diisi (maksimal 500 karakter).', 422 );
+			return self::err( 'alamat', 'Alamat rumah / tempat tinggal wajib diisi (maksimal 500 karakter).', 422 );
+		}
+		if ( '' === $d['alamat_instansi'] || self::len( $d['alamat_instansi'] ) > 500 ) {
+			return self::err( 'alamat_instansi', 'Alamat instansi wajib diisi (maksimal 500 karakter).', 422 );
+		}
+		if ( '' !== $d['agama'] && ! in_array( $d['agama'], KGTK_Helpers::AGAMA, true ) ) {
+			return self::err( 'agama', 'Pilih agama yang valid.', 422 );
+		}
+		if ( '' !== $d['pangkat_golongan'] && self::len( $d['pangkat_golongan'] ) > 80 ) {
+			return self::err( 'pangkat_golongan', 'Pangkat/Golongan maksimal 80 karakter.', 422 );
 		}
 		if ( 'S1' === $d['pendidikan'] || 'D4' === $d['pendidikan'] ) {
 			$d['pendidikan'] = 'D4 / S1';
@@ -542,19 +566,24 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		if ( $update_guru ) {
 			$res_guru = $wpdb->query(
 				$wpdb->prepare(
-					"INSERT INTO {$tg} (nik, nama, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb, updated_at)
-					 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-					 ON DUPLICATE KEY UPDATE nama = VALUES(nama), tempat_lahir = VALUES(tempat_lahir), tanggal_lahir = VALUES(tanggal_lahir), jenis_kelamin = VALUES(jenis_kelamin),
-					 alamat = VALUES(alamat), pendidikan = VALUES(pendidikan), bank = VALUES(bank), rekening = VALUES(rekening), npwp = VALUES(npwp), pengalaman_jabatan = VALUES(pengalaman_jabatan),
+					"INSERT INTO {$tg} (nik, nama, gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, alamat_instansi, pangkat_golongan, agama, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb, updated_at)
+					 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+					 ON DUPLICATE KEY UPDATE nama = VALUES(nama), gelar_depan = VALUES(gelar_depan), gelar_belakang = VALUES(gelar_belakang), tempat_lahir = VALUES(tempat_lahir), tanggal_lahir = VALUES(tanggal_lahir), jenis_kelamin = VALUES(jenis_kelamin),
+					 alamat = VALUES(alamat), alamat_instansi = VALUES(alamat_instansi), pangkat_golongan = VALUES(pangkat_golongan), agama = VALUES(agama), pendidikan = VALUES(pendidikan), bank = VALUES(bank), rekening = VALUES(rekening), npwp = VALUES(npwp), pengalaman_jabatan = VALUES(pengalaman_jabatan),
 					 sekolah = VALUES(sekolah), kabkota = VALUES(kabkota), sekolah_id = VALUES(sekolah_id),
 					 peran = VALUES(peran), jenis_gtk = VALUES(jenis_gtk), hp = VALUES(hp), nisn = VALUES(nisn), nuptk = VALUES(nuptk), nip = VALUES(nip), email = VALUES(email),
 					 email_belajar = VALUES(email_belajar), email_guru = VALUES(email_guru), simpkb = VALUES(simpkb), updated_at = VALUES(updated_at)",
 					$d['nik'],
 					$d['nama'],
+					$d['gelar_depan'],
+					$d['gelar_belakang'],
 					$d['tempat_lahir'],
 					$d['tanggal_lahir'],
 					$d['jenis_kelamin'],
 					$d['alamat'],
+					$d['alamat_instansi'],
+					$d['pangkat_golongan'],
+					$d['agama'],
 					$d['pendidikan'],
 					$d['bank'],
 					$d['rekening'],
@@ -588,10 +617,15 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 					'kelas_id'           => $k ? (int) $k->id : 0,
 					'nik'                => $d['nik'],
 					'nama'               => $d['nama'],
+					'gelar_depan'        => $d['gelar_depan'],
+					'gelar_belakang'     => $d['gelar_belakang'],
 					'tempat_lahir'       => $d['tempat_lahir'],
 					'tanggal_lahir'      => $d['tanggal_lahir'],
 					'jenis_kelamin'      => $d['jenis_kelamin'],
 					'alamat'             => $d['alamat'],
+					'alamat_instansi'    => $d['alamat_instansi'],
+					'pangkat_golongan'   => $d['pangkat_golongan'],
+					'agama'              => $d['agama'],
 					'pendidikan'         => $d['pendidikan'],
 					'bank'               => $d['bank'],
 					'rekening'           => $d['rekening'],
@@ -610,13 +644,16 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 					'email_belajar'      => $d['email_belajar'],
 					'email_guru'         => $d['email_guru'],
 					'simpkb'             => $d['simpkb'],
+					'setuju_kirim'       => ! empty( $d['setuju_kirim'] ) ? 1 : 0,
+					'setuju_pada'        => ! empty( $d['setuju_kirim'] ) ? $now : null,
 					'terverifikasi'      => $terverifikasi,
 					'created_at'         => $now,
 				),
 				array(
 					'%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
-					'%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s',
-					'%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s'
+					'%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+					'%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',
+					'%s', '%s', '%d', '%s', '%d', '%s'
 				)
 			);
 		}

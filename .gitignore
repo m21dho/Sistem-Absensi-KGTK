@@ -23,3 +23,6 @@ yarn-error.log*
 
 # Composer (Buka komentar di bawah jika ingin mengabaikan folder vendor)
 # vendor/
+
+# Local testing & scratch scripts
+scratch/

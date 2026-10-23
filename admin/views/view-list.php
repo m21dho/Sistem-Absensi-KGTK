@@ -51,6 +51,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php if ( '' !== $p->lokasi ) : ?>
 							<li><?php echo esc_html( $p->lokasi ); ?></li>
 						<?php endif; ?>
+						<?php if ( ! empty( $p->kabkota ) ) : ?>
+							<li>&#128205; <?php echo esc_html( $p->kabkota ); ?></li>
+						<?php endif; ?>
 						<li>Kode: <code><?php echo esc_html( $p->kode ); ?></code></li>
 					</ul>
 
@@ -72,6 +75,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 					<div class="kgtk-actions">
 						<a class="kgtk-btn kgtk-btn--navy" href="<?php echo esc_url( $absen ); ?>">Kelola</a>
+						<?php
+						$pel_json = wp_json_encode( array(
+							'id'               => (int) $p->id,
+							'nama'             => $p->nama,
+							'penyelenggara'    => $p->penyelenggara,
+							'tanggal_mulai'    => $p->tanggal_mulai,
+							'tanggal_selesai'  => $p->tanggal_selesai,
+							'lokasi'           => $p->lokasi,
+							'kabkota'          => isset( $p->kabkota ) ? $p->kabkota : '',
+							'penanggung_jawab' => $p->penanggung_jawab,
+							'tipe_pj'          => isset( $p->tipe_pj ) ? $p->tipe_pj : 'Penanggung Jawab',
+							'keterangan'       => $p->keterangan,
+							'kode'             => $p->kode,
+						) );
+						?>
+						<button type="button" class="kgtk-btn kgtk-btn--ghost" data-edit-pelatihan="<?php echo (int) $p->id; ?>" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="Edit data pelatihan">&#9998; Edit</button>
 						<button type="button" class="kgtk-btn kgtk-btn--ghost" data-copy="<?php echo esc_attr( $link ); ?>">Salin link</button>
 						<button type="button" class="kgtk-btn kgtk-btn--danger" data-hapus="<?php echo (int) $p->id; ?>" data-nama="<?php echo esc_attr( $p->nama ); ?>">Hapus</button>
 					</div>
@@ -79,4 +98,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endforeach; ?>
 		</div>
 	<?php endif; ?>
+
+	<?php require KGTK_PATH . 'admin/views/partials/modal-edit-pelatihan.php'; ?>
 </div>
