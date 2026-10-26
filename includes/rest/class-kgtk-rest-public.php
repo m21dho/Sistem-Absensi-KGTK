@@ -414,18 +414,6 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		if ( '' === $d['pendidikan'] || ! in_array( $d['pendidikan'], KGTK_Helpers::PENDIDIKAN, true ) ) {
 			return self::err( 'pendidikan', 'Pilih pendidikan terakhir.', 422 );
 		}
-		if ( '' === $d['bank'] || self::len( $d['bank'] ) > 60 ) {
-			return self::err( 'bank', 'Nama bank wajib diisi (maksimal 60 karakter).', 422 );
-		}
-		if ( '' === $d['rekening'] || ! preg_match( '/^[0-9\- ]{5,30}$/', $d['rekening'] ) ) {
-			return self::err( 'rekening', 'Nomor rekening wajib diisi (hanya angka/tanda hubung, 5-30 digit).', 422 );
-		}
-		if ( '' !== $d['npwp'] && self::len( $d['npwp'] ) > 30 ) {
-			return self::err( 'npwp', 'NPWP maksimal 30 karakter (kosongkan jika tidak ada).', 422 );
-		}
-		if ( '' === $d['pengalaman_jabatan'] || self::len( $d['pengalaman_jabatan'] ) > 255 ) {
-			return self::err( 'pengalaman_jabatan', 'Pengalaman jabatan wajib diisi (maksimal 255 karakter).', 422 );
-		}
 		$sek = self::resolve_sekolah( $d );
 		if ( is_wp_error( $sek ) ) {
 			return $sek;
@@ -436,16 +424,62 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		if ( ! in_array( $d['peran'], KGTK_Helpers::PERAN, true ) ) {
 			return self::err( 'peran', 'Pilih peran yang tersedia: ' . implode( ', ', KGTK_Helpers::PERAN ) . '.', 422 );
 		}
-		if ( 'Peserta' === $d['peran'] ) {
-			if ( ! in_array( $d['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $d['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) {
-				return self::err( 'jenis_gtk', 'Pilih Jabatan: ' . implode( ', ', KGTK_Helpers::JABATAN ) . '.', 422 );
+
+		if ( 'Panitia' === $d['peran'] ) {
+			// HANYA untuk Panitia: kosongkan data bank, rekening, pengalaman_jabatan, nuptk, simpkb, npwp, email_belajar
+			$d['bank']               = '-';
+			$d['rekening']           = '-';
+			$d['pengalaman_jabatan'] = '-';
+			$d['email_belajar']      = '';
+			$d['nuptk']              = '';
+			$d['simpkb']             = '';
+			$d['npwp']               = '';
+
+			if ( '' === $d['jenis_gtk'] ) {
+				$d['jenis_gtk'] = 'Panitia Pelaksana';
 			}
 		} else {
-			$d['jenis_gtk'] = '';
-		}
-		// NUPTK opsional (boleh kosong). Jika diisi, harus berupa angka maksimal 16 digit.
-		if ( '' !== $d['nuptk'] && ! preg_match( '/^\d{1,16}$/', $d['nuptk'] ) ) {
-			return self::err( 'nuptk', 'NUPTK harus berupa angka (maksimal 16 digit, kosongkan jika belum ada).', 422 );
+			// Untuk yang lainnya (Peserta, Narasumber, Pengajar, Fasilitator, Penceramah, Pemateri): tetap sama
+			if ( '' === $d['bank'] || self::len( $d['bank'] ) > 60 ) {
+				return self::err( 'bank', 'Nama bank wajib diisi (maksimal 60 karakter).', 422 );
+			}
+			if ( '' === $d['rekening'] || ! preg_match( '/^[0-9\- ]{5,30}$/', $d['rekening'] ) ) {
+				return self::err( 'rekening', 'Nomor rekening wajib diisi (hanya angka/tanda hubung, 5-30 digit).', 422 );
+			}
+			if ( '' !== $d['npwp'] && self::len( $d['npwp'] ) > 30 ) {
+				return self::err( 'npwp', 'NPWP maksimal 30 karakter (kosongkan jika tidak ada).', 422 );
+			}
+			if ( '' === $d['pengalaman_jabatan'] || self::len( $d['pengalaman_jabatan'] ) > 255 ) {
+				return self::err( 'pengalaman_jabatan', 'Pengalaman jabatan wajib diisi (maksimal 255 karakter).', 422 );
+			}
+
+			if ( 'Peserta' === $d['peran'] ) {
+				if ( ! in_array( $d['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $d['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) {
+					return self::err( 'jenis_gtk', 'Pilih Jabatan: ' . implode( ', ', KGTK_Helpers::JABATAN ) . '.', 422 );
+				}
+				$b = $d['email_belajar'];
+				if ( ! is_email( $b ) || self::len( $b ) > 100 || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $b ) ) {
+					return self::err( 'email_belajar', 'Email belajar.id wajib diisi dan harus berakhiran belajar.id untuk peran Peserta.', 422 );
+				}
+			} else {
+				// Non-peserta non-panitia (Narasumber, Pengajar, Fasilitator, dll.)
+				if ( '' === $d['jenis_gtk'] ) {
+					$d['jenis_gtk'] = $d['peran'];
+				}
+				$b = $d['email_belajar'];
+				if ( '' !== $b && ( ! is_email( $b ) || self::len( $b ) > 100 ) ) {
+					return self::err( 'email_belajar', 'Format email belajar.id tidak valid (kosongkan jika tidak ada).', 422 );
+				}
+			}
+
+			// NUPTK opsional (boleh kosong). Jika diisi, harus berupa angka maksimal 16 digit.
+			if ( '' !== $d['nuptk'] && ! preg_match( '/^\d{1,16}$/', $d['nuptk'] ) ) {
+				return self::err( 'nuptk', 'NUPTK harus berupa angka (maksimal 16 digit, kosongkan jika belum ada).', 422 );
+			}
+			// SIMPKB opsional, maksimal 100 karakter.
+			if ( '' !== $d['simpkb'] && self::len( $d['simpkb'] ) > 100 ) {
+				return self::err( 'simpkb', 'SIMPKB maksimal 100 karakter (kosongkan jika tidak ada).', 422 );
+			}
 		}
 		if ( '' !== $d['nip'] && ! preg_match( '/^\d{18}$/', $d['nip'] ) ) {
 			return self::err( 'nip', 'NIP harus 18 digit angka (kosongkan jika tidak ada).', 422 );
@@ -455,14 +489,6 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		}
 		if ( ! is_email( $d['email'] ) || self::len( $d['email'] ) > 100 ) {
 			return self::err( 'email', 'Email wajib diisi dengan format yang benar.', 422 );
-		}
-		$b = $d['email_belajar'];
-		if ( ! is_email( $b ) || self::len( $b ) > 100 || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $b ) ) {
-			return self::err( 'email_belajar', 'Email belajar.id wajib diisi dan harus berakhiran belajar.id.', 422 );
-		}
-		// SIMPKB opsional (bisa berupa No. UKG atau akun), maksimal 100 karakter.
-		if ( '' !== $d['simpkb'] && self::len( $d['simpkb'] ) > 100 ) {
-			return self::err( 'simpkb', 'SIMPKB maksimal 100 karakter (kosongkan jika tidak ada).', 422 );
 		}
 		return $d;
 	}

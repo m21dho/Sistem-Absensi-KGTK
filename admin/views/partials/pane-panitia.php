@@ -19,7 +19,8 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 				<p class="kgtk-muted">Daftar panitia pelaksana kegiatan pelatihan.</p>
 			</div>
 			<div class="kgtk-head-actions">
-				<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-tambah-panitia-pelatihan">&#128100; + Tambah Panitia</button>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=kgtk-pelatihan&view=tambah&id=' . (int) $p->id . '&peran=Panitia' ) ); ?>" class="kgtk-btn kgtk-btn--yellow">&#128100; + Tambah Panitia</a>
+				<button type="button" class="kgtk-btn kgtk-btn--outline" id="kgtk-btn-tambah-panitia-pelatihan" title="Pilih dari master panitia tersimpan">&#128196; Dari Master Data</button>
 			</div>
 		</div>
 
@@ -29,7 +30,8 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 				<div style="font-size:36px;margin-bottom:8px;">&#128100;</div>
 				<h3 style="margin:0 0 6px;color:#0b2d56;font-size:16px;">Belum Ada Panitia Ditambahkan</h3>
 				<p class="kgtk-muted" style="margin:0 0 16px;">Tambahkan panitia pelaksana untuk kegiatan pelatihan ini.</p>
-				<button type="button" class="kgtk-btn kgtk-btn--primary" onclick="var b = document.getElementById('kgtk-btn-tambah-panitia-pelatihan'); if(b) b.click();">&#128100; + Tambah Panitia Sekarang</button>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=kgtk-pelatihan&view=tambah&id=' . (int) $p->id . '&peran=Panitia' ) ); ?>" class="kgtk-btn kgtk-btn--yellow" style="margin-right:8px;">&#128100; + Tambah Panitia</a>
+				<button type="button" class="kgtk-btn kgtk-btn--outline" onclick="var b = document.getElementById('kgtk-btn-tambah-panitia-pelatihan'); if(b) b.click();">&#128196; Dari Master Data</button>
 			</div>
 		<?php else : ?>
 			<div class="kgtk-kelola-tools" style="margin-bottom:12px;">

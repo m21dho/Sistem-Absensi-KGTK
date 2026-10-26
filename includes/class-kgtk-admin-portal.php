@@ -251,7 +251,9 @@ class KGTK_Admin_Portal {
 		$nonce       = wp_create_nonce( 'kgtk_portal_login_action' );
 		$ajax_url    = admin_url( 'admin-ajax.php' );
 		$home_url    = home_url( '/' );
-		$site_title  = get_bloginfo( 'name' );
+		$site_title     = get_bloginfo( 'name' );
+		$ver_common_css = file_exists( KGTK_PATH . 'assets/css/common.css' ) ? filemtime( KGTK_PATH . 'assets/css/common.css' ) : KGTK_VERSION;
+		$ver_admin_css  = file_exists( KGTK_PATH . 'assets/css/admin.css' ) ? filemtime( KGTK_PATH . 'assets/css/admin.css' ) : KGTK_VERSION;
 		?>
 		<!DOCTYPE html>
 		<html <?php language_attributes(); ?>>
@@ -262,8 +264,8 @@ class KGTK_Admin_Portal {
 			<link rel="preconnect" href="https://fonts.googleapis.com">
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 			<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/common.css?v=' . KGTK_VERSION ); ?>">
-			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/admin.css?v=' . KGTK_VERSION ); ?>">
+			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/common.css?v=' . $ver_common_css ); ?>">
+			<link rel="stylesheet" href="<?php echo esc_url( KGTK_URL . 'assets/css/admin.css?v=' . $ver_admin_css ); ?>">
 		</head>
 		<body class="kgtk-portal-body">
 			<div class="kgtk-portal-login-screen">

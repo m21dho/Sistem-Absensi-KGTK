@@ -53,7 +53,7 @@ $pel_json = wp_json_encode( array(
 			</div>
 			<div class="kgtk-head-primary-actions">
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-edit-pelatihan-detail" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="Edit informasi dan jadwal pelatihan">&#9998; Edit Pelatihan</button>
-				<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>">+ Tambah Peserta</a>
+				<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
 			</div>
 		</div>
 

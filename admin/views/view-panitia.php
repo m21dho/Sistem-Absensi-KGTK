@@ -209,17 +209,10 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 								</label>
 							</div>
 
-							<div class="kgtk-row2">
-								<label class="kgtk-field">
-									<span>NIP (18 Digit)</span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-field-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka (opsional)">
-								</label>
-
-								<label class="kgtk-field">
-									<span>NUPTK (16 Digit)</span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-field-nuptk" name="nuptk" inputmode="numeric" maxlength="16" placeholder="16 digit angka (opsional)">
-								</label>
-							</div>
+							<label class="kgtk-field">
+								<span>NIP (18 Digit)</span>
+								<input type="text" class="kgtk-input" id="kgtk-pan-field-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka (opsional bila PNS)">
+							</label>
 
 							<div class="kgtk-row2">
 								<label class="kgtk-field">
@@ -249,11 +242,6 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 									<input type="email" class="kgtk-input" id="kgtk-pan-field-email" name="email" placeholder="nama@email.com">
 								</label>
 							</div>
-
-							<label class="kgtk-field">
-								<span>NPWP (opsional)</span>
-								<input type="text" class="kgtk-input" id="kgtk-pan-field-npwp" name="npwp" placeholder="Nomor Pokok Wajib Pajak">
-							</label>
 						</div>
 
 						<div class="kgtk-modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">

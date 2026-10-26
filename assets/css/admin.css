@@ -33,7 +33,7 @@ div.kgtk-modal-overlay.is-visible,
 /* Header Detail Pelatihan (view-absen) */
 .kgtk-wrap .kgtk-head--detail{display:flex;flex-direction:column;gap:16px;padding:22px 26px;border-radius:18px;box-shadow:0 10px 28px -10px rgba(11,45,86,.45),0 0 0 1px rgba(255,255,255,.1) inset}
 .kgtk-wrap .kgtk-head-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px;width:100%}
-.kgtk-wrap .kgtk-head-info{flex:1 1 320px}
+.kgtk-wrap .kgtk-head-info{flex:1 1 auto;width:auto;min-width:0;height:auto;min-height:0}
 .kgtk-wrap .kgtk-head-back{display:inline-flex;align-items:center;gap:6px;color:#bfdbfe;font-size:12.5px;font-weight:600;text-decoration:none;margin-bottom:6px;transition:color .15s ease,transform .15s ease}
 .kgtk-wrap .kgtk-head-back:hover{color:#fff;transform:translateX(-2px);text-decoration:none}
 .kgtk-wrap .kgtk-head-title{font-size:24px;font-weight:800;color:#fff;margin:0;line-height:1.25;letter-spacing:-.3px}
@@ -120,7 +120,7 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-wrap .kgtk-ttd-blok{width:260px;max-width:100%;margin:18px 0 0 auto;text-align:center;font-size:13px}
 .kgtk-wrap .kgtk-ttd-space{height:64px}
 .kgtk-wrap .kgtk-noprint-note{margin:0 0 10px}
-.kgtk-wrap .kgtk-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.kgtk-wrap .kgtk-scroll{overflow-x:auto!important;max-width:100%!important;width:100%!important;display:block;-webkit-overflow-scrolling:touch}
 .kgtk-wrap .kgtk-table{width:100%;min-width:600px;border-collapse:collapse;margin:14px 0 18px}
 .kgtk-wrap .kgtk-table th,.kgtk-wrap .kgtk-table td{border:1px solid #9fb0bd;padding:0 10px;height:38px;font-size:13px}
 .kgtk-wrap .kgtk-table th{background:none;background-color:transparent;color:#000;text-align:center;font-weight:700}
@@ -137,20 +137,47 @@ div.kgtk-modal-overlay.is-visible,
 
 @media print{
  @page{size:A4;margin:0.51cm 1.0cm}
+ html, body, .kgtk-portal-body, .kgtk-portal-main{
+  background:#fff!important;
+  background-color:#fff!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:auto!important;
+  height:auto!important;
+  overflow:visible!important;
+  display:block!important;
+ }
  html.wp-toolbar{padding-top:0!important}
- #adminmenumain,#adminmenuback,#adminmenuwrap,#wpadminbar,#wpfooter,#screen-meta,#screen-meta-links,.notice,.update-nag{display:none!important}
+ #adminmenumain,#adminmenuback,#adminmenuwrap,#wpadminbar,#wpfooter,#screen-meta,#screen-meta-links,.notice,.update-nag,
+ .kgtk-portal-header,
+ .kgtk-portal-topbar,
+ .kgtk-portal-subnav,
+ .kgtk-portal-mobile-drawer,
+ .kgtk-portal-footer,
+ header, footer{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  position:static!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+ }
  #wpcontent,#wpbody-content{margin:0!important;padding:0!important;float:none!important}
- body{background:#fff!important}
- .kgtk-wrap{margin:0;max-width:none}
+ .kgtk-wrap{margin:0!important;padding:0!important;max-width:none!important;width:100%!important}
  .kgtk-wrap>*:not(.kgtk-sheets){display:none!important}
  .kgtk-wrap .kgtk-sheets .kgtk-pane{display:none!important}
  .kgtk-wrap .kgtk-sheets .kgtk-pane.kgtk-printing{display:block!important}
  .kgtk-wrap .kgtk-pane .kgtk-toolbar,.kgtk-wrap .kgtk-pane .kgtk-subtabs{display:none!important}
  .kgtk-wrap .kgtk-pane .kgtk-sub{display:none!important}
  .kgtk-wrap .kgtk-pane .kgtk-sub.kgtk-printing{display:block!important}
- .kgtk-wrap .kgtk-sheet{box-shadow:none;padding:0;border-radius:0}
- .kgtk-wrap .kgtk-scroll{overflow:visible}
+ .kgtk-wrap .kgtk-sheet{box-shadow:none!important;padding:0!important;border:none!important;border-radius:0!important;background:#fff!important}
+ .kgtk-wrap .kgtk-scroll{overflow:visible!important}
  .kgtk-wrap .kgtk-noprint-note{display:none!important}
+ .kgtk-modal, .kgtk-modal-backdrop, .kgtk-modal-overlay{display:none!important}
  .kgtk-wrap .kgtk-sheet-day{display:block!important;margin:0!important;padding:0!important;page-break-after:always;break-after:page}
  .kgtk-wrap .kgtk-sheet-day.is-hidden{display:none!important}
  .kgtk-wrap .kgtk-sheet-day:last-child,
@@ -216,10 +243,10 @@ div.kgtk-modal-overlay.is-visible,
 
 /* Toolbar Pencarian & Filter */
 .kgtk-wrap .kgtk-kelola-tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
-.kgtk-wrap .kgtk-search-wrap{position:relative;flex:1 1 300px;max-width:440px}
-.kgtk-wrap .kgtk-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none}
-.kgtk-wrap .kgtk-search-wrap .kgtk-input{height:42px;min-height:42px;padding:8px 34px 8px 36px;border-radius:12px;font-size:13.5px;border:1.5px solid #cbd5e1}
-.kgtk-wrap .kgtk-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;background:transparent;border-radius:50%;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.kgtk-wrap .kgtk-search-wrap{position:relative;flex:1 1 auto;width:100%;max-width:440px;height:42px;min-height:42px}
+.kgtk-wrap .kgtk-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none;line-height:1;z-index:2}
+.kgtk-wrap .kgtk-search-wrap .kgtk-input{width:100%;height:42px;min-height:42px;padding:8px 34px 8px 36px;border-radius:12px;font-size:13.5px;border:1.5px solid #cbd5e1;box-sizing:border-box}
+.kgtk-wrap .kgtk-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;background:transparent;border-radius:50%;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .kgtk-wrap .kgtk-search-clear:hover{background:#e2e8f0;color:var(--navy)}
 
 .kgtk-wrap .kgtk-fbtns{display:flex;flex-wrap:wrap;gap:6px}
@@ -245,10 +272,11 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-wrap .kgtk-bulk-toolbar .kgtk-btn{min-height:38px;padding:6px 16px;font-size:13px}
 
 /* Tabel Kelola Peserta */
-.kgtk-wrap .kgtk-table--kelola{border-radius:12px;overflow:hidden;border:1.5px solid var(--line);border-collapse:collapse}
-.kgtk-wrap .kgtk-table--kelola th{background:#f8fafc;padding:12px 14px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#475569;border:0;border-bottom:2px solid var(--line);text-align:left}
+.kgtk-wrap .kgtk-table--kelola{width:100%!important;min-width:880px!important;border-radius:12px;overflow:hidden;border:1.5px solid var(--line);border-collapse:collapse;table-layout:auto!important;word-break:normal!important;overflow-wrap:normal!important}
+.kgtk-wrap .kgtk-table--kelola th{background:#f8fafc;padding:12px 14px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#475569;border:0;border-bottom:2px solid var(--line);text-align:left;white-space:nowrap!important;word-break:keep-all!important}
 .kgtk-wrap .kgtk-table--kelola tbody tr{cursor:pointer}
-.kgtk-wrap .kgtk-table--kelola td{padding:12px 14px;height:auto;font-size:13.5px;vertical-align:middle;text-align:left;border:0;border-bottom:1px solid #eef2f6;transition:background .15s ease}
+.kgtk-wrap .kgtk-table--kelola td{padding:12px 14px;height:auto;font-size:13.5px;vertical-align:middle;text-align:left;border:0;border-bottom:1px solid #eef2f6;transition:background .15s ease;word-break:normal!important;overflow-wrap:normal!important}
+.kgtk-wrap .kgtk-table--kelola .c-no{white-space:nowrap!important;text-align:center}
 .kgtk-wrap .kgtk-table--kelola tr:hover td{background:#f8fafc}
 .kgtk-wrap .kgtk-table--kelola tr.is-selected td{background:#eff6ff!important}
 .kgtk-wrap .kgtk-table--kelola tr.is-selected td:first-child{box-shadow:inset 3.5px 0 0 var(--blue)}
@@ -259,17 +287,17 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-wrap .kgtk-table--kelola tbody tr input[type=checkbox]{cursor:pointer}
 
 /* Kolom Guru */
-.kgtk-wrap .kgtk-guru-cell{display:flex;flex-direction:column;gap:3px}
+.kgtk-wrap .kgtk-guru-cell{display:flex;flex-direction:column;gap:3px;min-width:180px}
 .kgtk-wrap .kgtk-guru-nama{font-size:14px;font-weight:700;color:var(--navy)}
-.kgtk-wrap .kgtk-guru-kontak{font-size:12px}
+.kgtk-wrap .kgtk-guru-kontak{font-size:12px;white-space:nowrap}
 .kgtk-wrap .kgtk-wa-link{display:inline-flex;align-items:center;gap:4px;color:#16a34a;text-decoration:none;font-weight:600;transition:color .15s ease}
 .kgtk-wrap .kgtk-wa-link:hover{color:#15803d;text-decoration:underline}
 .kgtk-wrap .kgtk-wa-icon{font-size:12px}
 
 /* Kolom NIK Terpisah */
-.kgtk-wrap .kgtk-nik-cell{display:inline-flex;align-items:center;gap:6px}
-.kgtk-wrap .kgtk-nik-code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,Courier,monospace;font-size:12px;font-weight:700;background:#f1f5f9;color:var(--navy);padding:4px 8px;border-radius:6px;letter-spacing:.5px;border:1px solid #e2e8f0}
-.kgtk-wrap .kgtk-copy-btn{border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:6px;color:var(--muted);transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center}
+.kgtk-wrap .kgtk-nik-cell{display:inline-flex;align-items:center;gap:6px;white-space:nowrap!important;flex-wrap:nowrap!important}
+.kgtk-wrap .kgtk-nik-code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,Courier,monospace;font-size:12px;font-weight:700;background:#f1f5f9;color:var(--navy);padding:4px 8px;border-radius:6px;letter-spacing:.5px;border:1px solid #e2e8f0;white-space:nowrap!important;word-break:keep-all!important;display:inline-block;flex-shrink:0}
+.kgtk-wrap .kgtk-copy-btn{border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:13px;padding:3px 6px;border-radius:6px;color:var(--muted);transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .kgtk-wrap .kgtk-copy-btn:hover{background:var(--pill);color:var(--navy);border-color:#cbd5e1}
 .kgtk-wrap .kgtk-copy-btn.is-copied{background:#e0f2ea;color:var(--ok);border-color:#a7f3d0}
 
@@ -346,8 +374,9 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-wrap .kgtk-head-actions{flex-direction:column;gap:8px;width:100%}
 	.kgtk-wrap .kgtk-head-actions .kgtk-btn{width:100%;justify-content:center}
 	.kgtk-wrap .kgtk-head--detail{padding:16px 14px;gap:14px}
-	.kgtk-wrap .kgtk-head-top{flex-direction:column;align-items:stretch}
-	.kgtk-wrap .kgtk-head-primary-actions{width:100%}
+	.kgtk-wrap .kgtk-head-top{flex-direction:column;align-items:stretch;gap:12px}
+	.kgtk-wrap .kgtk-head-info{flex:none!important;width:100%!important;height:auto!important;min-height:0!important}
+	.kgtk-wrap .kgtk-head-primary-actions{width:100%;display:flex;gap:8px}
 	.kgtk-wrap .kgtk-head-primary-actions .kgtk-btn{flex:1 1 auto;justify-content:center}
 	.kgtk-wrap .kgtk-head-toolbar{flex-direction:column;align-items:stretch;gap:10px}
 	.kgtk-wrap .kgtk-head-toolbar-group{width:100%;flex-direction:column}
@@ -359,7 +388,7 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-wrap .kgtk-scard{padding:10px 12px}
 	.kgtk-wrap .kgtk-scard-num{font-size:20px}
 	.kgtk-wrap .kgtk-kelola-tools{flex-direction:column;align-items:stretch;gap:10px}
-	.kgtk-wrap .kgtk-search-wrap{max-width:100%;width:100%}
+	.kgtk-wrap .kgtk-search-wrap{flex:none!important;max-width:100%!important;width:100%!important;height:42px!important;min-height:42px!important}
 	.kgtk-wrap .kgtk-fbtns{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:6px}
 	.kgtk-wrap .kgtk-fbtn{white-space:nowrap;flex-shrink:0}
 	.kgtk-wrap .kgtk-bulk-toolbar{flex-direction:column;align-items:stretch;gap:10px;padding:12px}
@@ -615,6 +644,11 @@ div.kgtk-modal-overlay.is-visible,
    ========================================================================== */
 
 /* Layout & Reset Portal */
+html:has(.kgtk-portal-body) {
+	overflow-x: hidden !important;
+	max-width: 100% !important;
+}
+
 .kgtk-portal-body {
 	margin: 0 !important;
 	padding: 0 !important;
@@ -625,6 +659,9 @@ div.kgtk-modal-overlay.is-visible,
 	display: flex;
 	flex-direction: column;
 	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden !important;
+	max-width: 100% !important;
+	width: 100% !important;
 }
 
 .kgtk-portal-body *,
@@ -950,16 +987,40 @@ div.kgtk-modal-overlay.is-visible,
 	margin: 0 auto;
 	padding: 24px 24px 60px;
 	box-sizing: border-box;
+	overflow-x: hidden;
 }
 
 .kgtk-portal-main .wp-header-end {
 	display: none !important;
 }
 
-.kgtk-portal-main .wrap {
+.kgtk-portal-main .wrap,
+.kgtk-portal-main .kgtk-wrap {
 	margin: 0 !important;
 	padding: 0 !important;
 	max-width: 100% !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.kgtk-portal-main .kgtk-head {
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+.kgtk-portal-main .kgtk-card,
+.kgtk-portal-main .kgtk-pcard {
+	min-width: 0 !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.kgtk-portal-main .kgtk-table,
+.kgtk-portal-main .kgtk-scroll table {
+	word-break: normal !important;
+	overflow-wrap: normal !important;
 }
 
 .kgtk-portal-footer {
@@ -1268,21 +1329,132 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-portal-user-badge .kgtk-portal-user-info {
 		display: none;
 	}
+	.kgtk-wrap .kgtk-head {
+		padding: 18px 16px;
+		border-radius: 16px;
+	}
+}
+
+@media (max-width: 768px) {
+	.kgtk-portal-topbar-inner {
+		padding: 0 16px;
+		gap: 10px;
+	}
+	.kgtk-portal-topbar-right {
+		gap: 8px;
+	}
+	/* Sembunyikan tombol keluar & tombol public di header karena sudah ada di dalam drawer hamburger */
+	.kgtk-portal-btn-public {
+		display: none !important;
+	}
+	.kgtk-portal-logout-btn {
+		display: none !important;
+	}
+	.kgtk-portal-main {
+		padding: 16px 14px 48px;
+	}
+	.kgtk-wrap .kgtk-head {
+		padding: 16px 14px;
+		border-radius: 14px;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+	.kgtk-wrap .kgtk-head h1 {
+		font-size: 19px;
+	}
+	.kgtk-wrap .kgtk-head-actions {
+		width: 100%;
+		flex-direction: column;
+	}
+	.kgtk-wrap .kgtk-head-actions .kgtk-btn {
+		width: 100%;
+		justify-content: center;
+	}
+	.kgtk-wrap .kgtk-head--detail {
+		padding: 16px 14px;
+		gap: 14px;
+	}
+	.kgtk-wrap .kgtk-head-top {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 12px;
+	}
+	.kgtk-wrap .kgtk-head-info {
+		flex: none !important;
+		width: 100% !important;
+		height: auto !important;
+		min-height: 0 !important;
+	}
+	.kgtk-wrap .kgtk-head-primary-actions {
+		width: 100%;
+		display: flex;
+		gap: 8px;
+	}
+	.kgtk-wrap .kgtk-head-primary-actions .kgtk-btn {
+		flex: 1 1 auto;
+		justify-content: center;
+	}
+	.kgtk-wrap .kgtk-head-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.kgtk-wrap .kgtk-head-toolbar-group {
+		width: 100%;
+		flex-direction: column;
+	}
+	.kgtk-wrap .kgtk-head-toolbar-group .kgtk-btn {
+		width: 100%;
+		justify-content: center;
+	}
+	.kgtk-wrap .kgtk-kelola-tools {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.kgtk-wrap .kgtk-search-wrap {
+		flex: none !important;
+		max-width: 100% !important;
+		width: 100% !important;
+		height: 42px !important;
+		min-height: 42px !important;
+	}
+	.kgtk-wrap .kgtk-grid {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+		gap: 12px;
+	}
 }
 
 @media (max-width: 640px) {
 	.kgtk-portal-topbar-inner {
-		padding: 0 16px;
+		padding: 0 14px;
 		height: 52px;
+		gap: 8px;
+	}
+	.kgtk-portal-brand {
+		gap: 8px;
+		min-width: 0;
 	}
 	.kgtk-portal-brand-sub {
 		display: none;
 	}
-	.kgtk-portal-btn-public {
-		display: none;
+	.kgtk-portal-brand-title {
+		font-size: 14px;
+	}
+	.kgtk-portal-logo {
+		height: 30px;
+	}
+	.kgtk-portal-user-badge {
+		padding: 2px;
+		background: transparent;
+		border: none;
 	}
 	.kgtk-portal-main {
-		padding: 16px 14px 48px;
+		padding: 14px 10px 40px;
+	}
+	.kgtk-wrap .kgtk-grid {
+		grid-template-columns: minmax(0, 1fr) !important;
 	}
 	.kgtk-login-card {
 		padding: 28px 20px;
