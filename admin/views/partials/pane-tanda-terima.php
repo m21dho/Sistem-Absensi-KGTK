@@ -263,11 +263,11 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 				<div class="kgtk-row2" style="align-items:flex-start;gap:16px;">
 					<div class="kgtk-field" style="margin-bottom:0;">
 						<label for="kgtk-atk-penerima-select" style="font-weight:700;font-size:13px;color:#0b2d56;display:block;margin-bottom:5px;">
-							&#128104;&#8205;&#127979; Penerima (Pengajar / Pemateri / Fasilitator):
+							Penerima (Pengajar / Pemateri / Fasilitator):
 						</label>
 						<select class="kgtk-input" id="kgtk-atk-penerima-select">
 							<option value="0" data-nama="" data-nip="" data-instansi="" data-peran="Pengajar / Fasilitator">-- Format Terbuka (Titik-titik / Ditulis Manual) --</option>
-							<option value="custom" data-nama="" data-nip="" data-instansi="" data-peran="Pengajar">✏️ Input Nama Manual...</option>
+							<option value="custom" data-nama="" data-nip="" data-instansi="" data-peran="Pengajar">Input Nama Manual...</option>
 							<?php if ( ! empty( $pengajar_list ) ) : ?>
 								<optgroup label="Pengajar / Fasilitator Terdaftar">
 									<?php foreach ( $pengajar_list as $pgj ) : ?>

@@ -44,13 +44,13 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 						<?php
 						$label_icon = '';
 						switch ( $peran ) {
-							case 'Peserta': $label_icon = '🎓 Peserta (Guru Peserta Pelatihan)'; break;
-							case 'Panitia': $label_icon = '📋 Panitia (Panitia Pelaksana Kegiatan)'; break;
-							case 'Narasumber': $label_icon = '🎤 Narasumber'; break;
-							case 'Pengajar': $label_icon = '👨‍🏫 Pengajar / Instruktur'; break;
-							case 'Fasilitator': $label_icon = '🤝 Fasilitator'; break;
-							case 'Penceramah': $label_icon = '📢 Penceramah'; break;
-							case 'Pemateri': $label_icon = '💡 Pemateri'; break;
+							case 'Peserta': $label_icon = 'Peserta (Guru Peserta Pelatihan)'; break;
+							case 'Panitia': $label_icon = 'Panitia (Panitia Pelaksana Kegiatan)'; break;
+							case 'Narasumber': $label_icon = 'Narasumber'; break;
+							case 'Pengajar': $label_icon = 'Pengajar / Instruktur'; break;
+							case 'Fasilitator': $label_icon = 'Fasilitator'; break;
+							case 'Penceramah': $label_icon = 'Penceramah'; break;
+							case 'Pemateri': $label_icon = 'Pemateri'; break;
 							default: $label_icon = $peran;
 						}
 						echo esc_html( $label_icon );

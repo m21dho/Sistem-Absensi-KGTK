@@ -3316,7 +3316,7 @@
 
 			modalConfirm({
 				title: 'Hapus Panitia dari Pelatihan',
-				message: 'Hapus ' + nama + ' dari susunan panitia kegiatan pelatihan ini?\n\n(Catatan: Untuk menghapus permanen dari database master panitia, gunakan tombol "🗑️ Master" di samping tombol ini atau melalui modal Dari Master Data).',
+				message: 'Hapus ' + nama + ' dari susunan panitia kegiatan pelatihan ini?\n\n(Catatan: Untuk menghapus permanen dari database master panitia, gunakan tombol "Master" di samping tombol ini atau melalui modal Dari Master Data).',
 				confirmText: 'Ya, Hapus dari Pelatihan',
 				cancelText: 'Batal',
 				type: 'danger'
@@ -3904,9 +3904,9 @@
 				api('admin/pelatihan/' + pelId + '/atk', 'POST', { items: items })
 					.then(function (res) {
 						btnSaveAtk.disabled = false;
-						btnSaveAtk.textContent = '💾 Simpan Perubahan ATK';
+						btnSaveAtk.textContent = 'Simpan Perubahan ATK';
 						if (saveMsg) {
-							saveMsg.textContent = '✓ Daftar ATK berhasil disimpan!';
+							saveMsg.textContent = 'Daftar ATK berhasil disimpan!';
 							saveMsg.style.color = '#16a34a';
 							setTimeout(function () {
 								saveMsg.textContent = '';
@@ -3915,7 +3915,7 @@
 					})
 					.catch(function (err) {
 						btnSaveAtk.disabled = false;
-						btnSaveAtk.textContent = '💾 Simpan Perubahan ATK';
+						btnSaveAtk.textContent = 'Simpan Perubahan ATK';
 						if (saveMsg) {
 							saveMsg.textContent = 'Gagal menyimpan: ' + (err.message || 'Error');
 							saveMsg.style.color = '#dc2626';
