@@ -818,10 +818,20 @@
 					});
 				});
 		});
-		return form;
+		return el('div', {}, [btnBackHome, form]);
 	}
 
 	function vNik() {
+		var btnBackKode = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali / Ganti Kode Pelatihan' });
+		btnBackKode.addEventListener('click', function () {
+			S.nik = '';
+			S.nip = '';
+			S.idType = 'nik';
+			S.verifTipe = '';
+			S.verifNilai = '';
+			go('kode');
+		});
+
 		var idType = S.idType || 'nik';
 		var rNik = el('input', { type: 'radio', name: 'v_id_type', value: 'nik', id: 'v-id-nik', checked: idType !== 'nip' });
 		var rNip = el('input', { type: 'radio', name: 'v_id_type', value: 'nip', id: 'v-id-nip', checked: idType === 'nip' });
@@ -832,9 +842,9 @@
 
 		var f = field('NIK (16 digit)', 'nik', { type: 'text', inputmode: 'numeric', maxlength: 16, autocomplete: 'off', pattern: '[0-9]*', required: true }, S.nik || S.nip);
 		var err = errBox();
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block', text: 'Lanjut' });
-		var back = el('button', { type: 'button', class: 'kgtk-link', text: 'Ganti kode pelatihan' });
-		var form = el('form', { class: 'kgtk-card', novalidate: true }, [
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut' });
+		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: '← Kembali / Ganti Kode Pelatihan' });
+		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
 			el('h2', { text: 'Nomor Identitas' }),
 			el('p', { class: 'kgtk-muted', text: 'Pilih jenis identitas yang ingin digunakan untuk mengenali Anda di kegiatan ini.' }),
 			radios,
@@ -919,10 +929,17 @@
 				});
 			});
 		});
-		return form;
+		return el('div', {}, [btnBackKode, form]);
 	}
 
 	function vNikVerif() {
+		var btnBackNik = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya (NIK / NIP)' });
+		btnBackNik.addEventListener('click', function () {
+			S.verifTipe = '';
+			S.verifNilai = '';
+			go('nik');
+		});
+
 		var err = errBox();
 		var rHp = el('input', { type: 'radio', name: 'verif_type', value: 'hp', id: 'vf-hp', checked: true });
 		var rEmail = el('input', { type: 'radio', name: 'verif_type', value: 'email', id: 'vf-email' });
@@ -995,6 +1012,19 @@
 			btnSkip
 		]);
 
+		// Tombol Kembali Besar di Bawah
+		var btnBackBottom = el('button', {
+			type: 'button',
+			class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large',
+			style: 'margin-top:16px;',
+			text: '← Kembali ke Langkah Sebelumnya (NIK / NIP)'
+		});
+		btnBackBottom.addEventListener('click', function () {
+			S.verifTipe = '';
+			S.verifNilai = '';
+			go('nik');
+		});
+
 		var iconSvgVerif = el('div', { class: 'kgtk-card-icon-circle', 'aria-hidden': 'true' });
 		iconSvgVerif.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>';
 
@@ -1010,7 +1040,8 @@
 			headerClean,
 			err,
 			boxSudah,
-			boxBelum
+			boxBelum,
+			btnBackBottom
 		]);
 
 		form.addEventListener('submit', function (e) {
@@ -1048,7 +1079,7 @@
 			});
 		});
 
-		return form;
+		return el('div', {}, [btnBackNik, form]);
 	}
 
 	/** Cek NIK lalu arahkan ke tampilan yang sesuai. */
@@ -1098,6 +1129,11 @@
 	function digitsOnly(input, max) { input.addEventListener('input', function () { input.value = input.value.replace(/\D/g, '').slice(0, max); }); }
 
 	function vBiodata() {
+		var btnBackVerif = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya' });
+		btnBackVerif.addEventListener('click', function () {
+			go(S.cek && S.cek.guru ? 'nik-verif' : 'nik');
+		});
+
 		var baru = !S.cek || !S.cek.guru, F = S.form;
 		var err = errBox();
 		var fn = field('NIK', 'f-nik', { type: 'text', readonly: true }, S.nik);
@@ -1227,9 +1263,9 @@
 			el('span', { text: 'Saya bersedia menerima pemberitahuan pelatihan melalui email atau WhatsApp.' })
 		]);
 
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block', text: 'Daftar' });
-		var back = el('button', { type: 'button', class: 'kgtk-link', text: 'Kembali' });
-		var form = el('form', { class: 'kgtk-card', novalidate: true }, [
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Kirim Pendaftaran Pelatihan' });
+		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: '← Kembali ke Langkah Sebelumnya' });
+		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
 			el('h2', { text: baru ? 'Lengkapi biodata' : 'Periksa biodata' }),
 			el('p', { class: 'kgtk-muted', text: baru ? 'Isi data diri Anda untuk mendaftar. Tanda * wajib diisi.' : 'Data tersimpan dari pendaftaran sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.' }),
 			err,
@@ -1260,7 +1296,7 @@
 		back.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
-			go('nik');
+			go(S.cek && S.cek.guru ? 'nik-verif' : 'nik');
 		});
 
 		form.addEventListener('input', function (e) {
@@ -1491,7 +1527,7 @@
 					});
 				});
 		});
-		return form;
+		return el('div', {}, [btnBackVerif, form]);
 	}
 
 	function resetNik() {
@@ -1507,7 +1543,7 @@
 	function vTerdaftar() {
 		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: '\uD83D\uDD0D Lihat Biodata & Riwayat Saya' });
+		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: 'Lihat Biodata & Riwayat Saya' });
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
@@ -1526,7 +1562,7 @@
 	function vSukses() {
 		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: '\uD83D\uDD0D Lihat Biodata & Riwayat Saya' });
+		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: 'Lihat Biodata & Riwayat Saya' });
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
