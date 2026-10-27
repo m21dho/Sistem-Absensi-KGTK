@@ -349,6 +349,131 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		);
 	}
 
+	/**
+	 * Peserta memperbarui data biodata dirinya sendiri dari halaman Biodata & Riwayat Saya.
+	 */
+	public static function public_update_biodata_saya( WP_REST_Request $req ) {
+		$in    = self::params( $req );
+		$nik   = self::str( $in, 'nik' );
+		$tipe  = self::str( $in, 'verif_tipe' );
+		$nilai = self::str( $in, 'verif_nilai' );
+
+		$err_msg = 'Verifikasi sesi tidak cocok. Silakan periksa kembali identitas Anda.';
+
+		if ( ! preg_match( '/^\d{16}$/', $nik ) ) {
+			return self::err( 'verifikasi_gagal', $err_msg, 422 );
+		}
+
+		$rl = self::check_verif_rate_limit( $nik );
+		if ( is_wp_error( $rl ) ) {
+			return $rl;
+		}
+
+		$bio = self::verify_guru_credentials( $nik, $tipe, $nilai );
+		if ( ! $bio ) {
+			self::record_verif_failure( $nik );
+			return self::err( 'verifikasi_gagal', $err_msg, 422 );
+		}
+
+		// NIK tidak boleh diubah dari input
+		$in['nik'] = $nik;
+		if ( empty( $in['peran'] ) ) {
+			$in['peran'] = ! empty( $bio['peran'] ) ? $bio['peran'] : 'Peserta';
+		}
+		if ( empty( $in['jenis_gtk'] ) && ! empty( $in['jabatan'] ) ) {
+			$in['jenis_gtk'] = $in['jabatan'];
+		}
+
+		$d = self::validasi_peserta( $in );
+		if ( is_wp_error( $d ) ) {
+			return $d;
+		}
+
+		global $wpdb;
+		$tg = KGTK_DB::table( 'guru' );
+		$tp = KGTK_DB::table( 'peserta' );
+
+		$update_guru = array(
+			'nama'               => $d['nama'],
+			'gelar_depan'        => $d['gelar_depan'],
+			'gelar_belakang'     => $d['gelar_belakang'],
+			'tempat_lahir'       => $d['tempat_lahir'],
+			'tanggal_lahir'      => $d['tanggal_lahir'],
+			'jenis_kelamin'      => $d['jenis_kelamin'],
+			'alamat'             => $d['alamat'],
+			'alamat_instansi'    => $d['alamat_instansi'],
+			'pangkat_golongan'   => $d['pangkat_golongan'],
+			'agama'              => $d['agama'],
+			'pendidikan'         => $d['pendidikan'],
+			'bank'               => $d['bank'],
+			'rekening'           => $d['rekening'],
+			'npwp'               => $d['npwp'],
+			'pengalaman_jabatan' => $d['pengalaman_jabatan'],
+			'sekolah'            => $d['sekolah'],
+			'kabkota'            => $d['kabkota'],
+			'sekolah_id'         => $d['sekolah_id'],
+			'peran'              => $d['peran'],
+			'jenis_gtk'          => $d['jenis_gtk'],
+			'hp'                 => $d['hp'],
+			'nisn'               => $d['nisn'],
+			'nuptk'              => $d['nuptk'],
+			'nip'                => $d['nip'],
+			'email'              => $d['email'],
+			'email_belajar'      => $d['email_belajar'],
+			'email_guru'         => $d['email_guru'],
+			'simpkb'             => $d['simpkb'],
+			'updated_at'         => current_time( 'mysql' ),
+		);
+
+		// Simpan perubahan ke kgtk_guru (Master Data)
+		$wpdb->update( $tg, $update_guru, array( 'nik' => $nik ) );
+
+		// Update juga pada pendaftaran peserta yang bersangkutan di kgtk_peserta
+		$update_peserta = array(
+			'nama'               => $d['nama'],
+			'gelar_depan'        => $d['gelar_depan'],
+			'gelar_belakang'     => $d['gelar_belakang'],
+			'tempat_lahir'       => $d['tempat_lahir'],
+			'tanggal_lahir'      => $d['tanggal_lahir'],
+			'jenis_kelamin'      => $d['jenis_kelamin'],
+			'alamat'             => $d['alamat'],
+			'alamat_instansi'    => $d['alamat_instansi'],
+			'pangkat_golongan'   => $d['pangkat_golongan'],
+			'agama'              => $d['agama'],
+			'pendidikan'         => $d['pendidikan'],
+			'bank'               => $d['bank'],
+			'rekening'           => $d['rekening'],
+			'npwp'               => $d['npwp'],
+			'pengalaman_jabatan' => $d['pengalaman_jabatan'],
+			'sekolah'            => $d['sekolah'],
+			'kabkota'            => $d['kabkota'],
+			'sekolah_id'         => $d['sekolah_id'],
+			'jenis_gtk'          => $d['jenis_gtk'],
+			'hp'                 => $d['hp'],
+			'nisn'               => $d['nisn'],
+			'nuptk'              => $d['nuptk'],
+			'nip'                => $d['nip'],
+			'email'              => $d['email'],
+			'email_belajar'      => $d['email_belajar'],
+			'email_guru'         => $d['email_guru'],
+			'simpkb'             => $d['simpkb'],
+		);
+		$wpdb->update( $tp, $update_peserta, array( 'nik' => $nik ) );
+
+		$bio_baru = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tg} WHERE nik = %s LIMIT 1", $nik ), ARRAY_A );
+		if ( ! empty( $bio_baru ) ) {
+			$bio_baru['jabatan'] = ! empty( $bio_baru['jenis_gtk'] ) ? $bio_baru['jenis_gtk'] : '';
+		}
+
+		return self::respond(
+			array(
+				'success' => true,
+				'message' => 'Biodata Anda berhasil diperbarui.',
+				'biodata' => $bio_baru ? $bio_baru : $update_guru,
+			)
+		);
+	}
+
 	/* ====================== Validasi & Proses Pendaftaran ====================== */
 
 	/**

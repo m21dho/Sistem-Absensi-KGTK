@@ -69,7 +69,8 @@ class KGTK_Public {
 				'root'      => esc_url_raw( rest_url( 'kgtk/v1/' ) ),
 				'logoUrl'   => esc_url_raw( KGTK_URL . 'assets/images/logo-kemendikdasmen.svg' ),
 				'headerUrl' => esc_url_raw( KGTK_URL . 'assets/images/header-kemendikdasmen.png' ),
-				'waHelp'          => esc_attr( get_option( 'kgtk_wa_help', '08136798163' ) ),
+				'waHelp'    => esc_attr( get_option( 'kgtk_wa_help', '08136798163' ) ),
+				'kabkota'   => KGTK_Helpers::kabkota_list(),
 			)
 		);
 	}

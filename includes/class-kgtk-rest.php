@@ -75,6 +75,15 @@ class KGTK_REST extends KGTK_REST_Base {
 				'permission_callback' => $pub,
 			)
 		);
+		register_rest_route(
+			self::NS,
+			'/public/update-biodata-saya',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Public', 'public_update_biodata_saya' ),
+				'permission_callback' => $pub,
+			)
+		);
 
 		/* ------------------ Endpoint Admin: Pelatihan ------------------ */
 
