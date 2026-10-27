@@ -1882,7 +1882,13 @@
 						headers: { 'X-WP-Nonce': C.nonce },
 						body: fd
 					}).then(function (r) {
-						return r.json().then(function (d) {
+						return r.text().then(function (text) {
+							var d = {};
+							try {
+								d = JSON.parse(text);
+							} catch (e) {
+								throw new Error('Respon server tidak valid atau terjadi error sistem.');
+							}
 							if (!r.ok) { throw new Error(d.message || 'Gagal mengunggah berkas.'); }
 							return d;
 						});

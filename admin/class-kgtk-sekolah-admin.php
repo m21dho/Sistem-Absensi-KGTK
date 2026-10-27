@@ -52,7 +52,7 @@ class KGTK_Sekolah_Admin {
 		return $s;
 	}
 
-	private static function dir_impor() {
+	public static function dir_impor() {
 		$u   = wp_upload_dir();
 		$dir = trailingslashit( $u['basedir'] ) . 'kgtk-import';
 		if ( ! file_exists( $dir ) ) {
@@ -63,7 +63,7 @@ class KGTK_Sekolah_Admin {
 		return $dir;
 	}
 
-	private static function bersihkan_lama( $dir ) {
+	public static function bersihkan_lama( $dir ) {
 		foreach ( (array) glob( $dir . '/*.*' ) as $f ) {
 			$nama = basename( $f );
 			if ( in_array( $nama, array( 'index.php', '.htaccess' ), true ) ) {
