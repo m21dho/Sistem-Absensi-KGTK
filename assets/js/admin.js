@@ -2454,6 +2454,7 @@
 			if (f.npwp) { f.npwp.value = cleanVal(d.npwp); }
 			if (f.alamat) { f.alamat.value = cleanVal(d.alamat); }
 			if (f.alamat_instansi) { f.alamat_instansi.value = cleanVal(d.alamat_instansi); }
+			if (f.pengalaman_jabatan) { f.pengalaman_jabatan.value = cleanVal(d.pengalaman_jabatan); }
 		};
 
 		var openEditPsModal = function (pesertaId, initialData) {
@@ -2587,6 +2588,7 @@
 					bank: (f.bank.value || '').trim(),
 					rekening: (f.rekening.value || '').trim(),
 					npwp: (f.npwp.value || '').trim(),
+					pengalaman_jabatan: (f.pengalaman_jabatan ? f.pengalaman_jabatan.value : '').trim() || '-',
 					alamat: alamat,
 					alamat_instansi: (f.alamat_instansi.value || '').trim()
 				};

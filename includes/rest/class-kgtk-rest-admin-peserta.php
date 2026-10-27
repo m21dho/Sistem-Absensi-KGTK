@@ -197,6 +197,24 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		}
 
 		$in = self::params( $req );
+
+		// Fallback cerdas untuk field opsional agar tidak memblokir edit admin
+		if ( empty( $in['pengalaman_jabatan'] ) ) {
+			$in['pengalaman_jabatan'] = ! empty( $peserta->pengalaman_jabatan ) ? $peserta->pengalaman_jabatan : '-';
+		}
+		if ( empty( $in['alamat_instansi'] ) ) {
+			$in['alamat_instansi'] = ! empty( $peserta->alamat_instansi ) ? $peserta->alamat_instansi : ( ! empty( $in['alamat'] ) ? $in['alamat'] : '-' );
+		}
+		if ( empty( $in['pendidikan'] ) ) {
+			$in['pendidikan'] = ! empty( $peserta->pendidikan ) ? $peserta->pendidikan : 'D4 / S1';
+		}
+		if ( empty( $in['bank'] ) ) {
+			$in['bank'] = ! empty( $peserta->bank ) ? $peserta->bank : '-';
+		}
+		if ( empty( $in['rekening'] ) ) {
+			$in['rekening'] = ! empty( $peserta->rekening ) ? $peserta->rekening : '-';
+		}
+
 		$d  = KGTK_REST_Public::validasi_peserta( $in );
 		if ( is_wp_error( $d ) ) {
 			return $d;
