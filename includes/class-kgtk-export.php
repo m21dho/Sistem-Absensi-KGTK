@@ -897,7 +897,7 @@ div.space { height: 62px; }
 		$barang_upper = $barang_clean ? strtoupper( $barang_clean ) : '';
 		$judul        = 'DAFTAR TANDA TERIMA' . ( $barang_upper ? ' ' . $barang_upper : '' );
 
-		$pages       = KGTK_Helpers::halaman( $rows, max( 15, count( $rows ) ) );
+		$pages       = KGTK_Helpers::halaman( $rows, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, count( $rows ) ) );
 		$total_pages = count( $pages );
 
 		$html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' . esc_html( $judul . ' - ' . $p->nama ) . '</title><style>

@@ -26,7 +26,7 @@ foreach ( $kelas as $k ) {
 	} ) );
 }
 
-$pages_all = KGTK_Helpers::halaman( $tt_peserta, max( 15, $tt_count ) );
+$pages_all = KGTK_Helpers::halaman( $tt_peserta, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, $tt_count ) );
 
 $default_pdf_url = KGTK_Export::tanda_terima_pdf_url( $p->id, 'Baju' );
 
@@ -171,7 +171,7 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 			<!-- Group Per Kelas (Bila Multi Kelas atau spesifik kelas) -->
 			<?php foreach ( $kelas as $k ) :
 				$rows_k    = isset( $by_kelas[ (int) $k->id ] ) ? $by_kelas[ (int) $k->id ] : array();
-				$pages_k   = KGTK_Helpers::halaman( $rows_k, max( 15, count( $rows_k ) ) );
+				$pages_k   = KGTK_Helpers::halaman( $rows_k, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, count( $rows_k ) ) );
 				$tot_k_pgs = count( $pages_k );
 			?>
 				<div class="kgtk-tt-group" data-tt-group="<?php echo (int) $k->id; ?>" style="display:none;">

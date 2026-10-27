@@ -9,8 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class KGTK_Helpers {
 
 	/** Hanya peran ini yang memakai slot kelas; peran lain tidak dibatasi. */
-	const PERAN_SLOT        = 'Peserta';
-	const BARIS_PER_HALAMAN = 15;
+	const PERAN_SLOT           = 'Peserta';
+	const BARIS_PER_HALAMAN    = 20;
+	const BARIS_HALAMAN_AWAL   = 20;
+	const BARIS_HALAMAN_LANJUT = 25;
 	/** Nilai kabupaten/kota untuk guru dari luar daftar sekolah. */
 	const KABKOTA_LAIN      = 'Lainnya';
 	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Peserta' );
@@ -495,21 +497,26 @@ class KGTK_Helpers {
 	}
 
 	/**
-	 * Bagi baris absen menjadi halaman berisi maksimal 15 baris. Jumlah baris total = $total
-	 * (slot kelas), atau jumlah peserta bila lebih banyak. Baris yang belum terisi dibiarkan kosong.
+	 * Bagi baris absen menjadi halaman. Halaman pertama memuat hingga 20 baris (karena ada kop dan info kegiatan),
+	 * sedangkan halaman lanjutan memuat hingga 25 baris sehingga memenuhkan kertas terlebih dahulu sebelum pindah halaman.
 	 * Tiap halaman: array( 'rows' => peserta, 'mulai' => indeks baris pertama (0), 'jumlah' => baris di halaman ini ).
 	 */
 	public static function halaman( $rows, $total = 0 ) {
 		$rows  = array_values( (array) $rows );
 		$total = max( 1, (int) $total, count( $rows ) );
-		$per   = self::BARIS_PER_HALAMAN;
 		$pages = array();
-		for ( $mulai = 0; $mulai < $total; $mulai += $per ) {
+		$mulai = 0;
+		$p_idx = 0;
+
+		while ( $mulai < $total ) {
+			$per = ( 0 === $p_idx ) ? self::BARIS_HALAMAN_AWAL : self::BARIS_HALAMAN_LANJUT;
 			$pages[] = array(
 				'rows'   => array_slice( $rows, $mulai, $per ),
 				'mulai'  => $mulai,
 				'jumlah' => min( $per, $total - $mulai ),
 			);
+			$mulai += $per;
+			$p_idx++;
 		}
 		return $pages;
 	}
@@ -633,10 +640,10 @@ class KGTK_Helpers {
 				}
 
 				// Untuk peran yang bukan 'Peserta' tapi dipilih khusus dan datanya kosong,
-				// sediakan 15 baris kosong (1 halaman penuh) agar dapat ditandatangani manual di lokasi.
+				// sediakan baris kosong (1 halaman penuh) agar dapat ditandatangani manual di lokasi.
 				$jumlah_baris = self::baris_lembar( (string) $peran, $list, $k );
 				if ( $is_filtered && self::PERAN_SLOT !== $peran && empty( $list ) ) {
-					$jumlah_baris = self::BARIS_PER_HALAMAN;
+					$jumlah_baris = self::BARIS_HALAMAN_AWAL;
 				}
 
 				$sheets[] = array(
@@ -671,7 +678,7 @@ class KGTK_Helpers {
 					'kelas'        => $dummy_k,
 					'peran'        => 'Panitia',
 					'rows'         => $panitia_rows,
-					'jumlah'       => ! empty( $panitia_rows ) ? max( 1, count( $panitia_rows ) ) : self::BARIS_PER_HALAMAN,
+					'jumlah'       => ! empty( $panitia_rows ) ? max( 1, count( $panitia_rows ) ) : self::BARIS_HALAMAN_AWAL,
 					'tampil_kelas' => false,
 				);
 			}
