@@ -921,11 +921,11 @@
 		rHp.addEventListener('change', updateLabel);
 		rEmail.addEventListener('change', updateLabel);
 
-		// Tombol Aksi 1: Tarik Biodata Otomatis (Sangat Nampak)
+		// Tombol Aksi 1: Lanjut Pendaftaran (Sangat Nampak)
 		var btnVerif = el('button', {
 			type: 'submit',
 			class: 'kgtk-btn kgtk-btn-action-tarik',
-			text: '🔄 Tarik Biodata Otomatis →'
+			text: 'Lanjut Pendaftaran →'
 		});
 
 		// Tombol Aksi 2: Lewati & Isi Data Baru (Sangat Nampak)
@@ -945,7 +945,7 @@
 		var boxSudah = el('div', { class: 'kgtk-verif-box kgtk-verif-box--sudah' }, [
 			el('div', { class: 'kgtk-verif-badge kgtk-verif-badge--sudah', text: '⭐ PILIHAN 1: SUDAH PERNAH MENDAFTAR' }),
 			el('div', { class: 'kgtk-verif-title', text: 'Pernah Mengikuti Pelatihan KGTK Sebelumnya?' }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Data Anda sudah tersimpan di sistem. Masukkan No. HP atau Email belajar.id di bawah ini, lalu klik tombol Tarik Biodata agar formulir langsung terisi otomatis tanpa perlu mengetik ulang.' }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Data Anda sudah tersimpan di sistem. Masukkan No. HP atau Email belajar.id di bawah ini, lalu klik tombol Lanjut Pendaftaran agar formulir langsung terisi otomatis tanpa perlu mengetik ulang.' }),
 			radios,
 			fVal.wrap,
 			btnVerif
@@ -1000,7 +1000,7 @@
 				}
 				go('biodata');
 			}).catch(function (x) {
-				busy(btnVerif, false, '🔄 Tarik Biodata Otomatis →');
+				busy(btnVerif, false, 'Lanjut Pendaftaran →');
 				var pesan = x.message || 'Terjadi kesalahan.';
 				if (pesan.indexOf('Data tidak cocok') > -1) {
 					pesan += ' Jika Anda belum pernah mendaftar sebelumnya, silakan langsung klik tombol hijau "Saya Peserta Baru" di bawah.';
