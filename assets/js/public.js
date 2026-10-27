@@ -890,27 +890,49 @@
 		var err = errBox();
 		var rHp = el('input', { type: 'radio', name: 'verif_type', value: 'hp', id: 'vf-hp', checked: true });
 		var rEmail = el('input', { type: 'radio', name: 'verif_type', value: 'email', id: 'vf-email' });
-		var radios = el('div', { class: 'kgtk-radios' }, [
-			el('label', { class: 'kgtk-radio', for: 'vf-hp' }, [rHp, 'Nomor HP']),
-			el('label', { class: 'kgtk-radio', for: 'vf-email' }, [rEmail, 'Email belajar.id'])
-		]);
 
-		var fVal = field('No. HP/WhatsApp *', 'f-vval', { type: 'text', required: true, autocomplete: 'off', placeholder: 'mis. 081234567890 atau 62812...' });
+		var lblHp = el('label', { class: 'kgtk-radio is-checked', for: 'vf-hp' }, [
+			rHp,
+			el('span', { text: '📱 Nomor HP / WhatsApp' })
+		]);
+		var lblEmail = el('label', { class: 'kgtk-radio', for: 'vf-email' }, [
+			rEmail,
+			el('span', { text: '✉️ Email belajar.id' })
+		]);
+		var radios = el('div', { class: 'kgtk-radios' }, [lblHp, lblEmail]);
+
+		var fVal = field('Nomor HP / WhatsApp yang Pernah Didaftarkan *', 'f-vval', {
+			type: 'text',
+			required: true,
+			autocomplete: 'off',
+			placeholder: 'Contoh: 081234567890 atau 62812...'
+		});
+
 		function updateLabel() {
 			var isHp = rHp.checked;
+			lblHp.classList.toggle('is-checked', isHp);
+			lblEmail.classList.toggle('is-checked', !isHp);
 			var span = fVal.wrap.querySelector('span');
-			if (span) { span.textContent = isHp ? 'No. HP/WhatsApp *' : 'Email belajar.id *'; }
-			fVal.input.placeholder = isHp ? 'mis. 081234567890 atau 62812...' : 'mis. nama@belajar.id';
+			if (span) {
+				span.textContent = isHp ? 'Nomor HP / WhatsApp yang Pernah Didaftarkan *' : 'Email belajar.id yang Pernah Didaftarkan *';
+			}
+			fVal.input.placeholder = isHp ? 'Contoh: 081234567890 atau 62812...' : 'Contoh: nama@guru.smp.belajar.id';
 		}
 		rHp.addEventListener('change', updateLabel);
 		rEmail.addEventListener('change', updateLabel);
 
-		var btnVerif = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block', text: 'Tarik Biodata Otomatis' });
+		// Tombol Aksi 1: Tarik Biodata Otomatis (Sangat Nampak)
+		var btnVerif = el('button', {
+			type: 'submit',
+			class: 'kgtk-btn kgtk-btn-action-tarik',
+			text: '🔄 Tarik Biodata Otomatis →'
+		});
+
+		// Tombol Aksi 2: Lewati & Isi Data Baru (Sangat Nampak)
 		var btnSkip = el('button', {
 			type: 'button',
-			class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block',
-			style: 'border:1.5px solid var(--blue);color:var(--blue);font-weight:800;background:#fff;',
-			text: 'Lewati & Isi Data Baru \u2192'
+			class: 'kgtk-btn kgtk-btn-action-baru',
+			text: '✍️ Saya Peserta Baru: Lanjut Isi Formulir Pendaftaran →'
 		});
 		btnSkip.addEventListener('click', function () {
 			S.verifTipe = '';
@@ -919,36 +941,37 @@
 			go('biodata');
 		});
 
-		var petunjuk = el('div', {
-			class: 'kgtk-note',
-			style: 'margin-bottom:18px;background:#f0fdf4;border:1.5px solid #86efac;color:#166534;border-radius:12px;padding:12px 14px;'
-		});
-		petunjuk.innerHTML = '<div style="font-weight:800;font-size:13.5px;margin-bottom:6px;color:#15803d;display:flex;align-items:center;gap:6px;">' +
-			'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-			'Petunjuk Pengisian:</div>' +
-			'<div style="font-size:13px;line-height:1.55;">' +
-			'• <strong>Belum pernah mendaftar pelatihan KGTK?</strong> Anda tidak perlu mengisi verifikasi nomor HP atau email di bawah ini. Silakan langsung klik tombol <strong>&ldquo;Lewati &amp; Isi Data Baru&rdquo;</strong> di bagian bawah untuk mengisi formulir pendaftaran.<br>' +
-			'• <strong>Sudah pernah mendaftar sebelumnya?</strong> Masukkan No. HP atau Email belajar.id yang pernah Anda daftarkan agar data biodata Anda otomatis terisi tanpa mengetik ulang.' +
-			'</div>';
+		// Box Jalur 1: Sudah Pernah Mendaftar
+		var boxSudah = el('div', { class: 'kgtk-verif-box kgtk-verif-box--sudah' }, [
+			el('div', { class: 'kgtk-verif-badge kgtk-verif-badge--sudah', text: '⭐ PILIHAN 1: SUDAH PERNAH MENDAFTAR' }),
+			el('div', { class: 'kgtk-verif-title', text: 'Pernah Mengikuti Pelatihan KGTK Sebelumnya?' }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Data Anda sudah tersimpan di sistem. Masukkan No. HP atau Email belajar.id di bawah ini, lalu klik tombol Tarik Biodata agar formulir langsung terisi otomatis tanpa perlu mengetik ulang.' }),
+			radios,
+			fVal.wrap,
+			btnVerif
+		]);
 
-		var bagianBaru = el('div', {
-			style: 'margin-top:22px;padding-top:18px;border-top:1.5px dashed var(--line);text-align:center;'
-		}, [
-			el('div', { style: 'font-weight:800;color:var(--navy);font-size:15px;margin-bottom:4px;', text: 'Belum pernah mendaftar pelatihan sebelumnya?' }),
-			el('p', { class: 'kgtk-muted', style: 'margin:0 0 12px;font-size:13px;line-height:1.45;', text: 'Jika Anda peserta baru atau belum pernah mendaftar di sistem ini, lewati langkah ini dan langsung isi formulir data baru Anda.' }),
+		// Box Jalur 2: Belum Pernah Mendaftar
+		var boxBelum = el('div', { class: 'kgtk-verif-box kgtk-verif-box--belum' }, [
+			el('div', { class: 'kgtk-verif-badge kgtk-verif-badge--belum', text: '✨ PILIHAN 2: BELUM PERNAH MENDAFTAR (PESERTA BARU)' }),
+			el('div', { class: 'kgtk-verif-title', text: 'Peserta Baru / Pertama Kali Mendaftar' }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Jika Anda belum pernah mendaftar di pelatihan KGTK, Anda TIDAK PERLU mengisi kontak di atas. Silakan langsung klik tombol hijau di bawah ini untuk mengisi formulir pendaftaran baru:' }),
 			btnSkip
 		]);
 
-		var form = el('form', { class: 'kgtk-card', novalidate: true }, [
-			el('h2', { text: 'Pengisian Otomatis Biodata' }),
-			el('p', { class: 'kgtk-muted', text: 'Fitur opsional untuk mempercepat pengisian formulir jika Anda pernah mendaftar pelatihan sebelumnya.' }),
-			petunjuk,
+		var headerClean = el('div', { class: 'kgtk-card-header-clean' }, [
+			el('div', { class: 'kgtk-card-icon-circle', 'aria-hidden': 'true' }, [el('span', { text: '⚡' })]),
+			el('div', {}, [
+				el('h2', { text: 'Pilihan Pengisian Formulir' }),
+				el('p', { class: 'kgtk-card-desc', text: 'Silakan pilih salah satu jalur di bawah ini sesuai dengan kondisi Anda (Pernah mendaftar sebelumnya atau Peserta Baru).' })
+			])
+		]);
+
+		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
+			headerClean,
 			err,
-			el('div', { style: 'font-weight:700;color:var(--navy);font-size:13.5px;margin-bottom:6px;', text: 'Pernah mendaftar? Tarik data otomatis dengan:' }),
-			radios,
-			fVal.wrap,
-			btnVerif,
-			bagianBaru
+			boxSudah,
+			boxBelum
 		]);
 
 		form.addEventListener('submit', function (e) {
@@ -977,10 +1000,10 @@
 				}
 				go('biodata');
 			}).catch(function (x) {
-				busy(btnVerif, false, 'Tarik Biodata Otomatis');
+				busy(btnVerif, false, '🔄 Tarik Biodata Otomatis →');
 				var pesan = x.message || 'Terjadi kesalahan.';
 				if (pesan.indexOf('Data tidak cocok') > -1) {
-					pesan += ' Jika Anda belum pernah mendaftar sebelumnya, silakan langsung klik tombol "Lewati & Isi Data Baru" di bawah.';
+					pesan += ' Jika Anda belum pernah mendaftar sebelumnya, silakan langsung klik tombol hijau "Saya Peserta Baru" di bawah.';
 				}
 				showErr(err, pesan);
 			});
