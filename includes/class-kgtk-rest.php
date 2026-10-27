@@ -146,9 +146,21 @@ class KGTK_REST extends KGTK_REST_Base {
 			self::NS,
 			'/admin/peserta/(?P<id>\d+)',
 			array(
-				'methods'             => 'DELETE',
-				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_delete_peserta' ),
-				'permission_callback' => $admin,
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_get_peserta' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_update_peserta' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_delete_peserta' ),
+					'permission_callback' => $admin,
+				),
 			)
 		);
 		register_rest_route(

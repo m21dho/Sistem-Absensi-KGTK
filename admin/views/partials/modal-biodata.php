@@ -29,6 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div style="display:flex;gap:8px;">
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-bio-cetak" title="Cetak lembar biodata resmi">&#128424;&#65039; Cetak</button>
 				<a href="#" class="kgtk-btn kgtk-btn--navy" id="kgtk-btn-bio-pdf" target="_blank" title="Unduh lembar PDF biodata">&#128229; Download PDF</a>
+				<button type="button" class="kgtk-btn kgtk-btn--yellow" id="kgtk-btn-bio-edit" title="Edit data peserta ini">&#9998; Edit Data</button>
 			</div>
 			<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-bio-batal">Tutup</button>
 		</div>

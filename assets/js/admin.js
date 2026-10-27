@@ -2378,6 +2378,232 @@
 			}
 		}
 
+	/* Tombol Impor Data di Header Pelatihan */
+	var btnImpHeader = document.getElementById('kgtk-btn-impor-header');
+	if (btnImpHeader) {
+		btnImpHeader.addEventListener('click', function () {
+			var btnImp = document.getElementById('kgtk-btn-impor-undangan');
+			if (btnImp) {
+				btnImp.click();
+			} else {
+				var mImp = document.getElementById('kgtk-modal-impor');
+				if (mImp) {
+					mImp.style.display = 'flex';
+					mImp.classList.add('is-visible');
+				}
+			}
+		});
+	}
+
+	/* Modal Edit Data Peserta Pelatihan */
+	var modalEditPs = document.getElementById('kgtk-modal-edit-peserta');
+	if (modalEditPs) {
+		var formEditPs = document.getElementById('kgtk-form-edit-peserta');
+		var btnEditPsClose = document.getElementById('kgtk-btn-edit-peserta-close');
+		var btnEditPsCancel = document.getElementById('kgtk-btn-edit-peserta-cancel');
+		var btnEditPsSave = document.getElementById('kgtk-btn-edit-peserta-save');
+		var errEditPs = document.getElementById('kgtk-edit-peserta-error');
+
+		var closeEditPsModal = function () {
+			modalEditPs.classList.remove('is-visible');
+			modalEditPs.style.display = 'none';
+			if (errEditPs) {
+				errEditPs.hidden = true;
+				errEditPs.textContent = '';
+			}
+		};
+
+		if (btnEditPsClose) { btnEditPsClose.addEventListener('click', closeEditPsModal); }
+		if (btnEditPsCancel) { btnEditPsCancel.addEventListener('click', closeEditPsModal); }
+		modalEditPs.addEventListener('click', function (e) {
+			if (e.target === modalEditPs) { closeEditPsModal(); }
+		});
+
+		var cleanVal = function (v) {
+			if (v === null || v === undefined || v === '-') { return ''; }
+			return String(v).trim();
+		};
+
+		var populateEditForm = function (d) {
+			if (!formEditPs || !d) { return; }
+			var f = formEditPs.elements;
+			if (f.peserta_id) { f.peserta_id.value = d.id || d.peserta_id || '0'; }
+			if (f.peran) { f.peran.value = cleanVal(d.peran) || 'Peserta'; }
+			if (f.kelas_id) { f.kelas_id.value = d.kelas_id !== undefined ? String(d.kelas_id) : '0'; }
+			if (f.nama) { f.nama.value = cleanVal(d.nama); }
+			if (f.gelar_depan) { f.gelar_depan.value = cleanVal(d.gelar_depan); }
+			if (f.gelar_belakang) { f.gelar_belakang.value = cleanVal(d.gelar_belakang); }
+			if (f.nik) { f.nik.value = cleanVal(d.nik); }
+			if (f.nip) { f.nip.value = cleanVal(d.nip); }
+			if (f.tempat_lahir) { f.tempat_lahir.value = cleanVal(d.tempat_lahir); }
+			if (f.tanggal_lahir) { f.tanggal_lahir.value = cleanVal(d.tanggal_lahir); }
+			if (f.jenis_kelamin) { f.jenis_kelamin.value = cleanVal(d.jenis_kelamin); }
+			if (f.agama) { f.agama.value = cleanVal(d.agama); }
+			if (f.sekolah) { f.sekolah.value = cleanVal(d.sekolah); }
+			if (f.kabkota) { f.kabkota.value = cleanVal(d.kabkota); }
+			if (f.jenis_gtk) { f.jenis_gtk.value = cleanVal(d.jenis_gtk) || cleanVal(d.jabatan); }
+			if (f.pangkat_golongan) { f.pangkat_golongan.value = cleanVal(d.pangkat_golongan); }
+			if (f.pendidikan) { f.pendidikan.value = cleanVal(d.pendidikan); }
+			if (f.nuptk) { f.nuptk.value = cleanVal(d.nuptk) || cleanVal(d.nisn); }
+			if (f.hp) { f.hp.value = cleanVal(d.hp); }
+			if (f.email) { f.email.value = cleanVal(d.email); }
+			if (f.email_belajar) { f.email_belajar.value = cleanVal(d.email_belajar); }
+			if (f.simpkb) { f.simpkb.value = cleanVal(d.simpkb) || cleanVal(d.email_guru); }
+			if (f.bank) { f.bank.value = cleanVal(d.bank); }
+			if (f.rekening) { f.rekening.value = cleanVal(d.rekening); }
+			if (f.npwp) { f.npwp.value = cleanVal(d.npwp); }
+			if (f.alamat) { f.alamat.value = cleanVal(d.alamat); }
+			if (f.alamat_instansi) { f.alamat_instansi.value = cleanVal(d.alamat_instansi); }
+		};
+
+		var openEditPsModal = function (pesertaId, initialData) {
+			if (errEditPs) {
+				errEditPs.hidden = true;
+				errEditPs.textContent = '';
+			}
+			populateEditForm(initialData || { id: pesertaId });
+			modalEditPs.style.display = 'flex';
+			modalEditPs.classList.add('is-visible');
+
+			// Ambil data terbaru dari server
+			api('admin/peserta/' + pesertaId, 'GET').then(function (res) {
+				if (res && res.peserta) {
+					populateEditForm(res.peserta);
+				}
+			}).catch(function () {
+				// Gunakan data initialData jika offline
+			});
+		};
+
+		// Klik tombol edit di tabel peserta
+		document.addEventListener('click', function (e) {
+			var trigger = e.target.closest('[data-edit-peserta]');
+			if (!trigger) { return; }
+			e.preventDefault();
+			var psId = trigger.getAttribute('data-edit-peserta');
+			var tr = trigger.closest('tr');
+			var bio = null;
+			if (tr) {
+				try {
+					bio = JSON.parse(tr.getAttribute('data-biodata'));
+				} catch (err) {}
+			}
+			openEditPsModal(psId, bio);
+		});
+
+		// Klik tombol edit di dalam modal biodata
+		var btnBioEdit = document.getElementById('kgtk-btn-bio-edit');
+		if (btnBioEdit) {
+			btnBioEdit.addEventListener('click', function () {
+				if (modalBio) {
+					modalBio.classList.remove('is-visible');
+					modalBio.style.display = 'none';
+				}
+				if (activeBioData && activeBioData.id) {
+					openEditPsModal(activeBioData.id, activeBioData);
+				}
+			});
+		}
+
+		// Simpan perubahan peserta
+		if (btnEditPsSave && formEditPs) {
+			btnEditPsSave.addEventListener('click', function () {
+				if (errEditPs) { errEditPs.hidden = true; }
+				var f = formEditPs.elements;
+				var psId = parseInt(f.peserta_id.value, 10);
+				if (!psId) { return; }
+
+				var nama = (f.nama.value || '').trim();
+				var nik = (f.nik.value || '').trim();
+				var hp = (f.hp.value || '').trim();
+				var sekolah = (f.sekolah.value || '').trim();
+				var kabkota = (f.kabkota.value || '').trim();
+				var alamat = (f.alamat.value || '').trim();
+				var peran = f.peran ? f.peran.value : 'Peserta';
+
+				if (!nama) {
+					errEditPs.textContent = 'Nama lengkap wajib diisi.';
+					errEditPs.hidden = false;
+					f.nama.focus();
+					return;
+				}
+				if (peran !== 'Panitia' && !/^\d{16}$/.test(nik)) {
+					errEditPs.textContent = 'NIK harus 16 digit angka.';
+					errEditPs.hidden = false;
+					f.nik.focus();
+					return;
+				}
+				if (!hp) {
+					errEditPs.textContent = 'Nomor HP/WhatsApp wajib diisi.';
+					errEditPs.hidden = false;
+					f.hp.focus();
+					return;
+				}
+				if (!sekolah) {
+					errEditPs.textContent = 'Asal sekolah / instansi wajib diisi.';
+					errEditPs.hidden = false;
+					f.sekolah.focus();
+					return;
+				}
+				if (!kabkota) {
+					errEditPs.textContent = 'Kabupaten / Kota wajib diisi.';
+					errEditPs.hidden = false;
+					f.kabkota.focus();
+					return;
+				}
+				if (!alamat) {
+					errEditPs.textContent = 'Alamat rumah wajib diisi.';
+					errEditPs.hidden = false;
+					f.alamat.focus();
+					return;
+				}
+
+				btnEditPsSave.disabled = true;
+				var oldText = btnEditPsSave.textContent;
+				btnEditPsSave.textContent = 'Menyimpan...';
+
+				var payload = {
+					peran: peran,
+					kelas_id: f.kelas_id ? parseInt(f.kelas_id.value, 10) : 0,
+					nama: nama,
+					gelar_depan: (f.gelar_depan.value || '').trim(),
+					gelar_belakang: (f.gelar_belakang.value || '').trim(),
+					nik: nik,
+					nip: (f.nip.value || '').trim(),
+					tempat_lahir: (f.tempat_lahir.value || '').trim(),
+					tanggal_lahir: (f.tanggal_lahir.value || '').trim(),
+					jenis_kelamin: f.jenis_kelamin ? f.jenis_kelamin.value : '',
+					agama: f.agama ? f.agama.value : '',
+					sekolah: sekolah,
+					kabkota: kabkota,
+					jenis_gtk: (f.jenis_gtk.value || '').trim(),
+					pangkat_golongan: (f.pangkat_golongan.value || '').trim(),
+					pendidikan: (f.pendidikan.value || '').trim(),
+					nuptk: (f.nuptk.value || '').trim(),
+					hp: hp,
+					email: (f.email.value || '').trim(),
+					email_belajar: (f.email_belajar.value || '').trim(),
+					simpkb: (f.simpkb.value || '').trim(),
+					bank: (f.bank.value || '').trim(),
+					rekening: (f.rekening.value || '').trim(),
+					npwp: (f.npwp.value || '').trim(),
+					alamat: alamat,
+					alamat_instansi: (f.alamat_instansi.value || '').trim()
+				};
+
+				api('admin/peserta/' + psId, 'PUT', payload).then(function () {
+					closeEditPsModal();
+					window.location.reload();
+				}).catch(function (err) {
+					btnEditPsSave.disabled = false;
+					btnEditPsSave.textContent = oldText;
+					errEditPs.textContent = err.message || 'Gagal menyimpan perubahan.';
+					errEditPs.hidden = false;
+				});
+			});
+		}
+	}
+
 	/* Modal Export PDF */
 	var btnExportPdf = document.getElementById('kgtk-btn-export-pdf');
 	var modalExportPdf = document.getElementById('kgtk-modal-export-pdf');

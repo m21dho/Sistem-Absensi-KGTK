@@ -53,6 +53,7 @@ $pel_json = wp_json_encode( array(
 			</div>
 			<div class="kgtk-head-primary-actions">
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-edit-pelatihan-detail" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="Edit informasi dan jadwal pelatihan">&#9998; Edit Pelatihan</button>
+				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-impor-header" title="Impor Data Peserta dari berkas Excel atau CSV">&#128196; Impor Data</button>
 				<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
 			</div>
 		</div>
@@ -240,7 +241,7 @@ $pel_json = wp_json_encode( array(
 									<th style="width:180px;">NIK</th>
 									<th style="min-width:170px;">Asal Sekolah / Instansi</th>
 									<th style="min-width:160px;">Kelas Saat Ini</th>
-									<th style="width:65px;text-align:center;">Aksi</th>
+									<th style="width:115px;text-align:center;">Aksi</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -339,8 +340,9 @@ $pel_json = wp_json_encode( array(
 											<?php endif; ?>
 										</td>
 										<td style="text-align:center;">
-											<div class="kgtk-row-actions">
+											<div class="kgtk-row-actions" style="display:inline-flex;gap:4px;align-items:center;justify-content:center;">
 												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--view" data-view-bio title="Lihat Biodata">&#128065;</button>
+												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--edit" data-edit-peserta="<?php echo (int) $ps->id; ?>" title="Edit data peserta">&#9998;</button>
 												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-peserta="<?php echo (int) $ps->id; ?>" data-nama="<?php echo esc_attr( $ps->nama ); ?>" title="Hapus pendaftaran">&#128465;&#65039;</button>
 											</div>
 										</td>
@@ -398,6 +400,7 @@ $pel_json = wp_json_encode( array(
 	<?php
 	require KGTK_PATH . 'admin/views/partials/modals-undangan.php';
 	require KGTK_PATH . 'admin/views/partials/modal-biodata.php';
+	require KGTK_PATH . 'admin/views/partials/modal-edit-peserta.php';
 	require KGTK_PATH . 'admin/views/partials/modal-export-pdf.php';
 	require KGTK_PATH . 'admin/views/partials/modal-edit-pelatihan.php';
 	?>

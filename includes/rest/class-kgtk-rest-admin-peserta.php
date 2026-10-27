@@ -174,6 +174,110 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		);
 	}
 
+	/** Admin melihat detail satu peserta. */
+	public static function admin_get_peserta( WP_REST_Request $req ) {
+		global $wpdb;
+		$id = absint( $req['id'] );
+		$tp = KGTK_DB::table( 'peserta' );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tp} WHERE id = %d", $id ), ARRAY_A );
+		if ( ! $row ) {
+			return self::err( 'tidak_ada', 'Peserta tidak ditemukan.', 404 );
+		}
+		return self::respond( array( 'peserta' => $row ) );
+	}
+
+	/** Admin memperbarui data peserta. */
+	public static function admin_update_peserta( WP_REST_Request $req ) {
+		global $wpdb;
+		$id = absint( $req['id'] );
+		$tp = KGTK_DB::table( 'peserta' );
+		$peserta = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tp} WHERE id = %d", $id ) );
+		if ( ! $peserta ) {
+			return self::err( 'tidak_ada', 'Peserta tidak ditemukan.', 404 );
+		}
+
+		$in = self::params( $req );
+		$d  = KGTK_REST_Public::validasi_peserta( $in );
+		if ( is_wp_error( $d ) ) {
+			return $d;
+		}
+
+		// Jika NIK diubah, pastikan tidak duplikat di pelatihan ini
+		if ( $d['nik'] !== $peserta->nik ) {
+			$ada = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$tp} WHERE pelatihan_id = %d AND nik = %s AND id != %d",
+					$peserta->pelatihan_id,
+					$d['nik'],
+					$id
+				)
+			);
+			if ( $ada ) {
+				return self::err( 'duplikat_nik', 'NIK ini sudah terdaftar pada pelatihan ini.', 422 );
+			}
+		}
+
+		$kelas_id = isset( $in['kelas_id'] ) ? absint( $in['kelas_id'] ) : (int) $peserta->kelas_id;
+
+		$update_data = array(
+			'nik'                => $d['nik'],
+			'nama'               => $d['nama'],
+			'gelar_depan'        => $d['gelar_depan'],
+			'gelar_belakang'     => $d['gelar_belakang'],
+			'tempat_lahir'       => $d['tempat_lahir'],
+			'tanggal_lahir'      => $d['tanggal_lahir'],
+			'jenis_kelamin'      => $d['jenis_kelamin'],
+			'alamat'             => $d['alamat'],
+			'alamat_instansi'    => $d['alamat_instansi'],
+			'pangkat_golongan'   => $d['pangkat_golongan'],
+			'agama'              => $d['agama'],
+			'pendidikan'         => $d['pendidikan'],
+			'bank'               => $d['bank'],
+			'rekening'           => $d['rekening'],
+			'npwp'               => $d['npwp'],
+			'pengalaman_jabatan' => $d['pengalaman_jabatan'],
+			'sekolah'            => $d['sekolah'],
+			'kabkota'            => $d['kabkota'],
+			'sekolah_id'         => $d['sekolah_id'],
+			'peran'              => $d['peran'],
+			'jenis_gtk'          => $d['jenis_gtk'],
+			'hp'                 => $d['hp'],
+			'nisn'               => $d['nisn'],
+			'nuptk'              => $d['nuptk'],
+			'nip'                => $d['nip'],
+			'email'              => $d['email'],
+			'email_belajar'      => $d['email_belajar'],
+			'email_guru'         => $d['email_guru'],
+			'simpkb'             => $d['simpkb'],
+			'kelas_id'           => $kelas_id,
+		);
+
+		$wpdb->update( $tp, $update_data, array( 'id' => $id ) );
+
+		// Update juga ke kgtk_guru (master data)
+		$tg = KGTK_DB::table( 'guru' );
+		$guru_ada = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tg} WHERE nik = %s", $d['nik'] ) );
+		$guru_data = $update_data;
+		unset( $guru_data['kelas_id'] );
+		$guru_data['updated_at'] = current_time( 'mysql' );
+		if ( $guru_ada ) {
+			$wpdb->update( $tg, $guru_data, array( 'id' => $guru_ada ) );
+		} else {
+			$wpdb->insert( $tg, $guru_data );
+		}
+
+		// Sinkronkan ke data undangan jika terhubung
+		KGTK_Undangan::cocokkan_peserta( $id, (int) $peserta->pelatihan_id );
+
+		return self::respond(
+			array(
+				'peserta_id' => $id,
+				'stats'      => self::kelas_payload( KGTK_Helpers::kelas_stats( $peserta->pelatihan_id ) ),
+				'unassigned' => KGTK_Helpers::unassigned_count( $peserta->pelatihan_id ),
+			)
+		);
+	}
+
 	/** Admin menghapus peserta dari pelatihan. */
 	public static function admin_delete_peserta( WP_REST_Request $req ) {
 		global $wpdb;
