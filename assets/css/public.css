@@ -1271,6 +1271,158 @@ body.kgtk-penuh .wp-block-post-featured-image {
 	transform: translateX(4px);
 }
 
+/* ==============================================================
+   Tampilan Khusus Senior / Ramah Pengguna (Aksesibel & Sederhana)
+   ============================================================== */
+.kgtk-app .kgtk-layout--simple {
+	display: block !important;
+	width: 100% !important;
+	max-width: 640px !important;
+	margin: 0 auto !important;
+	padding: 0 !important;
+}
+.kgtk-app .kgtk-btn-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: #ffffff;
+	border: 1.5px solid #cbd5e1;
+	color: #0f172a;
+	font-size: 14.5px;
+	font-weight: 700;
+	padding: 9px 18px;
+	border-radius: 99px;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+	transition: all 0.2s ease;
+	margin-bottom: 14px;
+}
+.kgtk-app .kgtk-btn-back:hover {
+	background: #f8fafc;
+	border-color: #0284c7;
+	color: #0284c7;
+	transform: translateX(-2px);
+}
+.kgtk-app .kgtk-card--senior {
+	padding: 28px 24px 26px !important;
+	border-radius: 18px !important;
+	box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
+	border: 1.5px solid #e2e8f0 !important;
+}
+.kgtk-app .kgtk-card-header-clean {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 22px;
+	padding-bottom: 16px;
+	border-bottom: 1.5px solid #f1f5f9;
+}
+.kgtk-app .kgtk-card-icon-circle {
+	width: 50px;
+	height: 50px;
+	border-radius: 14px;
+	background: #eff6ff;
+	color: #0284c7;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24px;
+	flex-shrink: 0;
+}
+.kgtk-app .kgtk-card-header-clean h2 {
+	margin: 0 0 6px !important;
+	font-size: 21px !important;
+	font-weight: 800 !important;
+	color: #0f172a !important;
+	letter-spacing: -0.01em;
+}
+.kgtk-app .kgtk-card-desc {
+	margin: 0 !important;
+	font-size: 14px !important;
+	line-height: 1.55 !important;
+	color: #475569 !important;
+}
+.kgtk-app .kgtk-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 18px !important;
+}
+.kgtk-app .kgtk-field > span,
+.kgtk-app .kgtk-field-title {
+	font-size: 15.5px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+}
+.kgtk-app .kgtk-input {
+	min-height: 48px !important;
+	font-size: 16.5px !important;
+	padding: 10px 14px !important;
+	border: 2px solid #cbd5e1 !important;
+	border-radius: 12px !important;
+	color: #0f172a !important;
+	background: #ffffff !important;
+	transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+.kgtk-app .kgtk-input:focus {
+	border-color: #0284c7 !important;
+	box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+}
+.kgtk-app .kgtk-radios {
+	display: grid !important;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin: 6px 0 16px;
+	width: 100%;
+	box-sizing: border-box;
+}
+@media (max-width: 520px) {
+	.kgtk-app .kgtk-radios {
+		grid-template-columns: 1fr;
+	}
+}
+.kgtk-app .kgtk-radio {
+	display: flex !important;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px !important;
+	border: 2px solid #cbd5e1 !important;
+	border-radius: 12px !important;
+	background: #f8fafc !important;
+	font-size: 15px !important;
+	font-weight: 600 !important;
+	color: #1e293b !important;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+	box-sizing: border-box;
+}
+.kgtk-app .kgtk-radio:hover {
+	border-color: #94a3b8 !important;
+	background: #f1f5f9 !important;
+}
+.kgtk-app .kgtk-radio.is-checked,
+.kgtk-app .kgtk-radio:has(input:checked) {
+	border-color: #0284c7 !important;
+	background: #eff6ff !important;
+	color: #0369a1 !important;
+	box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12) !important;
+}
+.kgtk-app .kgtk-radio input[type="radio"] {
+	width: 18px !important;
+	height: 18px !important;
+	accent-color: #0284c7 !important;
+	margin: 0 !important;
+}
+.kgtk-app .kgtk-btn--large {
+	min-height: 52px !important;
+	font-size: 16.5px !important;
+	font-weight: 800 !important;
+	letter-spacing: 0.01em;
+	border-radius: 12px !important;
+	box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3) !important;
+}
+
 @media print {
 	@page {
 		size: A4;
