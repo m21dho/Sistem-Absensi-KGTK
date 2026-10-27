@@ -33,10 +33,38 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		);
 	}
 
-	/** Biodata tersimpan berdasarkan NIK (untuk mengisi otomatis form admin). */
+	/** Biodata tersimpan berdasarkan NIK atau NIP (untuk mengisi otomatis form admin). */
 	public static function admin_guru( WP_REST_Request $req ) {
 		global $wpdb;
+		$nip = preg_replace( '/\D/', '', sanitize_text_field( (string) $req->get_param( 'nip' ) ) );
 		$nik = sanitize_text_field( (string) $req->get_param( 'nik' ) );
+
+		if ( '' !== $nip && preg_match( '/^\d{18}$/', $nip ) ) {
+			$g   = KGTK_DB::table( 'guru' );
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT nama, gelar_depan, gelar_belakang, nik, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, alamat_instansi, pangkat_golongan, agama, pendidikan, bank, rekening, npwp, pengalaman_jabatan, sekolah, kabkota, sekolah_id, peran, jenis_gtk, hp, nisn, nuptk, nip, email, email_belajar, email_guru, simpkb FROM {$g} WHERE nip = %s LIMIT 1", $nip ), ARRAY_A );
+			if ( ! $row ) {
+				$tpan    = KGTK_DB::table( 'panitia' );
+				$pan_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tpan} WHERE nip = %s LIMIT 1", $nip ), ARRAY_A );
+				if ( $pan_row ) {
+					$row = array(
+						'nama'      => $pan_row['nama'],
+						'nip'       => $pan_row['nip'],
+						'nik'       => $pan_row['nik'],
+						'sekolah'   => $pan_row['instansi'],
+						'kabkota'   => $pan_row['kabkota'],
+						'hp'        => $pan_row['hp'],
+						'email'     => $pan_row['email'],
+						'peran'     => 'Panitia',
+						'jenis_gtk' => $pan_row['jabatan'],
+					);
+				}
+			}
+			if ( $row ) {
+				$row['jabatan'] = ! empty( $row['jenis_gtk'] ) ? $row['jenis_gtk'] : 'Panitia Pelaksana';
+				return self::respond( array( 'guru' => $row ) );
+			}
+		}
+
 		if ( ! preg_match( '/^\d{16}$/', $nik ) ) {
 			return self::err( 'nik', 'NIK harus 16 digit angka.', 422 );
 		}

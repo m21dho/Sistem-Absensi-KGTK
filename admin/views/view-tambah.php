@@ -63,7 +63,38 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 			</small>
 		</div>
 
-		<?php echo KGTK_Admin::field( 'NIK (16 digit) *', 'nik', 'type="text" inputmode="numeric" maxlength="16" autocomplete="off" required placeholder="16 digit angka NIK"' ); ?>
+		<!-- Pilihan Identitas Khusus Panitia -->
+		<div id="kgtk-wrap-tipe-identitas-panitia" style="display:none;background:#f8fafc;padding:14px 18px;border-radius:12px;border:1.5px solid #cbd5e1;margin-bottom:18px;">
+			<span style="font-weight:700;font-size:13.5px;color:#0b2d56;display:block;margin-bottom:8px;">
+				&#127380; Pilih Nomor Identitas yang Digunakan Panitia:
+			</span>
+			<div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+				<label style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:#1e293b;cursor:pointer;">
+					<input type="radio" name="panitia_id_type" value="nik" id="kgtk-radio-id-nik" checked>
+					<span>Gunakan NIK (16 Digit)</span>
+				</label>
+				<label style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:#1e293b;cursor:pointer;">
+					<input type="radio" name="panitia_id_type" value="nip" id="kgtk-radio-id-nip">
+					<span>Gunakan NIP (18 Digit)</span>
+				</label>
+			</div>
+			<small class="kgtk-muted" id="kgtk-panitia-id-hint" style="margin-top:6px;display:block;font-size:12px;">
+				Pilih apakah ingin mendaftarkan panitia menggunakan NIK atau NIP pegawai.
+			</small>
+		</div>
+
+		<div id="kgtk-wrap-nik-field">
+			<?php echo KGTK_Admin::field( 'NIK (16 digit) *', 'nik', 'type="text" inputmode="numeric" maxlength="16" autocomplete="off" required placeholder="16 digit angka NIK"' ); ?>
+		</div>
+
+		<div id="kgtk-wrap-nip-panitia-field" style="display:none;">
+			<label class="kgtk-field">
+				<span id="kgtk-lbl-nip-panitia">NIP (18 Digit) *</span>
+				<input type="text" class="kgtk-input" id="kgtk-inp-nip-panitia" inputmode="numeric" maxlength="18" placeholder="18 digit angka NIP">
+				<small class="kgtk-muted">Masukkan 18 digit angka NIP resmi panitia.</small>
+			</label>
+		</div>
+
 		<div id="kgtk-tambah-info" class="kgtk-note" hidden></div>
 
 		<label class="kgtk-field">
@@ -76,9 +107,9 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 			<?php echo KGTK_Admin::field( 'Gelar Belakang', 'gelar_belakang', 'type="text" maxlength="50" placeholder="mis. S.Pd. / M.Pd."' ); ?>
 		</div>
 
-		<label class="kgtk-field">
+		<label class="kgtk-field" id="kgtk-wrap-nip-umum">
 			<span>NIP <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">*Hanya angka, tanpa spasi atau karakter lain</small></span>
-			<input type="text" class="kgtk-input" name="nip" inputmode="numeric" maxlength="18" placeholder="199602082025211022">
+			<input type="text" class="kgtk-input" name="nip" id="kgtk-inp-nip-umum" inputmode="numeric" maxlength="18" placeholder="199602082025211022">
 			<small>18 digit angka NIP (kosongkan jika non-PNS/belum ada).</small>
 		</label>
 

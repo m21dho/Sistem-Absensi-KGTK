@@ -722,11 +722,55 @@
 				wrapKelas.style.display = '';
 			}
 
+			// Pilihan jenis identitas Panitia (NIK vs NIP)
+			var wrapTipeId = document.getElementById('kgtk-wrap-tipe-identitas-panitia');
+			var wrapNik = document.getElementById('kgtk-wrap-nik-field');
+			var wrapNipPan = document.getElementById('kgtk-wrap-nip-panitia-field');
+			var wrapNipUmum = document.getElementById('kgtk-wrap-nip-umum');
+			var rNik = document.getElementById('kgtk-radio-id-nik');
+			var rNip = document.getElementById('kgtk-radio-id-nip');
+			var inpNipPan = document.getElementById('kgtk-inp-nip-panitia');
+
+			var updatePanitiaIdView = function () {
+				if (!isPanitia) {
+					if (wrapTipeId) { wrapTipeId.style.display = 'none'; }
+					if (wrapNik) { wrapNik.style.display = ''; }
+					if (wrapNipPan) { wrapNipPan.style.display = 'none'; }
+					if (wrapNipUmum) { wrapNipUmum.style.display = ''; }
+					if (F.nik) { F.nik.required = true; }
+				} else {
+					if (wrapTipeId) { wrapTipeId.style.display = ''; }
+					var pakaiNip = rNip && rNip.checked;
+					if (pakaiNip) {
+						if (wrapNik) { wrapNik.style.display = 'none'; }
+						if (wrapNipPan) { wrapNipPan.style.display = ''; }
+						if (wrapNipUmum) { wrapNipUmum.style.display = 'none'; }
+						if (F.nik) { F.nik.required = false; }
+						if (inpNipPan) { inpNipPan.focus(); }
+					} else {
+						if (wrapNik) { wrapNik.style.display = ''; }
+						if (wrapNipPan) { wrapNipPan.style.display = 'none'; }
+						if (wrapNipUmum) { wrapNipUmum.style.display = ''; }
+						if (F.nik) { F.nik.required = true; }
+					}
+				}
+			};
+
+			if (rNik && !rNik._bound) {
+				rNik._bound = true;
+				rNik.addEventListener('change', updatePanitiaIdView);
+			}
+			if (rNip && !rNip._bound) {
+				rNip._bound = true;
+				rNip.addEventListener('change', updatePanitiaIdView);
+			}
+			updatePanitiaIdView();
+
 			if (hintPeran) {
 				if (pakaiSlot) {
 					hintPeran.textContent = 'Peserta akan masuk ke lembar absen kelas dan memotong kuota slot kelas yang dipilih.';
 				} else if (isPanitia) {
-					hintPeran.textContent = 'Panitia akan otomatis tercatat di lembar hadir Panitia (data rekening, pengalaman, & akun belajar.id ditiadakan).';
+					hintPeran.textContent = 'Panitia akan otomatis tercatat di lembar hadir Panitia (bisa memilih menggunakan NIK atau NIP).';
 				} else {
 					hintPeran.textContent = peranVal + ' akan tercatat di lembar khusus tim kegiatan dan tidak memotong kuota slot kelas.';
 				}
@@ -775,6 +819,36 @@
 			}).catch(function () { /* diam: pengisian otomatis hanya bantuan */ });
 		});
 
+		// NIP 18 digit: sinkronisasi dan isi otomatis dari biodata tersimpan
+		var inpNipPan = document.getElementById('kgtk-inp-nip-panitia');
+		if (inpNipPan) {
+			inpNipPan.addEventListener('input', function () {
+				inpNipPan.value = inpNipPan.value.replace(/\D/g, '').slice(0, 18);
+				if (F.nip) { F.nip.value = inpNipPan.value; }
+				if (inpNipPan.value.length === 18) {
+					api('admin/guru?nip=' + encodeURIComponent(inpNipPan.value), 'GET').then(function (d) {
+						if (!d.guru) { return; }
+						FIELDS.forEach(function (n) {
+							if (!F[n]) { return; }
+							if (d.guru[n] !== undefined && d.guru[n] !== null) {
+								F[n].value = d.guru[n];
+							}
+						});
+						sek.setValue(d.guru);
+						info.textContent = 'Data panitia tersimpan dari NIP sudah diisikan otomatis. Periksa dan edit bila perlu.';
+						info.hidden = false;
+					}).catch(function () {});
+				}
+			});
+		}
+		if (F.nip) {
+			F.nip.addEventListener('input', function () {
+				if (inpNipPan && inpNipPan.value !== F.nip.value) {
+					inpNipPan.value = F.nip.value;
+				}
+			});
+		}
+
 		ft.addEventListener('input', function (e) {
 			if (e.target && e.target.classList) {
 				e.target.classList.remove('is-invalid');
@@ -805,8 +879,24 @@
 			}
 
 			var errors = [];
-			if (!/^\d{16}$/.test(v.nik)) {
-				errors.push({ label: 'NIK', msg: 'NIK harus 16 digit angka.', el: F.nik });
+			var isPanitia = (v.peran === 'Panitia');
+			var radioNip = document.getElementById('kgtk-radio-id-nip');
+			var pakaiNip = isPanitia && radioNip && radioNip.checked;
+			v.panitia_id_type = pakaiNip ? 'nip' : 'nik';
+			var inpNipPan = document.getElementById('kgtk-inp-nip-panitia');
+			if (pakaiNip && inpNipPan) {
+				v.nip = inpNipPan.value.trim();
+				if (F.nip) { F.nip.value = v.nip; }
+			}
+
+			if (pakaiNip) {
+				if (!/^\d{18}$/.test(v.nip)) {
+					errors.push({ label: 'NIP', msg: 'NIP panitia harus 18 digit angka.', el: inpNipPan || F.nip });
+				}
+			} else {
+				if (!/^\d{16}$/.test(v.nik)) {
+					errors.push({ label: 'NIK', msg: 'NIK harus 16 digit angka.', el: F.nik });
+				}
 			}
 			if (!v.nama) {
 				errors.push({ label: 'Nama Lengkap', msg: 'Nama lengkap wajib diisi.', el: F.nama });
@@ -889,7 +979,7 @@
 					errors.push({ label: 'NUPTK', msg: 'NUPTK harus berupa maksimal 16 digit angka (kosongkan jika tidak ada).', el: F.nuptk });
 				}
 			}
-			if (v.nip && !/^\d{18}$/.test(v.nip)) {
+			if (!pakaiNip && v.nip && !/^\d{18}$/.test(v.nip)) {
 				errors.push({ label: 'NIP', msg: 'NIP harus 18 digit angka (kosongkan jika tidak ada).', el: F.nip });
 			}
 			if (!/^\+?[0-9][0-9 \-]{6,18}[0-9]$/.test(v.hp)) {

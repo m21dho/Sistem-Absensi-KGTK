@@ -172,7 +172,64 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		if ( ! $p ) {
 			return self::err( 'kode_tidak_ada', 'Kode pelatihan tidak ditemukan.', 404 );
 		}
-		$nik = self::str( $in, 'nik' );
+		$id_type = self::str( $in, 'id_type' );
+		$nip     = preg_replace( '/\D/', '', self::str( $in, 'nip' ) );
+		$nik     = self::str( $in, 'nik' );
+
+		// Jika pengguna memilih/memasukkan NIP 18 digit (khusus Panitia / ASN)
+		if ( 'nip' === $id_type || ( empty( $nik ) && 18 === strlen( $nip ) ) ) {
+			if ( ! preg_match( '/^\d{18}$/', $nip ) ) {
+				return self::err( 'nip', 'NIP harus 18 digit angka.', 422 );
+			}
+
+			$kelas = KGTK_Helpers::kelas_stats( $p->id );
+			$pel   = self::pelatihan_payload( $p, $kelas );
+
+			// Cek apakah sudah terdaftar di pelatihan ini berdasarkan NIP
+			$tp  = KGTK_DB::table( 'peserta' );
+			$reg = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tp} WHERE pelatihan_id = %d AND nip = %s", $p->id, $nip ) );
+			if ( $reg ) {
+				return self::respond(
+					array(
+						'status'    => 'terdaftar',
+						'pelatihan' => $pel,
+						'hasil'     => self::hasil( $p, $reg->nama, $reg->sekolah, $reg->peran, '', 0, 0, $reg->jenis_gtk ),
+					)
+				);
+			}
+
+			// Ambil data profil dari kgtk_guru atau kgtk_panitia jika ada
+			$tg       = KGTK_DB::table( 'guru' );
+			$guru_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tg} WHERE nip = %s LIMIT 1", $nip ), ARRAY_A );
+			if ( ! $guru_row ) {
+				$tpan    = KGTK_DB::table( 'panitia' );
+				$pan_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tpan} WHERE nip = %s LIMIT 1", $nip ), ARRAY_A );
+				if ( $pan_row ) {
+					$guru_row = array(
+						'nama'      => $pan_row['nama'],
+						'nip'       => $pan_row['nip'],
+						'nik'       => $pan_row['nik'],
+						'sekolah'   => $pan_row['instansi'],
+						'kabkota'   => $pan_row['kabkota'],
+						'hp'        => $pan_row['hp'],
+						'email'     => $pan_row['email'],
+						'peran'     => 'Panitia',
+						'jenis_gtk' => $pan_row['jabatan'],
+					);
+				}
+			}
+
+			return self::respond(
+				array(
+					'status'    => 'belum',
+					'pelatihan' => $pel,
+					'guru'      => $guru_row,
+					'nip'       => $nip,
+					'id_type'   => 'nip',
+				)
+			);
+		}
+
 		if ( ! preg_match( '/^\d{16}$/', $nik ) ) {
 			return self::err( 'nik', 'NIK harus 16 digit angka.', 422 );
 		}
@@ -373,8 +430,23 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			'setuju_kirim'       => ! empty( $in['setuju_kirim'] ) ? 1 : 0,
 		);
 
-		if ( ! preg_match( '/^\d{16}$/', $d['nik'] ) ) {
-			return self::err( 'nik', 'NIK harus 16 digit angka.', 422 );
+		$is_panitia = ( 'Panitia' === $d['peran'] );
+		$id_type    = isset( $in['panitia_id_type'] ) ? sanitize_text_field( $in['panitia_id_type'] ) : ( isset( $in['id_type'] ) ? sanitize_text_field( $in['id_type'] ) : '' );
+		$pakai_nip  = $is_panitia && ( 'nip' === $id_type || ( empty( $d['nik'] ) && ! empty( $d['nip'] ) ) );
+
+		if ( $pakai_nip ) {
+			if ( ! preg_match( '/^\d{18}$/', $d['nip'] ) ) {
+				return self::err( 'nip', 'NIP panitia harus 18 digit angka.', 422 );
+			}
+			// Jika NIK belum diisi atau bukan 16 digit, buat pseudo NIK 16 digit unik agar integritas DB terpenuhi
+			if ( ! preg_match( '/^\d{16}$/', $d['nik'] ) ) {
+				$seed     = $d['nip'] . '_' . $d['nama'];
+				$d['nik'] = '99' . substr( preg_replace( '/\D/', '', md5( $seed ) ) . '00000000000000', 0, 14 );
+			}
+		} else {
+			if ( ! preg_match( '/^\d{16}$/', $d['nik'] ) ) {
+				return self::err( 'nik', 'NIK harus 16 digit angka.', 422 );
+			}
 		}
 		if ( '' === $d['nama'] || self::len( $d['nama'] ) > 100 ) {
 			return self::err( 'nama', 'Nama lengkap wajib diisi (maksimal 100 karakter).', 422 );
