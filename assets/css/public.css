@@ -1118,6 +1118,159 @@ body.kgtk-penuh .wp-block-post-featured-image {
 	size: A4;
 	margin: 0.51cm 1.0cm;
 }
+/* ==============================================================
+   Halaman Landasan Awal (Landing Web Portal KGTK)
+   ============================================================== */
+.kgtk-app .kgtk-layout--beranda {
+	display: block !important;
+	width: 100% !important;
+	max-width: 860px !important;
+	margin: 0 auto !important;
+	padding: 0 !important;
+}
+.kgtk-app .kgtk-beranda-wrap {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.kgtk-app .kgtk-hero--beranda {
+	text-align: center;
+	padding: 32px 20px 34px !important;
+	border-radius: 18px !important;
+	background: linear-gradient(135deg, #09284d 0%, #0c5b9c 52%, #198ad1 100%) !important;
+	box-shadow: 0 10px 25px rgba(9, 40, 77, 0.15) !important;
+	position: relative;
+	overflow: hidden;
+}
+.kgtk-app .kgtk-hero--beranda .kgtk-crumbs {
+	justify-content: center;
+	margin-bottom: 12px;
+}
+.kgtk-app .kgtk-hero--beranda h1 {
+	font-size: clamp(22px, 5vw, 32px) !important;
+	line-height: 1.25 !important;
+	letter-spacing: -0.02em;
+	margin: 0 0 10px !important;
+	font-weight: 800;
+}
+.kgtk-app .kgtk-hero--beranda h1 span {
+	color: #fbbf24 !important;
+}
+.kgtk-app .kgtk-hero--beranda p {
+	font-size: 14px !important;
+	line-height: 1.6 !important;
+	color: #e0f2fe !important;
+	max-width: 620px;
+	margin: 0 auto !important;
+}
+.kgtk-app .kgtk-landing-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 14px;
+	width: 100%;
+	box-sizing: border-box;
+}
+@media (min-width: 641px) {
+	.kgtk-app .kgtk-landing-grid {
+		grid-template-columns: 1fr 1fr;
+		gap: 20px;
+	}
+}
+.kgtk-app .kgtk-landing-card {
+	position: relative;
+	background: #ffffff;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 18px;
+	padding: 28px 22px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	box-sizing: border-box;
+	overflow: hidden;
+}
+.kgtk-app .kgtk-landing-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 14px 30px rgba(11, 86, 145, 0.16);
+}
+.kgtk-app .kgtk-landing-card--primary:hover {
+	border-color: #0284c7;
+}
+.kgtk-app .kgtk-landing-card--secondary:hover {
+	border-color: #0d9488;
+}
+.kgtk-app .kgtk-landing-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: transparent;
+	transition: background 0.25s ease;
+}
+.kgtk-app .kgtk-landing-card--primary:hover::before {
+	background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+.kgtk-app .kgtk-landing-card--secondary:hover::before {
+	background: linear-gradient(90deg, #0d9488, #2dd4bf);
+}
+.kgtk-app .kgtk-landing-icon {
+	width: 62px;
+	height: 62px;
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16px;
+	transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.kgtk-app .kgtk-landing-card:hover .kgtk-landing-icon {
+	transform: scale(1.08);
+}
+.kgtk-app .kgtk-landing-icon--primary {
+	background: #eff6ff;
+	color: #0284c7;
+}
+.kgtk-app .kgtk-landing-icon--secondary {
+	background: #f0fdfa;
+	color: #0d9488;
+}
+.kgtk-app .kgtk-landing-card h3 {
+	margin: 0 0 8px !important;
+	font-size: 19px !important;
+	font-weight: 700 !important;
+	color: #0f172a;
+}
+.kgtk-app .kgtk-landing-card p {
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: #64748b;
+	margin: 0 0 20px !important;
+	flex-grow: 1;
+}
+.kgtk-app .kgtk-landing-card .kgtk-btn {
+	width: 100%;
+	font-size: 14px;
+	padding: 11px 18px;
+	border-radius: 10px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	text-decoration: none;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+.kgtk-app .kgtk-landing-card:hover .arr {
+	transform: translateX(4px);
+}
+
 @media print {
 	@page {
 		size: A4;
@@ -1159,3 +1312,4 @@ body.kgtk-penuh .wp-block-post-featured-image {
 		display: none !important;
 	}
 }
+

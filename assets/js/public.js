@@ -82,7 +82,7 @@
 		};
 	}
 	var S = {
-		view: 'loading',
+		view: 'beranda',
 		kode: '',
 		info: null,
 		nik: '',
@@ -489,6 +489,7 @@
 	var STEPS = ['Kode pelatihan', 'Identitas (NIK)', 'Biodata'];
 	var LABELS = {
 		loading: 'Memuat',
+		beranda: 'Web Portal KGTK',
 		kode: 'Langkah 1 \u00b7 Kode pelatihan',
 		nik: 'Langkah 2 \u00b7 Identitas',
 		'nik-verif': 'Langkah 2 \u00b7 Verifikasi pengisian otomatis',
@@ -498,15 +499,16 @@
 		'biodata-saya': 'Biodata & Riwayat Saya'
 	};
 	function stepNow() {
-		return { kode: 1, loading: 1, nik: 2, 'nik-verif': 2, terdaftar: 2, biodata: 3, sukses: 4 }[S.view] || 1;
+		return { beranda: 1, kode: 1, loading: 1, nik: 2, 'nik-verif': 2, terdaftar: 2, biodata: 3, sukses: 4 }[S.view] || 1;
 	}
 	/** Kerangka halaman mengikuti gaya situs: header logo di atas, menu langkah di samping, banner gradien, label bagian, lalu isi. */
 	function frame(content) {
+		var isHomeView = (S.view === 'beranda');
 		var isBioView = (S.view === 'biodata-saya');
 		var now = stepNow();
 		var steps = el('ol', { class: 'kgtk-steps' }, STEPS.map(function (s, i) {
 			var n = i + 1;
-			return el('li', { class: !isBioView && n < now ? 'is-done' : (!isBioView && n === now ? 'is-now' : '') }, [el('span', { class: 'n', text: !isBioView && n < now ? '\u2713' : String(n) }), s]);
+			return el('li', { class: !isBioView && !isHomeView && n < now ? 'is-done' : (!isBioView && !isHomeView && n === now ? 'is-now' : '') }, [el('span', { class: 'n', text: !isBioView && !isHomeView && n < now ? '\u2713' : String(n) }), s]);
 		}));
 		var side = el('aside', { class: 'kgtk-side kgtk-card' }, [el('div', { class: 'kgtk-side-title', text: 'Langkah pendaftaran' }), steps]);
 
@@ -524,17 +526,23 @@
 			])
 		]);
 		brandWrap.style.cursor = 'pointer';
+		brandWrap.title = 'Kembali ke Beranda';
 		brandWrap.addEventListener('click', function () {
-			if (isBioView) {
-				S.biodataData = null;
-				S.biodataState = 'input';
-				go('kode');
-			}
+			S.biodataData = null;
+			S.biodataState = 'input';
+			go('beranda');
 		});
+
+		var badgeText = 'Web Portal KGTK';
+		if (isBioView) {
+			badgeText = 'Biodata & Riwayat Guru';
+		} else if (!isHomeView) {
+			badgeText = 'Pendaftaran Pelatihan Guru';
+		}
 
 		var portalBadge = el('div', { class: 'kgtk-top-header-badge' }, [
 			el('span', { class: 'kgtk-badge-dot' }),
-			el('span', { text: isBioView ? 'Biodata & Riwayat Guru' : 'Pendaftaran Pelatihan Guru' })
+			el('span', { text: badgeText })
 		]);
 
 		var topHeader = el('header', { class: 'kgtk-top-header' }, [
@@ -542,10 +550,21 @@
 			portalBadge
 		]);
 
+		var footerHelp = createFooterHelp();
+
+		// Jika di halaman beranda / landasan awal, gunakan layout khusus tanpa sidebar langkah pendaftaran
+		if (isHomeView) {
+			var landingLayout = el('div', { class: 'kgtk-layout kgtk-layout--beranda' }, [content]);
+			return [topHeader, landingLayout, footerHelp];
+		}
+
+		var crumbHome = el('span', { class: 'kgtk-crumb', text: 'Beranda', style: 'cursor:pointer;' });
+		crumbHome.addEventListener('click', function () { go('beranda'); });
+
 		var crumbs = el('div', { class: 'kgtk-crumbs' }, [
-			el('span', { class: 'kgtk-crumb', text: 'Program' }),
+			crumbHome,
 			el('span', { class: 'kgtk-crumb-sep', text: '\u203a' }),
-			el('span', { class: 'kgtk-crumb is-now', text: isBioView ? 'Biodata Saya' : 'Pendaftaran Pelatihan' })
+			el('span', { class: 'kgtk-crumb is-now', text: isBioView ? 'Biodata & Riwayat Pelatihan' : 'Pendaftaran Pelatihan' })
 		]);
 
 		// Tombol biodata atau navigasi kembali di header hero
@@ -559,12 +578,12 @@
 			heroWrap = el('div', { class: 'kgtk-hero-bio-wrap' }, [pillBtn]);
 		} else {
 			var backIconSpan = el('span', { class: 'kgtk-bio-btn-arrow', text: '\u2190' });
-			var backTextSpan = el('span', { text: 'Kembali ke Pendaftaran Pelatihan' });
-			var backHeroBtn = el('button', { type: 'button', class: 'kgtk-hero-bio-btn kgtk-hero-bio-btn--back', 'aria-label': 'Kembali ke Pendaftaran Pelatihan' }, [backIconSpan, backTextSpan]);
+			var backTextSpan = el('span', { text: 'Kembali ke Beranda' });
+			var backHeroBtn = el('button', { type: 'button', class: 'kgtk-hero-bio-btn kgtk-hero-bio-btn--back', 'aria-label': 'Kembali ke Beranda' }, [backIconSpan, backTextSpan]);
 			backHeroBtn.addEventListener('click', function () {
 				S.biodataData = null;
 				S.biodataState = 'input';
-				go('kode');
+				go('beranda');
 			});
 			heroWrap = el('div', { class: 'kgtk-hero-bio-wrap' }, [backHeroBtn]);
 		}
@@ -578,13 +597,13 @@
 
 		var hero = el('header', { class: 'kgtk-hero' }, heroChildren);
 		var main = el('div', { class: 'kgtk-main' }, [hero, el('div', { class: 'kgtk-label', text: LABELS[S.view] || '' }), content]);
-		var footerHelp = createFooterHelp();
 		return [topHeader, el('div', { class: 'kgtk-layout' }, [side, main]), footerHelp];
 	}
 	function render() {
 		try {
 			var fn = {
 				loading: vLoading,
+				beranda: vBeranda,
 				kode: vKode,
 				nik: vNik,
 				'nik-verif': vNikVerif,
@@ -593,7 +612,7 @@
 				sukses: vSukses,
 				'biodata-saya': vBiodataSaya
 			}[S.view];
-			if (!fn) { fn = vKode; }
+			if (!fn) { fn = vBeranda; }
 			var content = fn();
 			root.textContent = '';
 			frame(content).forEach(function (n) { root.appendChild(n); });
@@ -635,7 +654,80 @@
 	}
 
 	/* ---------- tampilan ---------- */
-	function vLoading() { return el('div', { class: 'kgtk-card kgtk-center' }, [el('p', { class: 'kgtk-muted', text: 'Memuat data pelatihan...' })]); }
+	function vLoading() { return el('div', { class: 'kgtk-card kgtk-center' }, [el('p', { class: 'kgtk-muted', text: 'Memuat data...' })]); }
+
+	/**
+	 * Halaman Landasan Awal (Landing Portal KGTK)
+	 * Menyambut pengguna dengan ucapan selamat datang dan dua tombol aksi utama.
+	 */
+	function vBeranda() {
+		// Hero Section dengan Ucapan Selamat Datang
+		var badgeWrap = el('div', { class: 'kgtk-crumbs' }, [
+			el('span', { class: 'kgtk-crumb is-now', text: 'PORTAL LAYANAN RESMI' }),
+			el('span', { class: 'kgtk-crumb', text: 'KGTK KEPULAUAN RIAU' })
+		]);
+
+		var heroTitle = el('h1', {}, ['Selamat Datang di Web Portal ', el('span', { text: 'KGTK' })]);
+		var heroSub = el('p', { text: 'Selamat datang di Portal Layanan Guru dan Tenaga Kependidikan Provinsi Kepulauan Riau. Silakan pilih layanan yang ingin Anda akses di bawah ini.' });
+
+		var hero = el('header', { class: 'kgtk-hero kgtk-hero--beranda' }, [
+			badgeWrap,
+			heroTitle,
+			heroSub
+		]);
+
+		// Tombol 1: Daftar Pelatihan
+		var iconDaftar = el('div', { class: 'kgtk-landing-icon kgtk-landing-icon--primary', 'aria-hidden': 'true' });
+		iconDaftar.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+			'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>' +
+			'<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>' +
+			'<path d="M9 14l2 2 4-4"></path>' +
+			'</svg>';
+
+		var btnDaftar = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block', text: 'Daftar Pelatihan' }, [
+			el('span', { class: 'arr', style: 'margin-left:6px;', text: '→' })
+		]);
+
+		var cardDaftar = el('div', { class: 'kgtk-landing-card kgtk-landing-card--primary' }, [
+			iconDaftar,
+			el('h3', { text: 'Daftar Pelatihan' }),
+			el('p', { text: 'Daftarkan diri Anda pada kegiatan pelatihan KGTK yang baru dengan memasukkan kode pelatihan dari panitia.' }),
+			btnDaftar
+		]);
+
+		cardDaftar.addEventListener('click', function () {
+			go('kode');
+		});
+
+		// Tombol 2: Lihat Pelatihan Saya
+		var iconBio = el('div', { class: 'kgtk-landing-icon kgtk-landing-icon--secondary', 'aria-hidden': 'true' });
+		iconBio.innerHTML = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+			'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>' +
+			'<polyline points="14 2 14 8 20 8"></polyline>' +
+			'<line x1="16" y1="13" x2="8" y2="13"></line>' +
+			'<line x1="16" y1="17" x2="8" y2="17"></line>' +
+			'<polyline points="10 9 9 9 8 9"></polyline>' +
+			'</svg>';
+
+		var btnBio = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', text: 'Lihat Pelatihan Saya' }, [
+			el('span', { class: 'arr', style: 'margin-left:6px;', text: '→' })
+		]);
+
+		var cardBio = el('div', { class: 'kgtk-landing-card kgtk-landing-card--secondary' }, [
+			iconBio,
+			el('h3', { text: 'Lihat Pelatihan Saya' }),
+			el('p', { text: 'Periksa status pendaftaran, biodata Anda, dan riwayat seluruh kegiatan pelatihan yang pernah Anda ikuti.' }),
+			btnBio
+		]);
+
+		cardBio.addEventListener('click', function () {
+			goBiodataSaya();
+		});
+
+		var grid = el('div', { class: 'kgtk-landing-grid' }, [cardDaftar, cardBio]);
+
+		return el('div', { class: 'kgtk-beranda-wrap' }, [hero, grid]);
+	}
 
 	function vKode() {
 		var f = field('Kode pelatihan', 'kode', { type: 'text', maxlength: 20, autocapitalize: 'characters', autocomplete: 'off', placeholder: 'KGTK-XXXX', required: true }, S.kode);
@@ -643,10 +735,13 @@
 		if (S.kodeError) { showErr(err, S.kodeError); S.kodeError = ''; }
 		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block', text: 'Lanjut' });
 
-		var linkBio = el('button', { type: 'button', class: 'kgtk-link', text: '\uD83D\uDCC4 Cek Biodata & Riwayat Pelatihan Saya' });
+		var linkBio = el('button', { type: 'button', class: 'kgtk-link', text: '\uD83D\uDCC4 Lihat Pelatihan Saya' });
 		linkBio.addEventListener('click', function () { goBiodataSaya(); });
 
-		var linksNav = el('div', { style: 'text-align:center;margin-top:14px;' }, [linkBio]);
+		var linkHome = el('button', { type: 'button', class: 'kgtk-link', text: '\u2190 Kembali ke Beranda' });
+		linkHome.addEventListener('click', function () { go('beranda'); });
+
+		var linksNav = el('div', { style: 'display:flex;align-items:center;justify-content:center;gap:18px;margin-top:14px;flex-wrap:wrap;' }, [linkHome, linkBio]);
 
 		var form = el('form', { class: 'kgtk-card', novalidate: true }, [
 			el('h2', { text: 'Masukkan kode pelatihan' }),
@@ -1522,8 +1617,15 @@
 
 		var err = errBox();
 		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block', text: 'Tampilkan' });
-		var back = el('button', { type: 'button', class: 'kgtk-link', text: 'Kembali ke Pendaftaran' });
+		var back = el('button', { type: 'button', class: 'kgtk-link', text: 'Pendaftaran Pelatihan' });
 		back.addEventListener('click', function () { go('kode'); });
+
+		var backHome = el('button', { type: 'button', class: 'kgtk-link', text: '\u2190 Kembali ke Beranda' });
+		backHome.addEventListener('click', function () {
+			S.biodataData = null;
+			S.biodataState = 'input';
+			go('beranda');
+		});
 
 		var form = el('form', { class: 'kgtk-card', novalidate: true }, [
 			el('h2', { text: 'Lihat Biodata & Riwayat Saya' }),
@@ -1533,7 +1635,7 @@
 			el('label', { class: 'kgtk-field' }, [el('span', { text: 'Verifikasi dengan *' }), radios]),
 			fVal.wrap,
 			btn,
-			el('div', { style: 'text-align:center;margin-top:8px;' }, [back])
+			el('div', { style: 'display:flex;align-items:center;justify-content:center;gap:18px;margin-top:12px;flex-wrap:wrap;' }, [backHome, back])
 		]);
 
 		form.addEventListener('submit', function (e) {
@@ -1591,7 +1693,7 @@
 		getInfo(qKode).then(function (d) { S.info = d; go('nik'); })
 			.catch(function (x) { S.kodeError = x.message; go('kode'); });
 	} else {
-		S.view = 'kode';
+		S.view = 'beranda';
 		render();
 	}
 })();
