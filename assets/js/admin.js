@@ -2919,8 +2919,8 @@
 
 			modalConfirm({
 				title: 'Hapus Panitia dari Pelatihan',
-				message: 'Hapus ' + nama + ' dari susunan panitia kegiatan pelatihan ini?\n\n(Data master profil panitia tetap tersimpan di database dan dapat digunakan kembali).',
-				confirmText: 'Ya, Hapus',
+				message: 'Hapus ' + nama + ' dari susunan panitia kegiatan pelatihan ini?\n\n(Catatan: Untuk menghapus permanen dari database master panitia, gunakan tombol "🗑️ Master" di samping tombol ini atau melalui modal Dari Master Data).',
+				confirmText: 'Ya, Hapus dari Pelatihan',
 				cancelText: 'Batal',
 				type: 'danger'
 			}).then(function (ok) {
@@ -2931,6 +2931,42 @@
 					window.location.reload();
 				}).catch(function (err) {
 					delBtn.disabled = false;
+					modalAlert({ title: 'Gagal Menghapus', message: err.message, type: 'danger' });
+				});
+			});
+		});
+
+		// Hapus panitia dari Master Data (bisa diklik dari modal atau tabel utama)
+		document.addEventListener('click', function (e) {
+			var delMasterBtn = e.target.closest('[data-del-master-panitia]');
+			if (!delMasterBtn) { return; }
+			var mId = delMasterBtn.getAttribute('data-del-master-panitia');
+			var nama = delMasterBtn.getAttribute('data-nama') || 'panitia ini';
+
+			modalConfirm({
+				title: 'Hapus dari Master Data Panitia',
+				message: 'Hapus data panitia "' + nama + '" dari Master Data Panitia?\n\nProfil panitia ini akan dihapus dari daftar tersimpan di database. Penugasan di kegiatan pelatihan tetap tercatat.',
+				confirmText: 'Ya, Hapus dari Master Data',
+				cancelText: 'Batal',
+				type: 'danger'
+			}).then(function (ok) {
+				if (!ok) { return; }
+				delMasterBtn.disabled = true;
+				api('admin/panitia/' + mId, 'DELETE').then(function () {
+					// Hapus baris dari tabel modal jika ada
+					var rowModal = document.querySelector('tr[data-master-row="' + mId + '"]');
+					if (rowModal) {
+						rowModal.style.transition = 'all 0.25s ease';
+						rowModal.style.opacity = '0';
+						setTimeout(function () { rowModal.remove(); }, 250);
+					}
+					// Jika diklik dari tabel utama pelatihan, hilangkan tombol Master-nya
+					if (delMasterBtn.closest('#kgtk-tbl-panitia-pelatihan')) {
+						delMasterBtn.remove();
+					}
+					modalAlert({ title: 'Berhasil', message: 'Data panitia "' + nama + '" berhasil dihapus dari Master Data.', type: 'primary' });
+				}).catch(function (err) {
+					delMasterBtn.disabled = false;
 					modalAlert({ title: 'Gagal Menghapus', message: err.message, type: 'danger' });
 				});
 			});

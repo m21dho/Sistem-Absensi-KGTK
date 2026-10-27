@@ -8,8 +8,34 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var object $p       Data pelatihan.
  * @var array  $panitia Daftar panitia untuk pelatihan ini.
  */
+// Sinkronisasi otomatis: masukkan data panitia yang ada pada pelatihan ini ke master data jika belum ada
+if ( ! empty( $panitia ) && class_exists( 'KGTK_Panitia' ) ) {
+	foreach ( $panitia as $p_sync ) {
+		if ( ! empty( $p_sync->nama ) ) {
+			KGTK_Panitia::save( array(
+				'nama'     => $p_sync->nama,
+				'nik'      => $p_sync->nik,
+				'nip'      => $p_sync->nip ?? '',
+				'jabatan'  => ! empty( $p_sync->jabatan ) ? $p_sync->jabatan : 'Panitia Pelaksana',
+				'instansi' => $p_sync->sekolah ?? '',
+				'kabkota'  => $p_sync->kabkota ?? '',
+				'hp'       => $p_sync->hp ?? '',
+				'email'    => $p_sync->email ?? '',
+			) );
+		}
+	}
+}
 $panitia_list_master = KGTK_Panitia::get_all();
 $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
+
+$master_map_by_nik  = array();
+$master_map_by_nama = array();
+foreach ( $panitia_list_master as $pm_item ) {
+	if ( ! empty( $pm_item->nik ) && 0 !== strpos( $pm_item->nik, '99' ) ) {
+		$master_map_by_nik[ $pm_item->nik ] = (int) $pm_item->id;
+	}
+	$master_map_by_nama[ strtolower( trim( $pm_item->nama ) ) ] = (int) $pm_item->id;
+}
 ?>
 <div class="kgtk-pane" data-pane="panitia">
 	<div class="kgtk-card kgtk-kelola-box" id="kgtk-panitia-container" data-pelatihan="<?php echo (int) $p->id; ?>">
@@ -53,7 +79,7 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 							<th style="min-width:160px;">Tugas / Jabatan</th>
 							<th style="min-width:180px;">Asal Instansi</th>
 							<th style="width:160px;">NIK / NIP</th>
-							<th style="width:65px;text-align:center;">Aksi</th>
+							<th style="width:140px;text-align:center;">Aksi</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -103,7 +129,22 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 									<?php endif; ?>
 								</td>
 								<td style="text-align:center;">
-									<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-panitia-pelatihan="<?php echo (int) $pan->id; ?>" data-nama="<?php echo esc_attr( $pan->nama ); ?>" title="Hapus panitia dari pelatihan ini">&#128465;&#65039;</button>
+									<?php
+									$m_id = 0;
+									if ( ! empty( $pan->nik ) && isset( $master_map_by_nik[ $pan->nik ] ) ) {
+										$m_id = $master_map_by_nik[ $pan->nik ];
+									} elseif ( isset( $master_map_by_nama[ strtolower( trim( $pan->nama ) ) ] ) ) {
+										$m_id = $master_map_by_nama[ strtolower( trim( $pan->nama ) ) ];
+									}
+									?>
+									<div style="display:inline-flex;align-items:center;gap:5px;justify-content:center;">
+										<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-panitia-pelatihan="<?php echo (int) $pan->id; ?>" data-master-id="<?php echo (int) $m_id; ?>" data-nama="<?php echo esc_attr( $pan->nama ); ?>" title="Hapus panitia dari pelatihan ini">&#128465;&#65039;</button>
+										<?php if ( $m_id > 0 ) : ?>
+											<button type="button" class="kgtk-btn kgtk-btn--ghost" data-del-master-panitia="<?php echo (int) $m_id; ?>" data-nama="<?php echo esc_attr( $pan->nama ); ?>" title="Hapus panitia ini dari Master Data" style="color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:3px 7px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;white-space:nowrap;line-height:1.4;">
+												&#128465; Master
+											</button>
+										<?php endif; ?>
+									</div>
 								</td>
 							</tr>
 						<?php endforeach; ?>
@@ -165,6 +206,7 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 										<th>Nama Panitia</th>
 										<th>Jabatan</th>
 										<th>Instansi</th>
+										<th style="width:50px;text-align:center;">Hapus</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -183,13 +225,16 @@ $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 										) );
 										$s_text = strtolower( $pm->nama . ' ' . $pm->nik . ' ' . $pm->jabatan . ' ' . $pm->instansi );
 									?>
-										<tr data-search="<?php echo esc_attr( $s_text ); ?>">
+										<tr data-search="<?php echo esc_attr( $s_text ); ?>" data-master-row="<?php echo (int) $pm->id; ?>">
 											<td style="text-align:center;">
 												<input type="checkbox" class="kgtk-pan-pel-item-check" data-json="<?php echo esc_attr( $json_pm ); ?>">
 											</td>
 											<td><strong><?php echo esc_html( $pm->nama ); ?></strong></td>
 											<td><span class="kgtk-badge" style="background:#eff6ff;color:#1e40af;font-size:11px;"><?php echo esc_html( $pm->jabatan ?: 'Panitia Pelaksana' ); ?></span></td>
 											<td><?php echo esc_html( $pm->instansi ?: '-' ); ?></td>
+											<td style="text-align:center;">
+												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-master-panitia="<?php echo (int) $pm->id; ?>" data-nama="<?php echo esc_attr( $pm->nama ); ?>" title="Hapus dari Master Data Panitia">&#128465;&#65039;</button>
+											</td>
 										</tr>
 									<?php endforeach; ?>
 								</tbody>

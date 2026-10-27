@@ -713,6 +713,24 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			} catch ( \Throwable $e ) {
 				error_log( 'Gagal mencocokkan peserta: ' . $e->getMessage() );
 			}
+
+			// Masukkan data panitia ke dalam Master Data Panitia secara otomatis
+			if ( 'Panitia' === $d['peran'] && class_exists( 'KGTK_Panitia' ) ) {
+				try {
+					KGTK_Panitia::save( array(
+						'nama'     => $d['nama'],
+						'nik'      => $d['nik'],
+						'nip'      => $d['nip'] ?? '',
+						'jabatan'  => ! empty( $d['jenis_gtk'] ) ? $d['jenis_gtk'] : 'Panitia Pelaksana',
+						'instansi' => $d['sekolah'] ?? '',
+						'kabkota'  => $d['kabkota'] ?? '',
+						'hp'       => $d['hp'] ?? '',
+						'email'    => $d['email'] ?? '',
+					) );
+				} catch ( \Throwable $e ) {
+					error_log( 'Gagal menyimpan master panitia: ' . $e->getMessage() );
+				}
+			}
 		}
 
 		return array(

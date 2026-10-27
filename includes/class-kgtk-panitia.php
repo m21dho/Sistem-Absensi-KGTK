@@ -103,11 +103,10 @@ class KGTK_Panitia {
 			$nik = substr( $nik, 0, 16 );
 		}
 
-		$jabatan  = isset( $data['jabatan'] ) ? sanitize_text_field( wp_unslash( $data['jabatan'] ) ) : 'Panitia Pelaksana';
-		$jabatan  = trim( $jabatan ) !== '' ? trim( $jabatan ) : 'Panitia Pelaksana';
+		$jabatan  = isset( $data['jabatan'] ) && '' !== trim( $data['jabatan'] ) ? trim( sanitize_text_field( wp_unslash( $data['jabatan'] ) ) ) : ( isset( $data['tugas'] ) && '' !== trim( $data['tugas'] ) ? trim( sanitize_text_field( wp_unslash( $data['tugas'] ) ) ) : ( isset( $data['jenis_gtk'] ) && '' !== trim( $data['jenis_gtk'] ) ? trim( sanitize_text_field( wp_unslash( $data['jenis_gtk'] ) ) ) : 'Panitia Pelaksana' ) );
 		$nip      = isset( $data['nip'] ) ? preg_replace( '/\D/', '', (string) $data['nip'] ) : '';
 		$nuptk    = isset( $data['nuptk'] ) ? preg_replace( '/\D/', '', (string) $data['nuptk'] ) : '';
-		$instansi = isset( $data['instansi'] ) ? sanitize_text_field( wp_unslash( $data['instansi'] ) ) : '';
+		$instansi = isset( $data['instansi'] ) && '' !== trim( $data['instansi'] ) ? trim( sanitize_text_field( wp_unslash( $data['instansi'] ) ) ) : ( isset( $data['sekolah'] ) ? trim( sanitize_text_field( wp_unslash( $data['sekolah'] ) ) ) : '' );
 		$kabkota  = isset( $data['kabkota'] ) ? sanitize_text_field( wp_unslash( $data['kabkota'] ) ) : '';
 		$hp       = isset( $data['hp'] ) ? sanitize_text_field( wp_unslash( $data['hp'] ) ) : '';
 		$email    = isset( $data['email'] ) ? sanitize_email( wp_unslash( $data['email'] ) ) : '';
@@ -116,13 +115,19 @@ class KGTK_Panitia {
 		$npwp     = isset( $data['npwp'] ) ? sanitize_text_field( wp_unslash( $data['npwp'] ) ) : '';
 		$catatan  = isset( $data['catatan'] ) ? sanitize_textarea_field( wp_unslash( $data['catatan'] ) ) : '';
 
+		// Jika NIK pseudo (dimulai dengan 99...), jangan simpan sebagai NIK resmi di master
+		$stored_nik = $nik;
+		if ( 0 === strpos( $nik, '99' ) && 16 === strlen( $nik ) ) {
+			$stored_nik = '';
+		}
+
 		$now = current_time( 'mysql' );
 		$id  = isset( $data['id'] ) ? absint( $data['id'] ) : 0;
 
 		$payload = array(
 			'nama'       => $nama,
 			'jabatan'    => $jabatan,
-			'nik'        => $nik,
+			'nik'        => $stored_nik,
 			'nip'        => $nip,
 			'nuptk'      => $nuptk,
 			'instansi'   => $instansi,
@@ -142,12 +147,19 @@ class KGTK_Panitia {
 			return $id;
 		}
 
-		// Jika NIK terisi dan sudah ada di tabel panitia, update berdasarkan NIK
-		if ( '' !== $nik ) {
-			$existing = self::get_by_nik( $nik );
+		// Jika NIK valid (bukan pseudo 99...) dan sudah ada di tabel panitia, update berdasarkan NIK
+		if ( '' !== $stored_nik ) {
+			$existing = self::get_by_nik( $stored_nik );
 			if ( $existing ) {
 				$wpdb->update( $t, $payload, array( 'id' => $existing->id ) );
 				return (int) $existing->id;
+			}
+		} else {
+			// Cari berdasarkan nama yang sama jika NIK tidak ada / pseudo
+			$existing_by_name = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM {$t} WHERE LOWER(TRIM(nama)) = LOWER(TRIM(%s)) LIMIT 1", $nama ) );
+			if ( $existing_by_name ) {
+				$wpdb->update( $t, $payload, array( 'id' => $existing_by_name->id ) );
+				return (int) $existing_by_name->id;
 			}
 		}
 
