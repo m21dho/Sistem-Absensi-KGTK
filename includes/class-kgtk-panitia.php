@@ -98,6 +98,12 @@ class KGTK_Panitia {
 			return new WP_Error( 'nama_empty', 'Nama panitia wajib diisi.' );
 		}
 
+		$gelar_depan    = isset( $data['gelar_depan'] ) ? trim( sanitize_text_field( wp_unslash( $data['gelar_depan'] ) ) ) : '';
+		$gelar_belakang = isset( $data['gelar_belakang'] ) ? trim( sanitize_text_field( wp_unslash( $data['gelar_belakang'] ) ) ) : '';
+		if ( '' !== $gelar_depan || '' !== $gelar_belakang ) {
+			$nama = KGTK_Helpers::format_nama_gelar( $nama, $gelar_depan, $gelar_belakang );
+		}
+
 		$nik = isset( $data['nik'] ) ? preg_replace( '/\D/', '', (string) $data['nik'] ) : '';
 		if ( strlen( $nik ) > 16 ) {
 			$nik = substr( $nik, 0, 16 );
@@ -154,8 +160,15 @@ class KGTK_Panitia {
 				$wpdb->update( $t, $payload, array( 'id' => $existing->id ) );
 				return (int) $existing->id;
 			}
+		} elseif ( '' !== $nip ) {
+			// Cari berdasarkan NIP bila NIK tidak ada
+			$existing_nip = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM {$t} WHERE nip = %s LIMIT 1", $nip ) );
+			if ( $existing_nip ) {
+				$wpdb->update( $t, $payload, array( 'id' => $existing_nip->id ) );
+				return (int) $existing_nip->id;
+			}
 		} else {
-			// Cari berdasarkan nama yang sama jika NIK tidak ada / pseudo
+			// Cari berdasarkan nama yang sama jika NIK dan NIP tidak ada / pseudo
 			$existing_by_name = $wpdb->get_row( $wpdb->prepare( "SELECT id FROM {$t} WHERE LOWER(TRIM(nama)) = LOWER(TRIM(%s)) LIMIT 1", $nama ) );
 			if ( $existing_by_name ) {
 				$wpdb->update( $t, $payload, array( 'id' => $existing_by_name->id ) );

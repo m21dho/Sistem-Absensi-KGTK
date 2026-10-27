@@ -498,9 +498,9 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		}
 
 		if ( 'Panitia' === $d['peran'] ) {
-			// HANYA untuk Panitia: kosongkan data bank, rekening, pengalaman_jabatan, nuptk, simpkb, npwp, email_belajar
-			$d['bank']               = '-';
-			$d['rekening']           = '-';
+			// Bank dan rekening untuk Panitia bersifat opsional
+			$d['bank']               = '' !== $d['bank'] ? $d['bank'] : '-';
+			$d['rekening']           = '' !== $d['rekening'] ? $d['rekening'] : '-';
 			$d['pengalaman_jabatan'] = '-';
 			$d['email_belajar']      = '';
 			$d['nuptk']              = '';
@@ -798,6 +798,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 						'kabkota'  => $d['kabkota'] ?? '',
 						'hp'       => $d['hp'] ?? '',
 						'email'    => $d['email'] ?? '',
+						'bank'     => ( '-' !== $d['bank'] ) ? $d['bank'] : '',
+						'rekening' => ( '-' !== $d['rekening'] ) ? $d['rekening'] : '',
 					) );
 				} catch ( \Throwable $e ) {
 					error_log( 'Gagal menyimpan master panitia: ' . $e->getMessage() );

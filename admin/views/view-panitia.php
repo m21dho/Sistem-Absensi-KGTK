@@ -95,6 +95,8 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 								'kabkota'  => $pan->kabkota,
 								'hp'       => $pan->hp,
 								'email'    => $pan->email,
+								'bank'     => $pan->bank ?? '',
+								'rekening' => $pan->rekening ?? '',
 								'npwp'     => $pan->npwp,
 								'catatan'  => $pan->catatan,
 							) );
@@ -143,6 +145,11 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 												&#9993; <?php echo esc_html( $pan->email ); ?>
 											</a>
 										<?php endif; ?>
+										<?php if ( ! empty( $pan->bank ) || ! empty( $pan->rekening ) ) : ?>
+											<div class="kgtk-muted" style="font-size:11px;color:#0b2d56;background:#f8fafc;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;margin-top:2px;">
+												&#127974; <strong><?php echo esc_html( $pan->bank ?: 'Bank' ); ?>:</strong> <?php echo esc_html( $pan->rekening ?: '-' ); ?>
+											</div>
+										<?php endif; ?>
 									</div>
 								</td>
 								<td style="text-align:center;">
@@ -187,36 +194,85 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 						<div id="kgtk-panitia-form-error" class="kgtk-alert" role="alert" hidden style="margin-bottom:12px;"></div>
 
 						<div class="kgtk-modal-body-scroll" style="max-height:calc(100vh - 250px);max-height:calc(100dvh - 250px);overflow-y:auto;padding-right:6px;">
-							<label class="kgtk-field">
-								<span>Nama Lengkap Beserta Gelar <b>*</b></span>
-								<input type="text" class="kgtk-input" id="kgtk-pan-field-nama" name="nama" maxlength="100" required placeholder="Contoh: Dr. Ahmad Fauzi, S.Kom., M.M.">
-							</label>
+							<!-- Pilihan Identitas Panitia (Sama dengan penambahan panitia di pelatihan) -->
+							<div id="kgtk-pan-wrap-tipe-identitas" style="background:#f8fafc;padding:14px 18px;border-radius:12px;border:1.5px solid #cbd5e1;margin-bottom:18px;">
+								<span style="font-weight:700;font-size:13.5px;color:#0b2d56;display:block;margin-bottom:8px;">
+									&#127380; Pilih Nomor Identitas yang Digunakan Panitia:
+								</span>
+								<div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+									<label style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:#1e293b;cursor:pointer;">
+										<input type="radio" name="master_panitia_id_type" value="nik" id="kgtk-pan-radio-id-nik" checked>
+										<span>Gunakan NIK (16 Digit)</span>
+									</label>
+									<label style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:#1e293b;cursor:pointer;">
+										<input type="radio" name="master_panitia_id_type" value="nip" id="kgtk-pan-radio-id-nip">
+										<span>Gunakan NIP (18 Digit)</span>
+									</label>
+								</div>
+								<small class="kgtk-muted" style="margin-top:6px;display:block;font-size:12px;">
+									Pilih apakah ingin mendaftarkan panitia menggunakan NIK atau NIP pegawai.
+								</small>
+							</div>
 
-							<div class="kgtk-row2">
+							<!-- Input NIK (16 digit) -->
+							<div id="kgtk-pan-wrap-nik">
 								<label class="kgtk-field">
-									<span>Tugas / Jabatan Panitia <b>*</b></span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-field-jabatan" name="jabatan" list="kgtk-jabatan-panitia-options-master" required placeholder="Ketua Panitia / Sekretaris / dll." value="Panitia Pelaksana">
-									<datalist id="kgtk-jabatan-panitia-options-master">
-										<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
-											<option value="<?php echo esc_attr( $jp ); ?>"></option>
-										<?php endforeach; ?>
-									</datalist>
-								</label>
-
-								<label class="kgtk-field">
-									<span>NIK (16 Digit)</span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-field-nik" name="nik" inputmode="numeric" maxlength="16" placeholder="16 digit angka">
+									<span id="kgtk-pan-lbl-nik">NIK (16 digit) *</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-nik" name="nik" inputmode="numeric" maxlength="16" placeholder="16 digit angka NIK">
 								</label>
 							</div>
 
+							<!-- Input NIP (18 digit) saat pilihan NIP aktif -->
+							<div id="kgtk-pan-wrap-nip-top" style="display:none;">
+								<label class="kgtk-field">
+									<span id="kgtk-pan-lbl-nip-top">NIP (18 digit) *</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-nip-top" inputmode="numeric" maxlength="18" placeholder="18 digit angka NIP">
+									<small class="kgtk-muted">Masukkan 18 digit angka NIP resmi panitia.</small>
+								</label>
+							</div>
+
+							<!-- Nama Lengkap (Hanya nama tanpa gelar) -->
 							<label class="kgtk-field">
-								<span>NIP (18 Digit)</span>
-								<input type="text" class="kgtk-input" id="kgtk-pan-field-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka (opsional bila PNS)">
+								<span>Nama Lengkap * <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">(Hanya nama tanpa gelar)</small></span>
+								<input type="text" class="kgtk-input" id="kgtk-pan-field-nama" name="nama" maxlength="100" required placeholder="Contoh: Muhammad Ridho">
 							</label>
 
+							<!-- Gelar Depan & Gelar Belakang -->
 							<div class="kgtk-row2">
 								<label class="kgtk-field">
-									<span>Asal Instansi / Unit Kerja <b>*</b></span>
+									<span>Gelar Depan</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-gelar-depan" name="gelar_depan" maxlength="30" placeholder="mis. Dr. / Drs.">
+								</label>
+								<label class="kgtk-field">
+									<span>Gelar Belakang</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-gelar-belakang" name="gelar_belakang" maxlength="50" placeholder="mis. S.Pd. / M.Pd.">
+								</label>
+							</div>
+
+							<!-- NIP (bila pilihan NIK aktif, sebagai opsional) -->
+							<div id="kgtk-pan-wrap-nip-bottom">
+								<label class="kgtk-field">
+									<span>NIP <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">*Hanya angka, tanpa spasi atau karakter lain</small></span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="199602082025211022">
+									<small>18 digit angka NIP (kosongkan jika non-PNS/belum ada).</small>
+								</label>
+							</div>
+
+							<!-- Tugas / Jabatan Panitia -->
+							<label class="kgtk-field">
+								<span>Tugas / Jabatan Panitia *</span>
+								<input type="text" class="kgtk-input" id="kgtk-pan-field-jabatan" name="jabatan" list="kgtk-jabatan-panitia-options-master" required placeholder="Ketua Panitia / Sekretaris / Panitia Pelaksana" value="Panitia Pelaksana">
+								<datalist id="kgtk-jabatan-panitia-options-master">
+									<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
+										<option value="<?php echo esc_attr( $jp ); ?>"></option>
+									<?php endforeach; ?>
+								</datalist>
+							</label>
+
+							<!-- Asal Instansi & Kabupaten / Kota -->
+							<div class="kgtk-row2">
+								<label class="kgtk-field">
+									<span>Asal Instansi / Unit Kerja *</span>
 									<input type="text" class="kgtk-input" id="kgtk-pan-field-instansi" name="instansi" maxlength="200" placeholder="Contoh: Balai Guru Penggerak Provinsi Kepulauan Riau">
 								</label>
 
@@ -231,15 +287,29 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 								</label>
 							</div>
 
+							<!-- Nomor HP / WhatsApp & Alamat Email -->
 							<div class="kgtk-row2">
 								<label class="kgtk-field">
-									<span>Nomor HP / WhatsApp <b>*</b></span>
+									<span>Nomor HP / WhatsApp *</span>
 									<input type="text" class="kgtk-input" id="kgtk-pan-field-hp" name="hp" required placeholder="08xxxxxxxxxx">
 								</label>
 
 								<label class="kgtk-field">
 									<span>Alamat Email</span>
 									<input type="email" class="kgtk-input" id="kgtk-pan-field-email" name="email" placeholder="nama@email.com">
+								</label>
+							</div>
+
+							<!-- Nama Bank & Nomor Rekening Bank -->
+							<div class="kgtk-row2">
+								<label class="kgtk-field">
+									<span>Nama Bank</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-bank" name="bank" maxlength="60" placeholder="mis. Bank Riau Kepri Syariah / BRI / Mandiri">
+								</label>
+
+								<label class="kgtk-field">
+									<span>Nomor Rekening Bank</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-rekening" name="rekening" maxlength="50" inputmode="numeric" placeholder="Hanya angka rekening">
 								</label>
 							</div>
 						</div>

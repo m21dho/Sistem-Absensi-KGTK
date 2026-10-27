@@ -21,6 +21,8 @@ if ( ! empty( $panitia ) && class_exists( 'KGTK_Panitia' ) ) {
 				'kabkota'  => $p_sync->kabkota ?? '',
 				'hp'       => $p_sync->hp ?? '',
 				'email'    => $p_sync->email ?? '',
+				'bank'     => $p_sync->bank ?? '',
+				'rekening' => $p_sync->rekening ?? '',
 			) );
 		}
 	}
@@ -221,6 +223,8 @@ foreach ( $panitia_list_master as $pm_item ) {
 											'kabkota'  => $pm->kabkota,
 											'hp'       => $pm->hp,
 											'email'    => $pm->email,
+											'bank'     => $pm->bank ?? '',
+											'rekening' => $pm->rekening ?? '',
 											'npwp'     => $pm->npwp,
 										) );
 										$s_text = strtolower( $pm->nama . ' ' . $pm->nik . ' ' . $pm->jabatan . ' ' . $pm->instansi );
@@ -289,6 +293,16 @@ foreach ( $panitia_list_master as $pm_item ) {
 								<div class="kgtk-field">
 									<span>NIP (18 Digit - opsional)</span>
 									<input type="text" class="kgtk-input" id="kgtk-pan-m-nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka (bila PNS)">
+								</div>
+							</div>
+							<div class="kgtk-row2">
+								<div class="kgtk-field">
+									<span>Nama Bank</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-m-bank" maxlength="60" placeholder="mis. Bank Riau Kepri Syariah / BRI / Mandiri">
+								</div>
+								<div class="kgtk-field">
+									<span>Nomor Rekening Bank</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-m-rekening" maxlength="50" inputmode="numeric" placeholder="Nomor rekening bank">
 								</div>
 							</div>
 						</div>

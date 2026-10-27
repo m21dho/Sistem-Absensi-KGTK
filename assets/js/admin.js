@@ -693,10 +693,9 @@
 
 			var isPanitia = (peranVal === 'Panitia');
 
-			// HANYA untuk Panitia: sembunyikan nama bank, nomor bank, email belajar.id, nuptk, simpkb, pengalaman jabatan, npwp
-			// Untuk yang lainnya (Peserta, Narasumber, Pengajar, Fasilitator, Penceramah, Pemateri): tetap sama / ditampilkan
+			// Untuk Panitia: nama bank dan rekening bank tetap bisa diisi (opsional)
 			if (wrapBankRek) {
-				wrapBankRek.style.display = isPanitia ? 'none' : '';
+				wrapBankRek.style.display = '';
 				if (F.bank) { F.bank.required = !isPanitia; }
 				if (F.rekening) { F.rekening.required = !isPanitia; }
 			}
@@ -931,9 +930,9 @@
 				errors.push({ label: 'Peran Kegiatan', msg: 'Pilih peran dalam kegiatan ini.', el: F.peran });
 			}
 			if (v.peran === 'Panitia') {
-				// HANYA untuk Panitia saja: hapus/kosongkan bank, rekening, email_belajar, nuptk, simpkb, pengalaman jabatan, npwp
-				v.bank = '-';
-				v.rekening = '-';
+				// Panitia: nama bank & no rekening boleh diisi (opsional, default '-')
+				v.bank = (F.bank && F.bank.value.trim()) ? F.bank.value.trim() : '-';
+				v.rekening = (F.rekening && F.rekening.value.trim()) ? F.rekening.value.trim() : '-';
 				v.pengalaman_jabatan = '-';
 				v.email_belajar = '';
 				v.nuptk = '';
@@ -2563,6 +2562,32 @@
 			return; // Bukan halaman Data Panitia
 		}
 
+		var rNik = document.getElementById('kgtk-pan-radio-id-nik');
+		var rNip = document.getElementById('kgtk-pan-radio-id-nip');
+		var wrapNik = document.getElementById('kgtk-pan-wrap-nik');
+		var wrapNipTop = document.getElementById('kgtk-pan-wrap-nip-top');
+		var wrapNipBottom = document.getElementById('kgtk-pan-wrap-nip-bottom');
+		var inpNik = document.getElementById('kgtk-pan-field-nik');
+		var inpNipTop = document.getElementById('kgtk-pan-field-nip-top');
+		var inpNipBottom = document.getElementById('kgtk-pan-field-nip');
+
+		var updateMasterPanitiaIdView = function () {
+			var pakaiNip = rNip && rNip.checked;
+			if (pakaiNip) {
+				if (wrapNik) { wrapNik.style.display = 'none'; }
+				if (wrapNipTop) { wrapNipTop.style.display = ''; }
+				if (wrapNipBottom) { wrapNipBottom.style.display = 'none'; }
+				if (inpNipTop) { inpNipTop.focus(); }
+			} else {
+				if (wrapNik) { wrapNik.style.display = ''; }
+				if (wrapNipTop) { wrapNipTop.style.display = 'none'; }
+				if (wrapNipBottom) { wrapNipBottom.style.display = ''; }
+			}
+		};
+
+		if (rNik) { rNik.addEventListener('change', updateMasterPanitiaIdView); }
+		if (rNip) { rNip.addEventListener('change', updateMasterPanitiaIdView); }
+
 		var openModal = function (title, data) {
 			if (!formModal) { return; }
 			var titleEl = document.getElementById('kgtk-modal-panitia-title');
@@ -2574,26 +2599,38 @@
 				var fId = document.getElementById('kgtk-pan-field-id');
 				if (fId) { fId.value = (data && data.id) ? data.id : 0; }
 				if (data) {
+					var isNipOnly = (!data.nik || data.nik.indexOf('99') === 0) && !!data.nip;
+					if (isNipOnly) {
+						if (rNip) { rNip.checked = true; }
+					} else {
+						if (rNik) { rNik.checked = true; }
+					}
+
 					var fMap = {
 						'kgtk-pan-field-nama': data.nama || '',
+						'kgtk-pan-field-gelar-depan': data.gelar_depan || '',
+						'kgtk-pan-field-gelar-belakang': data.gelar_belakang || '',
 						'kgtk-pan-field-jabatan': data.jabatan || 'Panitia Pelaksana',
 						'kgtk-pan-field-nik': (data.nik && data.nik.indexOf('99') !== 0) ? data.nik : '',
 						'kgtk-pan-field-nip': data.nip || '',
-						'kgtk-pan-field-nuptk': data.nuptk || '',
+						'kgtk-pan-field-nip-top': data.nip || '',
 						'kgtk-pan-field-instansi': data.instansi || '',
 						'kgtk-pan-field-kabkota': data.kabkota || '',
 						'kgtk-pan-field-hp': data.hp || '',
 						'kgtk-pan-field-email': data.email || '',
-						'kgtk-pan-field-npwp': data.npwp || ''
+						'kgtk-pan-field-bank': data.bank || '',
+						'kgtk-pan-field-rekening': data.rekening || ''
 					};
 					for (var fieldId in fMap) {
 						var el = document.getElementById(fieldId);
 						if (el) { el.value = fMap[fieldId]; }
 					}
 				} else {
+					if (rNik) { rNik.checked = true; }
 					var jEl = document.getElementById('kgtk-pan-field-jabatan');
 					if (jEl) { jEl.value = 'Panitia Pelaksana'; }
 				}
+				updateMasterPanitiaIdView();
 			}
 
 			if (formModal) {
@@ -2633,7 +2670,7 @@
 		}
 
 		// Input formatting
-		['kgtk-pan-field-nik', 'kgtk-pan-field-nuptk'].forEach(function (id) {
+		['kgtk-pan-field-nik'].forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) {
 				el.addEventListener('input', function (e) {
@@ -2641,10 +2678,22 @@
 				});
 			}
 		});
-		var nipEl = document.getElementById('kgtk-pan-field-nip');
-		if (nipEl) {
-			nipEl.addEventListener('input', function (e) {
+		if (inpNipTop) {
+			inpNipTop.addEventListener('input', function (e) {
 				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 18);
+				if (inpNipBottom) { inpNipBottom.value = e.target.value; }
+			});
+		}
+		if (inpNipBottom) {
+			inpNipBottom.addEventListener('input', function (e) {
+				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 18);
+				if (inpNipTop && inpNipTop.value !== e.target.value) { inpNipTop.value = e.target.value; }
+			});
+		}
+		var rekMasterEl = document.getElementById('kgtk-pan-field-rekening');
+		if (rekMasterEl) {
+			rekMasterEl.addEventListener('input', function (e) {
+				e.target.value = e.target.value.replace(/[^\d\- ]/g, '').slice(0, 30);
 			});
 		}
 
@@ -2729,15 +2778,41 @@
 				var f = formPanitia.elements;
 				var id = parseInt(f.id.value || '0', 10);
 				var nama = (f.nama.value || '').trim();
+				var gelarDepan = (f.gelar_depan ? f.gelar_depan.value : '').trim();
+				var gelarBelakang = (f.gelar_belakang ? f.gelar_belakang.value : '').trim();
 				var jabatan = (f.jabatan.value || '').trim();
-				var nik = (f.nik.value || '').trim();
-				var nip = (f.nip.value || '').trim();
-				var nuptk = (f.nuptk ? f.nuptk.value : '').trim();
+				var nik = (f.nik ? f.nik.value : '').trim();
+				var nip = (f.nip ? f.nip.value : '').trim();
 				var instansi = (f.instansi ? f.instansi.value : '').trim();
 				var kabkota = (f.kabkota ? f.kabkota.value : '').trim();
 				var hp = (f.hp ? f.hp.value : '').trim();
 				var email = (f.email ? f.email.value : '').trim();
-				var npwp = (f.npwp ? f.npwp.value : '').trim();
+				var bank = (f.bank ? f.bank.value : '').trim();
+				var rekening = (f.rekening ? f.rekening.value : '').trim();
+
+				var pakaiNip = rNip && rNip.checked;
+				if (pakaiNip && inpNipTop && inpNipTop.value) {
+					nip = inpNipTop.value.trim();
+				}
+
+				if (pakaiNip) {
+					if (!/^\d{18}$/.test(nip)) {
+						if (errBox) { errBox.textContent = 'NIP panitia harus 18 digit angka.'; errBox.hidden = false; }
+						if (inpNipTop) { inpNipTop.focus(); }
+						return;
+					}
+				} else {
+					if (!/^\d{16}$/.test(nik)) {
+						if (errBox) { errBox.textContent = 'NIK panitia harus 16 digit angka.'; errBox.hidden = false; }
+						if (f.nik) { f.nik.focus(); }
+						return;
+					}
+					if (nip && !/^\d{18}$/.test(nip)) {
+						if (errBox) { errBox.textContent = 'NIP harus berupa 18 digit angka (atau kosongkan bila bukan PNS).'; errBox.hidden = false; }
+						if (f.nip) { f.nip.focus(); }
+						return;
+					}
+				}
 
 				if (!nama) {
 					if (errBox) { errBox.textContent = 'Nama lengkap panitia wajib diisi.'; errBox.hidden = false; }
@@ -2754,31 +2829,24 @@
 					f.hp.focus();
 					return;
 				}
-				if (nik && !/^\d{16}$/.test(nik)) {
-					if (errBox) { errBox.textContent = 'NIK harus berupa 16 digit angka (atau kosongkan bila belum ada).'; errBox.hidden = false; }
-					f.nik.focus();
-					return;
-				}
-				if (nip && !/^\d{18}$/.test(nip)) {
-					if (errBox) { errBox.textContent = 'NIP harus berupa 18 digit angka (atau kosongkan bila bukan PNS).'; errBox.hidden = false; }
-					f.nip.focus();
-					return;
-				}
 
 				var saveBtn = document.getElementById('kgtk-btn-form-panitia-save');
 				if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Menyimpan...'; }
 
 				var payload = {
 					nama: nama,
+					gelar_depan: gelarDepan,
+					gelar_belakang: gelarBelakang,
 					jabatan: jabatan,
-					nik: nik,
+					nik: pakaiNip ? '' : nik,
 					nip: nip,
-					nuptk: nuptk,
 					instansi: instansi,
 					kabkota: kabkota,
 					hp: hp,
 					email: email,
-					npwp: npwp
+					bank: bank,
+					rekening: rekening,
+					id_type: pakaiNip ? 'nip' : 'nik'
 				};
 
 				var method = id > 0 ? 'PUT' : 'POST';
@@ -3175,6 +3243,9 @@
 					var nikM = (document.getElementById('kgtk-pan-m-nik') ? document.getElementById('kgtk-pan-m-nik').value : '').trim();
 					var nipM = (document.getElementById('kgtk-pan-m-nip') ? document.getElementById('kgtk-pan-m-nip').value : '').trim();
 
+					var bankM = (document.getElementById('kgtk-pan-m-bank') ? document.getElementById('kgtk-pan-m-bank').value : '').trim();
+					var rekeningM = (document.getElementById('kgtk-pan-m-rekening') ? document.getElementById('kgtk-pan-m-rekening').value : '').trim();
+
 					if (!namaM) {
 						if (errBox) { errBox.textContent = 'Nama lengkap panitia wajib diisi.'; errBox.hidden = false; }
 						return;
@@ -3191,7 +3262,9 @@
 						instansi: instansiM,
 						kabkota: kabkotaM,
 						nik: nikM,
-						nip: nipM
+						nip: nipM,
+						bank: bankM,
+						rekening: rekeningM
 					});
 				}
 
