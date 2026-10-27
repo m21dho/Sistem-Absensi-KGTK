@@ -677,9 +677,7 @@
 			'<path d="M9 14l2 2 4-4"></path>' +
 			'</svg>';
 
-		var btnDaftar = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Mulai Pendaftaran Pelatihan' }, [
-			el('span', { class: 'arr', style: 'margin-left:8px;', text: '→' })
-		]);
+		var btnDaftar = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Mulai Pendaftaran Pelatihan' });
 
 		var cardDaftar = el('div', { class: 'kgtk-landing-card kgtk-landing-card--primary' }, [
 			iconDaftar,
@@ -702,9 +700,7 @@
 			'<polyline points="10 9 9 9 8 9"></polyline>' +
 			'</svg>';
 
-		var btnBio = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', text: 'Buka Data & Riwayat Saya' }, [
-			el('span', { class: 'arr', style: 'margin-left:8px;', text: '→' })
-		]);
+		var btnBio = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', text: 'Buka Data & Riwayat Saya' });
 
 		var cardBio = el('div', { class: 'kgtk-landing-card kgtk-landing-card--secondary' }, [
 			iconBio,
@@ -736,7 +732,7 @@
 		}, S.kode);
 		var err = errBox();
 		if (S.kodeError) { showErr(err, S.kodeError); S.kodeError = ''; }
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut ke Langkah 2 (Identitas) →' });
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut ke Langkah 2 (Identitas)' });
 
 		var linkBio = el('button', { type: 'button', class: 'kgtk-link', text: '🔍 Sudah pernah mendaftar? Klik di sini untuk Lihat Pelatihan Saya' });
 		linkBio.addEventListener('click', function () { goBiodataSaya(); });
@@ -925,14 +921,14 @@
 		var btnVerif = el('button', {
 			type: 'submit',
 			class: 'kgtk-btn kgtk-btn-action-tarik',
-			text: 'Lanjut Pendaftaran →'
+			text: 'Lanjut Pendaftaran'
 		});
 
 		// Tombol Aksi 2: Lewati & Isi Data Baru (Sangat Nampak)
 		var btnSkip = el('button', {
 			type: 'button',
 			class: 'kgtk-btn kgtk-btn-action-baru',
-			text: '✍️ Saya Peserta Baru: Lanjut Isi Formulir Pendaftaran →'
+			text: '✍️ Saya Peserta Baru: Lanjut Isi Formulir Pendaftaran'
 		});
 		btnSkip.addEventListener('click', function () {
 			S.verifTipe = '';
@@ -1000,7 +996,7 @@
 				}
 				go('biodata');
 			}).catch(function (x) {
-				busy(btnVerif, false, 'Lanjut Pendaftaran →');
+				busy(btnVerif, false, 'Lanjut Pendaftaran');
 				var pesan = x.message || 'Terjadi kesalahan.';
 				if (pesan.indexOf('Data tidak cocok') > -1) {
 					pesan += ' Jika Anda belum pernah mendaftar sebelumnya, silakan langsung klik tombol hijau "Saya Peserta Baru" di bawah.';
@@ -1684,7 +1680,7 @@
 		rEmail.addEventListener('change', updateLabel);
 
 		var err = errBox();
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Tampilkan Data Pelatihan Saya →' });
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Tampilkan Data Pelatihan Saya' });
 
 		var linkDaftar = el('button', { type: 'button', class: 'kgtk-link', text: 'Ingin mendaftar pelatihan baru? Klik di sini untuk Daftar Pelatihan' });
 		linkDaftar.addEventListener('click', function () { go('kode'); });
@@ -1727,7 +1723,7 @@
 				render();
 				window.scrollTo({ top: root.offsetTop - 10, behavior: 'smooth' });
 			}).catch(function (x) {
-				busy(btn, false, 'Tampilkan Data Pelatihan Saya →');
+				busy(btn, false, 'Tampilkan Data Pelatihan Saya');
 				showErr(err, x.message);
 			});
 		});
