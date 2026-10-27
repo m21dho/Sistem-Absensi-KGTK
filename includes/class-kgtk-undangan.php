@@ -1234,9 +1234,41 @@ class KGTK_Undangan {
 		return array(
 			'nama'          => array( 'nama', 'namapeserta', 'namalengkap', 'namaguru', 'peserta' ),
 			'nik'           => array( 'nik', 'nomorindukkependudukan', 'indukkependudukan', 'nonik', 'nomornik', 'noktp', 'ktp', 'nomorinduk' ),
-			'hp'            => array( 'hp', 'nohp', 'nomorhp', 'telepon', 'notelepon', 'wa', 'nowa', 'nomorwa', 'whatsapp', 'handphone', 'ponsel', 'nohandphone', 'kontak' ),
+			'hp'            => array( 'hp', 'nohp', 'nomorhp', 'telepon', 'notelepon', 'wa', 'nowa', 'nomorwa', 'whatsapp', 'handphone', 'ponsel', 'nohandphone', 'kontak', 'nohpwhatsapp', 'hpwhatsapp' ),
 			'email_belajar' => array( 'emailbelajar', 'emailbelajarid', 'belajarid', 'akunbelajar', 'akunbelajarid', 'email', 'surel' ),
 		);
+	}
+
+	/**
+	 * Deteksi baris judul kolom untuk data undangan.
+	 */
+	public static function deteksi_header( $rows ) {
+		$kata = array();
+		foreach ( self::sinonim_kolom() as $list ) {
+			$kata = array_merge( $kata, $list );
+		}
+		$kata[] = 'no';
+		$kata[] = 'nomor';
+
+		$best  = 0;
+		$skor  = -1;
+		$batas = min( 15, count( $rows ) );
+		for ( $i = 0; $i < $batas; $i++ ) {
+			$n = 0;
+			if ( is_array( $rows[ $i ] ) ) {
+				foreach ( $rows[ $i ] as $c ) {
+					$norm = preg_replace( '/[^a-z0-9]/', '', strtolower( (string) $c ) );
+					if ( '' !== $norm && in_array( $norm, $kata, true ) ) {
+						$n++;
+					}
+				}
+			}
+			if ( $n > $skor ) {
+				$skor = $n;
+				$best = $i;
+			}
+		}
+		return $best;
 	}
 
 	/**
@@ -1295,7 +1327,7 @@ class KGTK_Undangan {
 		}
 
 		// Deteksi header
-		$hdr_idx = KGTK_Sekolah_Admin::deteksi_header( $rows );
+		$hdr_idx = self::deteksi_header( $rows );
 		$data_rows = array_slice( $rows, $hdr_idx + 1 );
 
 		if ( empty( $data_rows ) ) {
@@ -1395,9 +1427,10 @@ class KGTK_Undangan {
 		}
 
 		return array(
-			'imported' => $imported,
-			'skipped'  => $skipped,
-			'reasons'  => $reasons,
+			'imported'   => $imported,
+			'skipped'    => $skipped,
+			'total_rows' => $imported + $skipped,
+			'reasons'    => $reasons,
 		);
 	}
 

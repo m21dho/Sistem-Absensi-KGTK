@@ -1874,6 +1874,7 @@
 
 					var fd = new FormData();
 					fd.append('file', file);
+					fd.append('berkas', file);
 
 					fetch(C.root + 'admin/pelatihan/' + pelatihanId + '/undangan/upload', {
 						method: 'POST',
@@ -1886,10 +1887,10 @@
 							return d;
 						});
 					}).then(function (data) {
-						impSessionKey = data.session_key;
-						var headers = data.headers || [];
-						var detected = data.detected || {};
-						var preview = data.preview || [];
+						impSessionKey = data.session_key || data.token;
+						var headers = data.headers || data.header || [];
+						var detected = data.detected || data.guessed || {};
+						var preview = data.preview || data.sample || [];
 
 						var buildSelectOptions = function (selectedIdx) {
 							var optHtml = '<option value="-1">-- Lewati --</option>';
@@ -1900,10 +1901,10 @@
 							return optHtml;
 						};
 
-						mapNama.innerHTML = buildSelectOptions(detected.nama !== false ? detected.nama : -1);
-						mapNik.innerHTML = buildSelectOptions(detected.nik !== false ? detected.nik : -1);
-						mapHp.innerHTML = buildSelectOptions(detected.hp !== false ? detected.hp : -1);
-						mapEmail.innerHTML = buildSelectOptions(detected.email_belajar !== false ? detected.email_belajar : -1);
+						mapNama.innerHTML = buildSelectOptions(detected.nama !== false && detected.nama !== undefined ? detected.nama : -1);
+						mapNik.innerHTML = buildSelectOptions(detected.nik !== false && detected.nik !== undefined ? detected.nik : -1);
+						mapHp.innerHTML = buildSelectOptions(detected.hp !== false && detected.hp !== undefined ? detected.hp : -1);
+						mapEmail.innerHTML = buildSelectOptions(detected.email_belajar !== false && detected.email_belajar !== undefined ? detected.email_belajar : -1);
 
 						if (impPreview) {
 							var prevHtml = '<table class="kgtk-table" style="font-size:12px;margin:0;"><thead><tr>';
@@ -1949,14 +1950,18 @@
 					btnImpNext.disabled = true;
 					btnImpNext.textContent = 'Mengimpor data...';
 
+					var mapPayload = {
+						nama: vNama,
+						nik: vNik,
+						hp: vHp,
+						email_belajar: vEmail
+					};
+
 					api('admin/pelatihan/' + pelatihanId + '/undangan/import', 'POST', {
 						session_key: impSessionKey,
-						mapping: {
-							nama: vNama,
-							nik: vNik,
-							hp: vHp,
-							email_belajar: vEmail
-						}
+						token: impSessionKey,
+						mapping: mapPayload,
+						map: mapPayload
 					}).then(function (res) {
 						step2.style.display = 'none';
 						step3.style.display = '';

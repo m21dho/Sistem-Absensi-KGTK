@@ -163,7 +163,7 @@ class KGTK_REST_Admin_Undangan extends KGTK_REST_Base {
 			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
 		}
 
-		$f = isset( $_FILES['berkas'] ) ? $_FILES['berkas'] : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$f = isset( $_FILES['berkas'] ) ? $_FILES['berkas'] : ( isset( $_FILES['file'] ) ? $_FILES['file'] : null ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		if ( ! $f || ! isset( $f['error'] ) || UPLOAD_ERR_OK !== (int) $f['error'] || empty( $f['tmp_name'] ) ) {
 			return self::err( 'upload', 'Berkas gagal diunggah. Pastikan memilih berkas yang benar.', 400 );
 		}
@@ -196,17 +196,21 @@ class KGTK_REST_Admin_Undangan extends KGTK_REST_Base {
 			return self::err( 'baca', 'Berkas tidak bisa dibaca atau tidak memiliki baris data.', 422 );
 		}
 
-		$hdr_idx = KGTK_Sekolah_Admin::deteksi_header( $rows );
+		$hdr_idx = KGTK_Undangan::deteksi_header( $rows );
 		$header  = isset( $rows[ $hdr_idx ] ) ? $rows[ $hdr_idx ] : array();
 		$sample  = array_slice( $rows, $hdr_idx + 1, 5 );
 		$guessed = KGTK_Undangan::tebak_kolom( $header );
 
 		return self::respond(
 			array(
-				'token'   => $token,
-				'header'  => $header,
-				'sample'  => $sample,
-				'guessed' => $guessed,
+				'token'       => $token,
+				'session_key' => $token,
+				'header'      => $header,
+				'headers'     => $header,
+				'sample'      => $sample,
+				'preview'     => $sample,
+				'guessed'     => $guessed,
+				'detected'    => $guessed,
 			)
 		);
 	}
@@ -219,8 +223,8 @@ class KGTK_REST_Admin_Undangan extends KGTK_REST_Base {
 		}
 
 		$in    = self::params( $req );
-		$token = sanitize_file_name( (string) ( $in['token'] ?? '' ) );
-		$map   = is_array( $in['map'] ?? null ) ? $in['map'] : array();
+		$token = sanitize_file_name( (string) ( $in['token'] ?? ( $in['session_key'] ?? '' ) ) );
+		$map   = is_array( $in['map'] ?? null ) ? $in['map'] : ( is_array( $in['mapping'] ?? null ) ? $in['mapping'] : array() );
 
 		$dir  = KGTK_Sekolah_Admin::dir_impor();
 		$path = trailingslashit( $dir ) . $token;
@@ -234,7 +238,8 @@ class KGTK_REST_Admin_Undangan extends KGTK_REST_Base {
 			return $res;
 		}
 
-		$res['stats'] = KGTK_Undangan::get_stats( $pelatihan_id );
+		$res['total_rows'] = isset( $res['total_rows'] ) ? $res['total_rows'] : ( $res['imported'] + $res['skipped'] );
+		$res['stats']      = KGTK_Undangan::get_stats( $pelatihan_id );
 		return self::respond( $res );
 	}
 
