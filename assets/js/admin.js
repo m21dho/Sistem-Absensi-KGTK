@@ -2113,6 +2113,8 @@
 			if (btnBioCetak) {
 				btnBioCetak.addEventListener('click', function () {
 					if (!activeBioData) { return; }
+					var b = activeBioData;
+
 					function getKabkotaKegiatan(bio) {
 						var kab = (bio && bio.pelatihan_kabkota) || '';
 						var lok = (bio && bio.pelatihan_lok) || (typeof bio === 'string' ? bio : '');
@@ -2209,7 +2211,7 @@
 						kop +
 						'<div class="title-box">' +
 						'<div class="title-main">BIODATA ' + escHtml(peranUpper) + '</div>' +
-						'<div class="title-sub">' + escHtml(b.pelatihan) + '</div>' +
+						'<div class="title-sub">' + escHtml(b.pelatihan || '') + '</div>' +
 						(b.pelatihan_tgl ? '<div class="title-date">' + escHtml(b.pelatihan_tgl) + '</div>' : '') +
 						(lokasiTxt ? '<div class="title-loc">' + escHtml(lokasiTxt) + '</div>' : '') +
 						'</div>' +
@@ -2219,11 +2221,59 @@
 						'<div class="space">&nbsp;</div>' +
 						'<div><u><strong>' + escHtml(namaLengkap) + '</strong></u></div>' +
 						'</td></tr></table>' +
-						'<script>window.onload=function(){window.print();}<\/script>' +
+						'<script>' +
+						'window.addEventListener("load", function(){ setTimeout(function(){ window.focus(); window.print(); }, 250); });' +
+						'<\/script>' +
 						'</body></html>';
 
-					var w = window.open('', '_blank', 'width=800,height=750');
-					if (w) { w.document.write(html); w.document.close(); }
+					var printViaIframe = function (docHtml) {
+						var frame = document.getElementById('kgtk-print-biodata-frame');
+						if (!frame) {
+							frame = document.createElement('iframe');
+							frame.id = 'kgtk-print-biodata-frame';
+							frame.style.position = 'fixed';
+							frame.style.right = '0';
+							frame.style.bottom = '0';
+							frame.style.width = '0';
+							frame.style.height = '0';
+							frame.style.border = '0';
+							document.body.appendChild(frame);
+						}
+						var fDoc = frame.contentWindow || frame.contentDocument;
+						if (fDoc.document) { fDoc = fDoc.document; }
+						fDoc.open();
+						fDoc.write(docHtml);
+						fDoc.close();
+						setTimeout(function () {
+							try {
+								frame.contentWindow.focus();
+								frame.contentWindow.print();
+							} catch (e) {
+								window.print();
+							}
+						}, 350);
+					};
+
+					try {
+						var w = window.open('', '_blank', 'width=850,height=800');
+						if (w && !w.closed) {
+							w.document.open();
+							w.document.write(html);
+							w.document.close();
+							w.focus();
+							setTimeout(function () {
+								try {
+									w.print();
+								} catch (errP) {
+									printViaIframe(html);
+								}
+							}, 400);
+						} else {
+							printViaIframe(html);
+						}
+					} catch (errOpen) {
+						printViaIframe(html);
+					}
 				});
 			}
 		}
