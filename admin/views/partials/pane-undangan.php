@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var array  $und_stats Statistik peserta ditetapkan.
  */
 $exp_und_url = wp_nonce_url( admin_url( 'admin-post.php?action=kgtk_undangan_export&id=' . (int) $p->id ), 'kgtk_undangan_export_' . (int) $p->id );
+$tpl_und_url = wp_nonce_url( admin_url( 'admin-post.php?action=kgtk_undangan_template' ), 'kgtk_undangan_template' );
 $rows_undangan = KGTK_Undangan::get_list( $p->id );
 ?>
 <div class="kgtk-pane" data-pane="peserta-ditetapkan">
@@ -21,6 +22,7 @@ $rows_undangan = KGTK_Undangan::get_list( $p->id );
 			<div class="kgtk-head-actions">
 				<button type="button" class="kgtk-btn" id="kgtk-btn-tambah-undangan">+ Tambah</button>
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-impor-undangan">&#128196; Impor Excel/CSV</button>
+				<a class="kgtk-btn kgtk-btn--ghost" href="<?php echo esc_url( $tpl_und_url ); ?>" title="Unduh template Excel untuk impor data peserta">&#128229; Unduh Template</a>
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-sinkron-undangan" title="Jalankan ulang pencocokan untuk seluruh peserta belum cocok">&#128260; Sinkronkan ulang</button>
 				<a class="kgtk-btn kgtk-btn--navy" href="<?php echo esc_url( $exp_und_url ); ?>">&#128229; Export Excel</a>
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-salin-belum" title="Salin daftar peserta yang belum mendaftar untuk dihubungi">&#128203; Salin Belum Mendaftar</button>

@@ -79,10 +79,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<div id="kgtk-impor-modal-error" class="kgtk-alert" style="margin-bottom:12px;" hidden></div>
 
 				<div id="kgtk-impor-step-1">
+					<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;background:#f8fafc;padding:10px 14px;border-radius:6px;border:1px solid #e2e8f0;">
+						<div>
+							<div style="font-weight:600;font-size:13px;color:#1e293b;">Format Tabel Impor</div>
+							<div class="kgtk-muted" style="font-size:12px;">Unduh contoh template Excel resmi yang siap diisi.</div>
+						</div>
+						<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=kgtk_undangan_template' ), 'kgtk_undangan_template' ) ); ?>" class="kgtk-btn kgtk-btn--ghost kgtk-btn--sm" style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+							Unduh Template Excel
+						</a>
+					</div>
 					<label class="kgtk-field"><span>Pilih Berkas (.xlsx, .xls, .csv, maks. 10 MB)</span>
 						<input type="file" class="kgtk-input" id="kgtk-impor-file-input" accept=".xlsx,.xls,.csv">
 					</label>
-					<div style="margin-top:12px;font-size:12px;" class="kgtk-muted">Format berkas: Baris pertama berisi judul kolom (mis. Nama, NIK, No. HP, Email). Baris-baris berikutnya berisi data calon peserta.</div>
+					<div style="margin-top:12px;font-size:12px;" class="kgtk-muted">Format kolom: <strong>NO</strong>, <strong>NAMA LENGKAP</strong>, <strong>NIK</strong>, <strong>NO.HP / WHATSAPP</strong>, <strong>EMAIL BELAJAR.ID</strong>. Cukup isi Nama saja jika data lainnya belum ada.</div>
 				</div>
 
 				<div id="kgtk-impor-step-2" style="display:none;">

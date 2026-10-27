@@ -21,6 +21,7 @@ class KGTK_Undangan {
 
 	public static function init() {
 		add_action( 'admin_post_kgtk_undangan_export', array( __CLASS__, 'handle_export' ) );
+		add_action( 'admin_post_kgtk_undangan_template', array( __CLASS__, 'handle_download_template' ) );
 	}
 
 	/* ====================== Normalisasi & Helper ====================== */
@@ -1448,6 +1449,115 @@ class KGTK_Undangan {
 
 		$filter = isset( $_GET['filter'] ) ? sanitize_key( wp_unslash( $_GET['filter'] ) ) : 'all';
 		self::export_excel( $id, $filter );
+	}
+
+	/**
+	 * Handler admin-post untuk unduh template Excel impor peserta ditetapkan.
+	 */
+	public static function handle_download_template() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Anda tidak memiliki akses.', 'Akses ditolak', array( 'response' => 403 ) );
+		}
+		check_admin_referer( 'kgtk_undangan_template' );
+
+		self::download_template();
+	}
+
+	/**
+	 * Generate dan stream berkas template Excel (.xlsx) untuk impor peserta ditetapkan.
+	 */
+	public static function download_template() {
+		if ( class_exists( '\PhpOffice\PhpSpreadsheet\Spreadsheet' ) ) {
+			$ss = new Spreadsheet();
+			$ss->getProperties()
+				->setCreator( 'KGTK Pelatihan' )
+				->setTitle( 'Template Impor Peserta Ditetapkan' );
+
+			$ws = $ss->getActiveSheet();
+			$ws->setTitle( 'Template Peserta' );
+
+			// Header kolom
+			$headers = array(
+				'A' => 'NO',
+				'B' => 'NAMA LENGKAP',
+				'C' => 'NIK',
+				'D' => 'NO.HP / WHATSAPP',
+				'E' => 'EMAIL BELAJAR.ID',
+			);
+
+			foreach ( $headers as $col => $title ) {
+				$ws->setCellValueExplicit( $col . '1', $title, DataType::TYPE_STRING );
+			}
+
+			// Style header: Navy, White text, Bold, Center
+			$ws->getStyle( 'A1:E1' )->getFont()->setBold( true )->setColor( new \PhpOffice\PhpSpreadsheet\Style\Color( 'FFFFFFFF' ) );
+			$ws->getStyle( 'A1:E1' )->getFill()->setFillType( \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID )->getStartColor()->setARGB( 'FF1E3A8A' );
+			$ws->getStyle( 'A1:E1' )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_CENTER )->setVertical( Alignment::VERTICAL_CENTER );
+			$ws->getRowDimension( 1 )->setRowHeight( 26 );
+
+			// Data contoh
+			$samples = array(
+				array( '1', 'Rizky Pratama', '3201012345670001', '081234567890', 'rizky.pratama@guru.smp.belajar.id' ),
+				array( '2', 'Siti Nurhaliza', '', '', '' ),
+				array( '3', 'Budi Santoso', '3201012345670002', '085678901234', 'budi.santoso@guru.sd.belajar.id' ),
+			);
+
+			$r = 2;
+			foreach ( $samples as $row ) {
+				$ws->setCellValueExplicit( 'A' . $r, (string) $row[0], DataType::TYPE_STRING );
+				$ws->setCellValueExplicit( 'B' . $r, self::safe_excel_string( $row[1] ), DataType::TYPE_STRING );
+				$ws->setCellValueExplicit( 'C' . $r, self::safe_excel_string( $row[2] ), DataType::TYPE_STRING );
+				$ws->setCellValueExplicit( 'D' . $r, self::safe_excel_string( $row[3] ), DataType::TYPE_STRING );
+				$ws->setCellValueExplicit( 'E' . $r, self::safe_excel_string( $row[4] ), DataType::TYPE_STRING );
+
+				$ws->getStyle( 'A' . $r )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_CENTER );
+				$ws->getStyle( 'C' . $r . ':D' . $r )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_LEFT );
+				$ws->getRowDimension( $r )->setRowHeight( 22 );
+				$r++;
+			}
+
+			$last_r = max( 2, $r - 1 );
+			$ws->getStyle( 'A1:E' . $last_r )->getBorders()->getAllBorders()->setBorderStyle( Border::BORDER_THIN );
+
+			// Auto-fit lebar kolom
+			foreach ( range( 'A', 'E' ) as $col ) {
+				$ws->getColumnDimension( $col )->setAutoSize( true );
+			}
+
+			$filename = 'Template_Impor_Peserta.xlsx';
+
+			while ( ob_get_level() ) {
+				ob_end_clean();
+			}
+
+			nocache_headers();
+			header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			$writer = new Xlsx( $ss );
+			$writer->save( 'php://output' );
+			$ss->disconnectWorksheets();
+			exit;
+		}
+
+		// Fallback CSV jika library PhpSpreadsheet tidak tersedia
+		$filename = 'Template_Impor_Peserta.csv';
+
+		while ( ob_get_level() ) {
+			ob_end_clean();
+		}
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=UTF-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
+		$out = fopen( 'php://output', 'w' );
+		fprintf( $out, chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) ); // UTF-8 BOM
+		fputcsv( $out, array( 'NO', 'NAMA LENGKAP', 'NIK', 'NO.HP / WHATSAPP', 'EMAIL BELAJAR.ID' ) );
+		fputcsv( $out, array( '1', 'Rizky Pratama', '3201012345670001', '081234567890', 'rizky.pratama@guru.smp.belajar.id' ) );
+		fputcsv( $out, array( '2', 'Siti Nurhaliza', '', '', '' ) );
+		fputcsv( $out, array( '3', 'Budi Santoso', '3201012345670002', '085678901234', 'budi.santoso@guru.sd.belajar.id' ) );
+		fclose( $out );
+		exit;
 	}
 
 	/**
