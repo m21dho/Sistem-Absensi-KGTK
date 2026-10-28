@@ -1466,19 +1466,26 @@
 	}
 
 	function resetNik() {
+		S.kode = '';
+		S.info = null;
 		S.nik = '';
+		S.nip = '';
+		S.idType = 'nik';
 		S.cek = null;
 		S.hasil = null;
 		S.form = emptyForm();
 		S.verifTipe = '';
 		S.verifNilai = '';
-		go('nik');
+		S.verifKode = '';
+		S.biodataState = 'input';
+		S.biodataData = null;
+		go('beranda');
 	}
 
 	function vTerdaftar() {
-		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block', text: 'Selesai' });
+		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: 'Lihat Biodata & Riwayat Saya' });
+		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
@@ -1495,9 +1502,9 @@
 	}
 
 	function vSukses() {
-		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block', text: 'Selesai' });
+		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block', style: 'margin-top:10px;', text: 'Lihat Biodata & Riwayat Saya' });
+		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
