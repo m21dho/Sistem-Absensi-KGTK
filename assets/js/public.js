@@ -832,43 +832,29 @@
 			go('kode');
 		});
 
-		var idType = S.idType || 'nik';
-		var rNik = el('input', { type: 'radio', name: 'v_id_type', value: 'nik', id: 'v-id-nik', checked: idType !== 'nip' });
-		var rNip = el('input', { type: 'radio', name: 'v_id_type', value: 'nip', id: 'v-id-nip', checked: idType === 'nip' });
-		var radios = el('div', { class: 'kgtk-radios', style: 'margin-bottom:14px;' }, [
-			el('label', { class: 'kgtk-radio', for: 'v-id-nik' }, [rNik, 'NIK (16 digit)']),
-			el('label', { class: 'kgtk-radio', for: 'v-id-nip' }, [rNip, 'NIP (18 digit - Panitia/ASN)'])
-		]);
-
-		var f = field('NIK (16 digit)', 'nik', { type: 'text', inputmode: 'numeric', maxlength: 16, autocomplete: 'off', pattern: '[0-9]*', required: true }, S.nik || S.nip);
+		var f = field('NIK (16 digit) *', 'nik', {
+			type: 'text',
+			inputmode: 'numeric',
+			maxlength: 16,
+			autocomplete: 'off',
+			pattern: '[0-9]*',
+			placeholder: '16 digit angka NIK sesuai KTP',
+			required: true
+		}, S.nik);
 		var err = errBox();
 		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut' });
 		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: '← Kembali / Ganti Kode Pelatihan' });
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
-			el('h2', { text: 'Nomor Identitas' }),
-			el('p', { class: 'kgtk-muted', text: 'Pilih jenis identitas yang ingin digunakan untuk mengenali Anda di kegiatan ini.' }),
-			radios,
+			el('h2', { text: 'Nomor Induk Kependudukan (NIK)' }),
+			el('p', { class: 'kgtk-muted', text: 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mendaftar pelatihan.' }),
 			err,
 			f.wrap,
 			btn,
 			back
 		]);
 
-		function updateInputMode() {
-			var isNip = rNip.checked;
-			var span = f.wrap.querySelector('span');
-			if (span) { span.textContent = isNip ? 'NIP (18 digit) *' : 'NIK (16 digit) *'; }
-			f.input.maxLength = isNip ? 18 : 16;
-			f.input.placeholder = isNip ? '18 digit angka NIP' : '16 digit angka NIK';
-			f.input.value = f.input.value.slice(0, isNip ? 18 : 16);
-		}
-		rNik.addEventListener('change', updateInputMode);
-		rNip.addEventListener('change', updateInputMode);
-		updateInputMode();
-
 		f.input.addEventListener('input', function () {
-			var max = rNip.checked ? 18 : 16;
-			f.input.value = f.input.value.replace(/\D/g, '').slice(0, max);
+			f.input.value = f.input.value.replace(/\D/g, '').slice(0, 16);
 			S.verifTipe = '';
 			S.verifNilai = '';
 		});
@@ -885,42 +871,23 @@
 			err.hidden = true;
 			f.input.classList.remove('is-invalid');
 			var val = f.input.value.trim();
-			var isNip = rNip.checked;
-			if (isNip) {
-				if (!/^\d{18}$/.test(val)) {
-					f.input.classList.add('is-invalid');
-					var msgNip = !val ? 'NIP belum diisi.' : 'NIP harus terdiri dari 18 digit angka.';
-					showErr(err, msgNip);
-					kgtkAlert('NIP Belum Sesuai', msgNip + ' Silakan periksa kembali 18 digit Nomor Induk Pegawai Anda.', {
-						type: 'warning',
-						confirmText: 'Periksa NIP'
-					}).then(function () {
-						f.input.focus();
-					});
-					return;
-				}
-				S.idType = 'nip';
-				S.nip = val;
-				S.nik = '';
-			} else {
-				if (!/^\d{16}$/.test(val)) {
-					f.input.classList.add('is-invalid');
-					var msgNik = !val ? 'NIK belum diisi.' : 'NIK harus terdiri dari 16 digit angka.';
-					showErr(err, msgNik);
-					kgtkAlert('NIK Belum Sesuai', msgNik + ' Silakan periksa kembali Nomor Induk Kependudukan pada KTP Anda.', {
-						type: 'warning',
-						confirmText: 'Periksa NIK'
-					}).then(function () {
-						f.input.focus();
-					});
-					return;
-				}
-				S.idType = 'nik';
-				S.nik = val;
-				S.nip = '';
+			if (!/^\d{16}$/.test(val)) {
+				f.input.classList.add('is-invalid');
+				var msgNik = !val ? 'NIK belum diisi.' : 'NIK harus terdiri dari 16 digit angka.';
+				showErr(err, msgNik);
+				kgtkAlert('NIK Belum Sesuai', msgNik + ' Silakan periksa kembali Nomor Induk Kependudukan pada KTP Anda.', {
+					type: 'warning',
+					confirmText: 'Periksa NIK'
+				}).then(function () {
+					f.input.focus();
+				});
+				return;
 			}
+			S.idType = 'nik';
+			S.nik = val;
+			S.nip = '';
 			busy(btn, true);
-			cekNikOrNip(val, S.idType).catch(function (x) {
+			cekNik(val).catch(function (x) {
 				busy(btn, false, 'Lanjut');
 				showErr(err, x.message);
 				kgtkAlert('Pemeriksaan Gagal', x.message || 'Terjadi kesalahan saat memeriksa data.', {
@@ -933,7 +900,7 @@
 	}
 
 	function vNikVerif() {
-		var btnBackNik = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya (NIK / NIP)' });
+		var btnBackNik = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya (NIK)' });
 		btnBackNik.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
@@ -1017,7 +984,7 @@
 			type: 'button',
 			class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large',
 			style: 'margin-top:16px;',
-			text: '← Kembali ke Langkah Sebelumnya (NIK / NIP)'
+			text: '← Kembali ke Langkah Sebelumnya (NIK)'
 		});
 		btnBackBottom.addEventListener('click', function () {
 			S.verifTipe = '';
@@ -1083,41 +1050,23 @@
 	}
 
 	/** Cek NIK lalu arahkan ke tampilan yang sesuai. */
-	/** Cek NIK / NIP lalu arahkan ke tampilan yang sesuai. */
 	function cekNikOrNip(val, idType) {
 		S.verifTipe = '';
 		S.verifNilai = '';
-		idType = idType || 'nik';
-		var payload = { kode: S.kode, id_type: idType };
-		if (idType === 'nip') {
-			payload.nip = val;
-		} else {
-			payload.nik = val;
-		}
+		idType = 'nik';
+		var payload = { kode: S.kode, id_type: 'nik', nik: val };
 		return api('public/cek-nik', 'POST', payload).then(function (d) {
 			S.info = d.pelatihan; S.cek = d;
-			if (idType === 'nip') {
-				S.idType = 'nip';
-				S.nip = val;
-				S.nik = d.guru && d.guru.nik ? d.guru.nik : '';
-			} else {
-				S.idType = 'nik';
-				S.nik = val;
-				S.nip = d.guru && d.guru.nip ? d.guru.nip : '';
-			}
+			S.idType = 'nik';
+			S.nik = val;
+			S.nip = d.guru && d.guru.nip ? d.guru.nip : '';
 			if (d.status === 'terdaftar') { S.hasil = d.hasil; return go('terdaftar'); }
 			if (d.guru) {
 				S.form = Object.assign(emptyForm(), d.guru);
 				go('biodata');
 			} else {
 				S.form = emptyForm();
-				if (idType === 'nip') {
-					S.form.peran = 'Panitia';
-					S.form.nip = val;
-					go('biodata');
-				} else {
-					go('nik-verif');
-				}
+				go('nik-verif');
 			}
 		});
 	}
@@ -1236,20 +1185,13 @@
 			if (fpengalaman && fpengalaman.input) { fpengalaman.input.required = !isPanitia; }
 			if (fbel && fbel.input) { fbel.input.required = isPeserta; }
 
-			// Perlakuan NIK / NIP untuk Panitia
-			var isPakaiNip = (isPanitia && S.idType === 'nip');
-			if (isPakaiNip) {
-				fn.wrap.style.display = 'none';
-				fnip.wrap.querySelector('span').innerHTML = 'NIP * <small style="color:#dc2626;font-size:12.5px;font-weight:normal;margin-left:4px;">*Identitas utama panitia (18 digit angka)</small>';
-				fnip.input.required = true;
-			} else if (isPanitia) {
-				fn.wrap.style.display = '';
-				fn.wrap.querySelector('span').textContent = 'NIK (16 digit) *';
+			// Label NIK & NIP
+			fn.wrap.style.display = '';
+			fn.wrap.querySelector('span').textContent = 'NIK (16 digit) *';
+			if (isPanitia) {
 				fnip.wrap.querySelector('span').innerHTML = 'NIP <small style="color:#64748b;font-weight:normal;">(opsional bila ada)</small>';
 				fnip.input.required = false;
 			} else {
-				fn.wrap.style.display = '';
-				fn.wrap.querySelector('span').textContent = 'NIK (16 digit) *';
 				fnip.wrap.querySelector('span').innerHTML = 'NIP <small style="color:#64748b;font-weight:normal;">(hanya angka, kosongkan jika belum ada)</small>';
 				fnip.input.required = false;
 			}
@@ -1462,12 +1404,7 @@
 			}
 
 			// 16. NIP
-			var isPakaiNip = (v.peran === 'Panitia' && S.idType === 'nip');
-			if (isPakaiNip) {
-				if (!/^\d{18}$/.test(v.nip)) {
-					errors.push({ label: 'NIP', msg: 'NIP panitia wajib diisi (18 digit angka).', el: fnip.input });
-				}
-			} else if (v.nip && !/^\d{18}$/.test(v.nip)) {
+			if (v.nip && !/^\d{18}$/.test(v.nip)) {
 				errors.push({ label: 'NIP', msg: 'NIP harus 18 digit angka (kosongkan jika tidak ada).', el: fnip.input });
 			}
 
@@ -1497,13 +1434,11 @@
 			}
 
 			busy(btn, true);
-			var isPakaiNip = (v.peran === 'Panitia' && S.idType === 'nip');
 			var postData = Object.assign({
 				kode: S.kode,
 				nik: S.nik,
 				nip: v.nip,
-				panitia_id_type: isPakaiNip ? 'nip' : 'nik',
-				id_type: isPakaiNip ? 'nip' : 'nik'
+				id_type: 'nik'
 			}, v);
 			if (S.verifTipe && S.verifNilai) {
 				postData.tipe = S.verifTipe;
