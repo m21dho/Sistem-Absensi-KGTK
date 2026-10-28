@@ -130,6 +130,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</label>
 			</div>
 
+			<label class="kgtk-field">
+				<span>Alamat Sekolah / Instansi</span>
+				<textarea class="kgtk-input" name="alamat_instansi" id="kgtk-edit-ps-alamat-instansi" rows="2" placeholder="Alamat lengkap kantor / sekolah"></textarea>
+			</label>
+
 			<div class="kgtk-row2">
 				<label class="kgtk-field">
 					<span>Jabatan / Jenis GTK</span>
@@ -205,11 +210,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<label class="kgtk-field">
 				<span>Alamat Tempat Tinggal / Rumah *</span>
 				<textarea class="kgtk-input" name="alamat" id="kgtk-edit-ps-alamat" rows="2" placeholder="Alamat lengkap domisili" required></textarea>
-			</label>
-
-			<label class="kgtk-field">
-				<span>Alamat Sekolah / Instansi</span>
-				<textarea class="kgtk-input" name="alamat_instansi" id="kgtk-edit-ps-alamat-instansi" rows="2" placeholder="Alamat lengkap kantor / sekolah"></textarea>
 			</label>
 		</form>
 

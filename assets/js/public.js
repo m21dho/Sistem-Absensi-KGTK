@@ -1221,9 +1221,9 @@
 			rowJkAgama,
 			fpangkat.wrap,
 			falamat.wrap,
-			falamatInstansi.wrap,
 			fpendidikan.wrap,
 			sek.node,
+			falamatInstansi.wrap,
 			rowBank,
 			fnpwp.wrap,
 			fpengalaman.wrap,
@@ -1329,21 +1329,21 @@
 				errors.push({ label: 'Alamat Rumah / Tempat Tinggal', msg: 'Alamat rumah / tempat tinggal belum diisi.', el: falamat.input });
 			}
 
-			// 5. Alamat Sekolah / Instansi
-			if (!v.alamat_instansi) {
-				errors.push({ label: 'Alamat Sekolah / Instansi', msg: 'Alamat sekolah / instansi belum diisi.', el: falamatInstansi.input });
-			}
-
-			// 6. Pendidikan Terakhir
+			// 5. Pendidikan Terakhir
 			if (!v.pendidikan) {
 				errors.push({ label: 'Pendidikan Terakhir', msg: 'Pilih pendidikan terakhir Anda.', el: fpendidikan.input });
 			}
 
-			// Asal Sekolah/Instansi & Kabupaten/Kota
+			// 6. Asal Sekolah/Instansi & Kabupaten/Kota
 			var se = sek.validate();
 			if (se) {
 				var sekTarget = sek.node ? (sek.node.querySelector('.kgtk-input:invalid') || sek.node.querySelector('.kgtk-input')) : null;
 				errors.push({ label: 'Asal Sekolah/Instansi', msg: se, el: sekTarget });
+			}
+
+			// 7. Alamat Sekolah / Instansi
+			if (!v.alamat_instansi) {
+				errors.push({ label: 'Alamat Sekolah / Instansi', msg: 'Alamat sekolah / instansi belum diisi.', el: falamatInstansi.input });
 			}
 
 			// Peran
@@ -1643,9 +1643,9 @@
 				rowJkAgama,
 				fpangkat.wrap,
 				falamat.wrap,
-				falamatInstansi.wrap,
 				fpendidikan.wrap,
 				sek.node,
+				falamatInstansi.wrap,
 				wrapGtk,
 				rowBank,
 				fnpwp.wrap,
@@ -1701,9 +1701,9 @@
 				if (!postPayload.tanggal_lahir) { return showErr(err, 'Tanggal lahir belum diisi.'); }
 				if (!postPayload.jenis_kelamin) { return showErr(err, 'Pilih jenis kelamin.'); }
 				if (!postPayload.alamat) { return showErr(err, 'Alamat rumah belum diisi.'); }
-				if (!postPayload.alamat_instansi) { return showErr(err, 'Alamat instansi belum diisi.'); }
 				if (!postPayload.pendidikan) { return showErr(err, 'Pilih pendidikan terakhir.'); }
 				if (!postPayload.sekolah) { return showErr(err, 'Sekolah / Instansi belum diisi.'); }
+				if (!postPayload.alamat_instansi) { return showErr(err, 'Alamat instansi belum diisi.'); }
 				if (!postPayload.jenis_gtk) { return showErr(err, 'Jabatan belum dipilih.'); }
 				if (!postPayload.bank) { return showErr(err, 'Nama bank belum diisi.'); }
 				if (!postPayload.rekening) { return showErr(err, 'Nomor rekening belum diisi.'); }

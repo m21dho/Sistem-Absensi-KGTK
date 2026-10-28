@@ -156,11 +156,6 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</label>
 
 		<label class="kgtk-field">
-			<span>Alamat Sekolah / Instansi *</span>
-			<textarea class="kgtk-input" name="alamat_instansi" rows="2" maxlength="500" required placeholder="Alamat lengkap instansi / tempat bertugas"></textarea>
-		</label>
-
-		<label class="kgtk-field">
 			<span>Pendidikan Terakhir *</span>
 			<select class="kgtk-input" name="pendidikan" required>
 				<option value="">-- Pilih Pendidikan Terakhir --</option>
@@ -190,6 +185,11 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</div>
 
 		<div id="kgtk-sekolah-slot"></div>
+
+		<label class="kgtk-field">
+			<span>Alamat Sekolah / Instansi *</span>
+			<textarea class="kgtk-input" name="alamat_instansi" rows="2" maxlength="500" required placeholder="Alamat lengkap instansi / tempat bertugas"></textarea>
+		</label>
 
 		<!-- Field Jabatan Khusus Peserta -->
 		<label class="kgtk-field" id="kgtk-admin-wrap-jenis-gtk">
