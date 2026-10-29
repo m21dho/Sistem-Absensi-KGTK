@@ -601,6 +601,12 @@
 					el('span', { class: 'kgtk-hero-meta-val', text: S.info.lokasi })
 				]));
 			}
+			if (S.info.deadline_formatted) {
+				metaItems.push(el('div', { class: 'kgtk-hero-meta-item' }, [
+					el('span', { class: 'kgtk-hero-meta-lbl', text: 'Batas Pendaftaran: ' }),
+					el('span', { class: 'kgtk-hero-meta-val', text: S.info.deadline_formatted })
+				]));
+			}
 			var metaRow = el('div', { class: 'kgtk-hero-meta-row' }, metaItems);
 
 			heroChildren = [
@@ -608,7 +614,10 @@
 				el('div', { class: 'kgtk-hero-main-info' }, [
 					el('div', { class: 'kgtk-hero-title-row' }, [
 						el('h1', { class: 'kgtk-hero-title-pelatihan', text: S.info.nama }),
-						el('span', { class: 'kgtk-hero-status-pill', text: 'Pendaftaran Dibuka' })
+						el('span', {
+							class: 'kgtk-hero-status-pill' + (S.info.is_deadline_passed ? ' is-closed' : (S.info.penuh ? ' is-closed' : '')),
+							text: S.info.is_deadline_passed ? 'Pendaftaran Ditutup' : (S.info.penuh ? 'Kuota Penuh' : 'Pendaftaran Dibuka')
+						})
 					]),
 					metaRow
 				])
@@ -808,7 +817,20 @@
 				return;
 			}
 			busy(btn, true);
-			getInfo(kode).then(function (d) { S.kode = kode; S.info = d; go('nik'); })
+			getInfo(kode).then(function (d) {
+				S.kode = kode;
+				S.info = d;
+				if (d.is_deadline_passed) {
+					busy(btn, false, 'Lanjut ke Langkah 2 (Identitas)');
+					showErr(err, 'Pendaftaran untuk pelatihan ini telah ditutup pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.');
+					kgtkAlert('Pendaftaran Sudah Ditutup', 'Batas waktu pendaftaran untuk pelatihan "' + (d.nama || '') + '" telah berakhir pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.\n\nPendaftaran baru sudah tidak dapat dilakukan karena telah melewati batas waktu (deadline) yang ditetapkan panitia.\n\nBagi guru yang sudah mendaftar sebelumnya, silakan buka menu "Lihat Pelatihan Saya" di bawah untuk melihat bukti dan data pendaftaran Anda.', {
+						type: 'danger',
+						confirmText: 'Mengerti'
+					});
+					return;
+				}
+				go('nik');
+			})
 				.catch(function (x) {
 					busy(btn, false, 'Lanjut');
 					showErr(err, x.message);
@@ -2043,7 +2065,18 @@
 		goBiodataSaya();
 	} else if (qKode) {
 		S.kode = qKode;
-		getInfo(qKode).then(function (d) { S.info = d; go('nik'); })
+		getInfo(qKode).then(function (d) {
+			S.info = d;
+			if (d.is_deadline_passed) {
+				go('kode');
+				kgtkAlert('Pendaftaran Sudah Ditutup', 'Batas waktu pendaftaran untuk pelatihan "' + (d.nama || '') + '" telah berakhir pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.\n\nPendaftaran baru sudah tidak dapat dilakukan karena telah melewati batas waktu (deadline) yang ditetapkan panitia.\n\nBagi guru yang sudah mendaftar sebelumnya, silakan buka menu "Lihat Pelatihan Saya" di bawah untuk melihat bukti dan data pendaftaran Anda.', {
+					type: 'danger',
+					confirmText: 'Mengerti'
+				});
+				return;
+			}
+			go('nik');
+		})
 			.catch(function (x) { S.kodeError = x.message; go('kode'); });
 	} else {
 		S.view = 'beranda';

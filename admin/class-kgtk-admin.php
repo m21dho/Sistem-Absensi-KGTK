@@ -480,8 +480,10 @@ class KGTK_Admin {
 			echo '</div>';
 			return;
 		}
-		$kelas = KGTK_Helpers::kelas_stats( $p->id );
-		$back  = self::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => (int) $p->id ) );
+		$kelas     = KGTK_Helpers::kelas_stats( $p->id );
+		$req_peran = isset( $_GET['peran'] ) ? sanitize_text_field( wp_unslash( $_GET['peran'] ) ) : 'Peserta';
+		$back_hash = ( 'Panitia' === $req_peran ) ? '#panitia' : '';
+		$back      = self::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => (int) $p->id ) ) . $back_hash;
 
 		self::render_view( 'view-tambah', compact( 'p', 'kelas', 'back' ) );
 	}

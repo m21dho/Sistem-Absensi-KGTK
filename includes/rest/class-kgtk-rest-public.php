@@ -198,6 +198,15 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				);
 			}
 
+			if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
+				$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+				return self::err(
+					'pendaftaran_ditutup',
+					'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Anda tidak dapat melakukan pendaftaran baru.',
+					422
+				);
+			}
+
 			// Ambil data profil dari kgtk_guru atau kgtk_panitia jika ada
 			$tg       = KGTK_DB::table( 'guru' );
 			$guru_row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tg} WHERE nip = %s LIMIT 1", $nip ), ARRAY_A );
@@ -245,6 +254,15 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 					'pelatihan' => $pel,
 					'hasil'     => self::hasil( $p, $reg->nama, $reg->sekolah, $reg->peran, $reg->kelas_nama, KGTK_Helpers::PERAN_SLOT === $reg->peran ? (int) $reg->slot : 0, $reg->nomor, $reg->jenis_gtk ),
 				)
+			);
+		}
+
+		if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
+			$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+			return self::err(
+				'pendaftaran_ditutup',
+				'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Anda tidak dapat melakukan pendaftaran baru.',
+				422
 			);
 		}
 
@@ -733,7 +751,11 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		);
 
 		$k = null;
-		if ( $kelas_id ) {
+		if ( 'Panitia' === $d['peran'] ) {
+			// Panitia tidak pernah terikat pada kelas peserta dan tidak mengurangi slot kelas.
+			$k        = null;
+			$kelas_id = 0;
+		} elseif ( $kelas_id ) {
 			foreach ( (array) $daftar as $row ) {
 				if ( (int) $row->id === (int) $kelas_id ) {
 					$k = $row;
@@ -956,6 +978,14 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$p = self::find_pelatihan( self::str( $in, 'kode' ) );
 		if ( ! $p ) {
 			return self::err( 'kode_tidak_ada', 'Kode pelatihan tidak ditemukan.', 404 );
+		}
+		if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
+			$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+			return self::err(
+				'pendaftaran_ditutup',
+				'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Pendaftaran baru tidak dapat diproses.',
+				422
+			);
 		}
 		$d = self::validasi_peserta( $in );
 		if ( is_wp_error( $d ) ) {

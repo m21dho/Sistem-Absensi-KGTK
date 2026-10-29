@@ -3,6 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -20,6 +21,66 @@ use Dompdf\Options;
  * Endpoint: admin-post.php?action=kgtk_export&format=pdf|xlsx&id=ID&_wpnonce=...
  */
 class KGTK_Export {
+
+	const DEFAULT_PROVINSI    = 'Kepulauan Riau';
+	const STATUS_VERIFIED     = 'Terverifikasi';
+	const PLACEHOLDER_EMPTY   = '-';
+
+	const BULAN_SINGKAT = array(
+		'01' => 'Jan',
+		'02' => 'Feb',
+		'03' => 'Mar',
+		'04' => 'Apr',
+		'05' => 'Mei',
+		'06' => 'Jun',
+		'07' => 'Jul',
+		'08' => 'Agu',
+		'09' => 'Sep',
+		'10' => 'Okt',
+		'11' => 'Nov',
+		'12' => 'Des',
+	);
+
+	const JENJANG_PATTERNS = array(
+		'SMK'  => '/\b(SMK|SMKN)\b/i',
+		'SMA'  => '/\b(SMA|SMAN)\b/i',
+		'SMP'  => '/\b(SMP|SMPN)\b/i',
+		'SD'   => '/\b(SD|SDN)\b/i',
+		'SLB'  => '/\b(SLB|SLBN)\b/i',
+		'TK'   => '/\b(TK|TKN)\b/i',
+		'PAUD' => '/\b(PAUD)\b/i',
+	);
+
+	const DATA_GURU_HEADERS = array(
+		'Nama',
+		'NIP/NIK',
+		'Tempat',
+		'Tanggal Lahir',
+		'Jenis Kelamin',
+		'NPSN',
+		'NUPTK',
+		'Instansi',
+		'Alamat Instansi',
+		'Kabupaten/Kota',
+		'Alamat Rumah',
+		'Jenjang',
+		'Pangkat/Golongan',
+		'Agama',
+		'Pendidikan Terakhir',
+		'Jabatan',
+		'Pengelaman Jabatan',
+		'Nama BANK',
+		'Nomor Rekening',
+		'NPWP',
+		'Pengalaman Jabatan ',
+		'NO HP',
+		'Email ',
+		'Email Belajar ID',
+		'SIMPKB',
+		'Provinsi',
+		'Nomor HP',
+		'Status',
+	);
 
 	public static function init() {
 		add_action( 'admin_post_kgtk_export', array( __CLASS__, 'handle' ) );
@@ -257,7 +318,7 @@ class KGTK_Export {
 		check_admin_referer( 'kgtk_export_' . $id );
 
 		$format = isset( $_GET['format'] ) ? sanitize_key( wp_unslash( $_GET['format'] ) ) : '';
-		if ( ! in_array( $format, array( 'pdf', 'xlsx' ), true ) ) {
+		if ( ! in_array( $format, array( 'pdf', 'xlsx', 'xlsx_absen' ), true ) ) {
 			wp_die( 'Format tidak dikenal.', 'Permintaan tidak valid', array( 'response' => 400 ) );
 		}
 		if ( ! self::libs_ready() ) {
@@ -297,11 +358,15 @@ class KGTK_Export {
 			$suffix .= '-' . sanitize_title( $tanggal_filter );
 		}
 
-		$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
 		if ( 'pdf' === $format ) {
+			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
 			self::pdf( $data, $base . '.pdf', $peran_filter, $tanggal_filter );
-		} else {
+		} elseif ( 'xlsx_absen' === $format ) {
+			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
 			self::xlsx( $data, $base . '.xlsx', $peran_filter, $tanggal_filter );
+		} else {
+			$base = sanitize_file_name( 'data-guru-' . strtolower( $data['pelatihan']->kode ) . $suffix );
+			self::xlsx_data_guru( $id, $data, $base . '.xlsx', $peran_filter );
 		}
 		exit;
 	}
@@ -542,13 +607,256 @@ class KGTK_Export {
 		}
 		$ss->setActiveSheetIndex( 0 );
 
+		self::stream_xlsx( $ss, $filename );
+	}
+
+	/**
+	 * Mengirim berkas Spreadsheet (.xlsx) ke output browser dan membebaskan memori.
+	 *
+	 * @param Spreadsheet $ss       Instance Spreadsheet.
+	 * @param string      $filename Nama berkas unduhan.
+	 */
+	private static function stream_xlsx( Spreadsheet $ss, $filename ) {
 		self::clean_buffers();
 		nocache_headers();
 		header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
 		$writer = new Xlsx( $ss );
 		$writer->save( 'php://output' );
 		$ss->disconnectWorksheets();
+	}
+
+	/**
+	 * Sanitasi nilai string sebelum ditulis ke sel Excel untuk mencegah CSV/Excel Formula Injection.
+	 *
+	 * @param mixed $val Nilai input.
+	 * @return string
+	 */
+	private static function sanitize_excel_cell( $val ) {
+		$str = trim( (string) $val );
+		if ( '' === $str ) {
+			return '';
+		}
+		if ( in_array( $str[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+			return "'" . $str;
+		}
+		return $str;
+	}
+
+	/**
+	 * Normalisasi field opsional yang menggunakan tanda '-' sebagai placeholder kosong.
+	 *
+	 * @param mixed $val Nilai kolom dari database.
+	 * @return string
+	 */
+	private static function clean_optional_field( $val ) {
+		$cleaned = trim( (string) $val );
+		return self::PLACEHOLDER_EMPTY === $cleaned ? '' : $cleaned;
+	}
+
+	/**
+	 * Format tanggal lahir sesuai standar template: "18 Agu 1988".
+	 *
+	 * @param string $tgl Tanggal mentah (YYYY-MM-DD).
+	 * @return string
+	 */
+	public static function format_tgl_lahir_excel( $tgl ) {
+		$raw = trim( (string) $tgl );
+		if ( '' === $raw ) {
+			return '';
+		}
+
+		$timestamp = strtotime( $raw );
+		if ( false === $timestamp ) {
+			return $raw;
+		}
+
+		$month_key   = date( 'm', $timestamp );
+		$month_label = isset( self::BULAN_SINGKAT[ $month_key ] ) ? self::BULAN_SINGKAT[ $month_key ] : date( 'M', $timestamp );
+
+		return date( 'd', $timestamp ) . ' ' . $month_label . ' ' . date( 'Y', $timestamp );
+	}
+
+	/**
+	 * Deteksi jenjang sekolah (SD, SMP, SMA, SMK, PAUD, TK, SLB) dari nama instansi.
+	 *
+	 * @param string $sekolah Nama sekolah/instansi.
+	 * @return string
+	 */
+	public static function detect_jenjang( $sekolah ) {
+		$name = trim( (string) $sekolah );
+		if ( '' === $name ) {
+			return '';
+		}
+
+		foreach ( self::JENJANG_PATTERNS as $jenjang => $pattern ) {
+			if ( preg_match( $pattern, $name ) ) {
+				return $jenjang;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Mengambil daftar peserta pelatihan beserta data sekolah dan kelas untuk kebutuhan export.
+	 *
+	 * @param int    $pelatihan_id ID pelatihan.
+	 * @param string $peran_filter Filter peran (opsional).
+	 * @return array<int, object>
+	 */
+	private static function fetch_peserta_for_export( $pelatihan_id, $peran_filter = '' ) {
+		global $wpdb;
+		$tp = KGTK_DB::table( 'peserta' );
+		$tk = KGTK_DB::table( 'kelas' );
+		$ts = KGTK_DB::table( 'sekolah' );
+
+		$where  = array( 'ps.pelatihan_id = %d' );
+		$params = array( (int) $pelatihan_id );
+
+		$peran_clean = trim( (string) $peran_filter );
+		$is_all      = in_array( strtolower( $peran_clean ), array( '', 'all', 'semua' ), true );
+
+		if ( ! $is_all ) {
+			$where[]  = 'ps.peran = %s';
+			$params[] = $peran_clean;
+		}
+
+		$where_sql = implode( ' AND ', $where );
+		$sql       = "SELECT ps.*,
+		                     COALESCE(k.nama, '') AS kelas_label,
+		                     COALESCE(s.npsn, '') AS sekolah_npsn,
+		                     COALESCE(s.jenjang, '') AS sekolah_jenjang
+		              FROM {$tp} ps
+		              LEFT JOIN {$tk} k ON k.id = ps.kelas_id
+		              LEFT JOIN {$ts} s ON s.id = ps.sekolah_id
+		              WHERE {$where_sql}
+		              ORDER BY ps.kelas_id ASC, ps.nama ASC";
+
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Memetakan satu objek peserta menjadi array 28 kolom sesuai urutan DATA_GURU_HEADERS.
+	 *
+	 * @param object $row Objek baris peserta dari database.
+	 * @return array<int, string>
+	 */
+	private static function map_peserta_to_excel_row( $row ) {
+		$nama_lengkap = KGTK_Helpers::format_nama_gelar( $row->nama, $row->gelar_depan, $row->gelar_belakang );
+
+		$nip     = trim( (string) $row->nip );
+		$nik     = trim( (string) $row->nik );
+		$nip_nik = ( '' !== $nip && '' !== $nik ) ? ( $nip . '/' . $nik ) : ( '' !== $nip ? $nip : $nik );
+
+		$npsn = ! empty( $row->sekolah_npsn )
+			? (string) $row->sekolah_npsn
+			: ( ! empty( $row->npsn ) ? (string) $row->npsn : '' );
+
+		$jenjang = ! empty( $row->sekolah_jenjang )
+			? (string) $row->sekolah_jenjang
+			: self::detect_jenjang( $row->sekolah );
+
+		$pengalaman = self::clean_optional_field( $row->pengalaman_jabatan );
+		$bank       = self::clean_optional_field( $row->bank );
+		$rekening   = self::clean_optional_field( $row->rekening );
+
+		$hp_raw   = trim( (string) $row->hp );
+		$hp_digit = preg_replace( '/\D/', '', $hp_raw );
+		$no_hp    = '' !== $hp_digit ? ltrim( $hp_digit, '0' ) : $hp_raw;
+
+		return array(
+			$nama_lengkap,
+			$nip_nik,
+			trim( (string) $row->tempat_lahir ),
+			self::format_tgl_lahir_excel( $row->tanggal_lahir ),
+			trim( (string) $row->jenis_kelamin ),
+			$npsn,
+			trim( (string) $row->nuptk ),
+			trim( (string) $row->sekolah ),
+			trim( (string) $row->alamat_instansi ),
+			trim( (string) $row->kabkota ),
+			trim( (string) $row->alamat ),
+			$jenjang,
+			trim( (string) $row->pangkat_golongan ),
+			trim( (string) $row->agama ),
+			trim( (string) $row->pendidikan ),
+			trim( (string) $row->jenis_gtk ),
+			$pengalaman,
+			$bank,
+			$rekening,
+			trim( (string) $row->npwp ),
+			$pengalaman,
+			$no_hp,
+			trim( (string) $row->email ),
+			trim( (string) $row->email_belajar ),
+			trim( (string) $row->simpkb ),
+			self::DEFAULT_PROVINSI,
+			$hp_raw,
+			! empty( $row->terverifikasi ) ? self::STATUS_VERIFIED : '',
+		);
+	}
+
+	/**
+	 * Export data guru yang mengikuti pelatihan dalam format Excel (.xlsx)
+	 * sesuai template Google Spreadsheet (28 kolom data guru lengkap).
+	 *
+	 * @param int    $pelatihan_id ID pelatihan.
+	 * @param array  $data         Data konteks pelatihan.
+	 * @param string $filename     Nama berkas keluaran.
+	 * @param string $peran_filter Filter peran peserta (opsional).
+	 */
+	public static function xlsx_data_guru( $pelatihan_id, $data, $filename, $peran_filter = '' ) {
+		$peserta_list = self::fetch_peserta_for_export( $pelatihan_id, $peran_filter );
+
+		$ss = new Spreadsheet();
+		$ss->getDefaultStyle()->getFont()->setName( 'Arial' )->setSize( 10 );
+
+		$ws = $ss->getActiveSheet();
+		$ws->setTitle( 'Data Guru Pelatihan' );
+
+		$headers   = self::DATA_GURU_HEADERS;
+		$col_count = count( $headers );
+
+		// Precompute huruf kolom (A..AB) satu kali di luar loop baris untuk efisiensi O(1)
+		$col_letters = array();
+		for ( $i = 1; $i <= $col_count; $i++ ) {
+			$col_letters[ $i - 1 ] = Coordinate::stringFromColumnIndex( $i );
+		}
+
+		// Tulis baris header (Baris 1)
+		foreach ( $headers as $idx => $header_text ) {
+			$ws->setCellValueExplicit( $col_letters[ $idx ] . '1', $header_text, DataType::TYPE_STRING );
+		}
+
+		// Styling Header & Freeze Baris Pertama
+		$header_range = 'A1:' . $col_letters[ $col_count - 1 ] . '1';
+		$ws->getStyle( $header_range )->getFont()->setBold( true );
+		$ws->getStyle( $header_range )->getAlignment()->setVertical( Alignment::VERTICAL_CENTER );
+		$ws->freezePane( 'A2' );
+
+		// Tulis baris data peserta (Baris 2 dst)
+		$row_idx = 2;
+		foreach ( $peserta_list as $peserta ) {
+			$row_values = self::map_peserta_to_excel_row( $peserta );
+			foreach ( $row_values as $col_idx => $cell_value ) {
+				$ws->setCellValueExplicit(
+					$col_letters[ $col_idx ] . $row_idx,
+					self::sanitize_excel_cell( $cell_value ),
+					DataType::TYPE_STRING
+				);
+			}
+			$row_idx++;
+		}
+
+		// Auto-size seluruh kolom
+		foreach ( $col_letters as $col_letter ) {
+			$ws->getColumnDimension( $col_letter )->setAutoSize( true );
+		}
+
+		self::stream_xlsx( $ss, $filename );
 	}
 
 	/* ====================== PDF ====================== */

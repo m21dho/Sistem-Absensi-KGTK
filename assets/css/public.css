@@ -528,6 +528,12 @@ body.kgtk-penuh .wp-block-post-featured-image {
 	text-transform: uppercase;
 	line-height: 1.2;
 }
+.kgtk-app .kgtk-hero-status-pill.is-closed,
+.kgtk-app .kgtk-hero-status-pill.is-full {
+	background: rgba(239, 68, 68, 0.22);
+	border: 1px solid rgba(248, 113, 113, 0.55);
+	color: #fca5a5;
+}
 .kgtk-app .kgtk-hero-meta-row {
 	display: flex;
 	flex-wrap: wrap;

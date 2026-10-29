@@ -28,6 +28,8 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		if ( ! in_array( $tipe_pj, array( 'Penanggung Jawab', 'Ketua' ), true ) ) {
 			$tipe_pj = 'Penanggung Jawab';
 		}
+		$deadline_raw = isset( $in['deadline_pendaftaran'] ) ? $in['deadline_pendaftaran'] : ( isset( $in['deadline'] ) ? $in['deadline'] : '' );
+		$deadline     = KGTK_Helpers::sanitize_deadline( $deadline_raw );
 		$ket     = isset( $in['keterangan'] ) && is_scalar( $in['keterangan'] ) ? sanitize_textarea_field( (string) $in['keterangan'] ) : '';
 		$kode    = KGTK_Helpers::normalize_kode( self::str( $in, 'kode' ) );
 
@@ -131,17 +133,18 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			array(
 				'nama'            => $nama,
 				'penyelenggara'   => $penyel,
-				'tanggal_mulai'   => $mulai,
-				'tanggal_selesai' => $selesai,
-				'lokasi'          => $lokasi,
-				'kabkota'         => $kabkota,
-				'penanggung_jawab' => $pj,
-				'tipe_pj'          => $tipe_pj,
-				'keterangan'      => $ket,
-				'kode'            => $kode,
-				'created_at'      => current_time( 'mysql' ),
+				'tanggal_mulai'        => $mulai,
+				'tanggal_selesai'      => $selesai,
+				'deadline_pendaftaran' => $deadline,
+				'lokasi'               => $lokasi,
+				'kabkota'              => $kabkota,
+				'penanggung_jawab'     => $pj,
+				'tipe_pj'              => $tipe_pj,
+				'keterangan'           => $ket,
+				'kode'                 => $kode,
+				'created_at'           => current_time( 'mysql' ),
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		$id = $ok ? (int) $wpdb->insert_id : 0;
 		if ( $id ) {
@@ -255,6 +258,8 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		if ( ! in_array( $tipe_pj, array( 'Penanggung Jawab', 'Ketua' ), true ) ) {
 			$tipe_pj = 'Penanggung Jawab';
 		}
+		$deadline_raw = isset( $in['deadline_pendaftaran'] ) ? $in['deadline_pendaftaran'] : ( isset( $in['deadline'] ) ? $in['deadline'] : '' );
+		$deadline     = KGTK_Helpers::sanitize_deadline( $deadline_raw );
 		$ket     = isset( $in['keterangan'] ) && is_scalar( $in['keterangan'] ) ? sanitize_textarea_field( (string) $in['keterangan'] ) : '';
 		$kode    = KGTK_Helpers::normalize_kode( self::str( $in, 'kode' ) );
 
@@ -307,17 +312,18 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			array(
 				'nama'             => $nama,
 				'penyelenggara'    => $penyel,
-				'tanggal_mulai'    => $mulai,
-				'tanggal_selesai'  => $selesai,
-				'lokasi'           => $lokasi,
-				'kabkota'          => $kabkota,
-				'penanggung_jawab' => $pj,
-				'tipe_pj'          => $tipe_pj,
-				'keterangan'       => $ket,
-				'kode'             => $kode,
+				'tanggal_mulai'        => $mulai,
+				'tanggal_selesai'      => $selesai,
+				'deadline_pendaftaran' => $deadline,
+				'lokasi'               => $lokasi,
+				'kabkota'              => $kabkota,
+				'penanggung_jawab'     => $pj,
+				'tipe_pj'              => $tipe_pj,
+				'keterangan'           => $ket,
+				'kode'                 => $kode,
 			),
 			array( 'id' => $id ),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 

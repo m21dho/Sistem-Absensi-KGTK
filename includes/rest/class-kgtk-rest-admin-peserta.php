@@ -15,6 +15,9 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
 		}
 		$in = self::params( $req );
+		if ( empty( $in['pengalaman_jabatan'] ) ) {
+			$in['pengalaman_jabatan'] = '-';
+		}
 		$d  = KGTK_REST_Public::validasi_peserta( $in );
 		if ( is_wp_error( $d ) ) {
 			return $d;

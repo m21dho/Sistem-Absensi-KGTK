@@ -603,6 +603,7 @@
 			api('admin/pelatihan', 'POST', {
 				nama: f.nama.value, penyelenggara: f.penyelenggara.value,
 				tanggal_mulai: f.tanggal_mulai.value, tanggal_selesai: f.tanggal_selesai.value,
+				deadline_pendaftaran: f.deadline_pendaftaran ? f.deadline_pendaftaran.value : '',
 				lokasi: f.lokasi.value,
 				kabkota: f.kabkota ? f.kabkota.value : '',
 				tipe_pj: f.tipe_pj ? f.tipe_pj.value : 'Penanggung Jawab',
@@ -658,7 +659,7 @@
 		var wrapJenisGtk = document.getElementById('kgtk-admin-wrap-jenis-gtk');
 		var sek = window.KGTKSekolah.create({ root: C.pubroot, kabkota: C.kabkota || [] });
 		document.getElementById('kgtk-sekolah-slot').appendChild(sek.node);
-		var FIELDS = ['nama', 'gelar_depan', 'gelar_belakang', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'alamat_instansi', 'pangkat_golongan', 'agama', 'pendidikan', 'bank', 'rekening', 'npwp', 'pengalaman_jabatan', 'peran', 'jenis_gtk', 'nuptk', 'nip', 'hp', 'email', 'email_belajar', 'simpkb'];
+		var FIELDS = ['nama', 'gelar_depan', 'gelar_belakang', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'alamat_instansi', 'pangkat_golongan', 'agama', 'pendidikan', 'bank', 'rekening', 'npwp', 'pengalaman_jabatan', 'nuptk', 'nip', 'hp', 'email', 'email_belajar', 'simpkb'];
 		var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		// Slot dan Jabatan disesuaikan secara dinamis berdasarkan Peran Kegiatan.
 		var applyPeran = function () {
@@ -704,7 +705,7 @@
 			}
 			if (wrapPengalaman) {
 				wrapPengalaman.style.display = isPanitia ? 'none' : '';
-				if (F.pengalaman_jabatan) { F.pengalaman_jabatan.required = !isPanitia; }
+				if (F.pengalaman_jabatan) { F.pengalaman_jabatan.required = false; }
 			}
 			if (wrapNuptkSimpkb) {
 				wrapNuptkSimpkb.style.display = isPanitia ? 'none' : '';
@@ -718,7 +719,21 @@
 				}
 			}
 			if (wrapKelas) {
-				wrapKelas.style.display = '';
+				wrapKelas.style.display = isPanitia ? 'none' : '';
+				if (isPanitia && selKelas) {
+					selKelas.value = '0';
+				}
+			}
+
+			var btnSelesai = document.getElementById('kgtk-btn-selesai-tambah');
+			var btnHeadBack = document.getElementById('kgtk-head-back-btn');
+			if (btnSelesai && btnSelesai.href) {
+				var baseBack = btnSelesai.href.split('#')[0];
+				var targetHash = isPanitia ? '#panitia' : (pakaiSlot ? '#kelola-peserta' : '#kelola-peserta');
+				btnSelesai.href = baseBack + targetHash;
+				if (btnHeadBack && btnHeadBack.href) {
+					btnHeadBack.href = baseBack + targetHash;
+				}
 			}
 
 			// Pilihan jenis identitas Panitia (NIK vs NIP)
@@ -811,7 +826,14 @@
 					}
 				});
 				sek.setValue(d.guru);
-				if (!d.guru.peran || !F.peran.querySelector('option[value="' + d.guru.peran + '"]')) { F.peran.value = 'Peserta'; }
+				if (F.peran && F.peran.value === 'Peserta' && d.guru.jenis_gtk && F.jenis_gtk) {
+					F.jenis_gtk.value = d.guru.jenis_gtk;
+				} else if (F.peran && F.peran.value === 'Panitia') {
+					var inpTugas = document.getElementById('kgtk-tambah-tugas-tim');
+					if (inpTugas && (!inpTugas.value || inpTugas.value === 'Panitia Pelaksana') && d.guru.jabatan) {
+						inpTugas.value = d.guru.jabatan;
+					}
+				}
 				applyPeran();
 				info.textContent = 'Data tersimpan dari pendaftaran sebelumnya sudah diisikan. Periksa dan edit bila perlu.';
 				info.hidden = false;
@@ -834,6 +856,11 @@
 							}
 						});
 						sek.setValue(d.guru);
+						var inpTugasNip = document.getElementById('kgtk-tambah-tugas-tim');
+						if (inpTugasNip && (!inpTugasNip.value || inpTugasNip.value === 'Panitia Pelaksana') && d.guru.jabatan) {
+							inpTugasNip.value = d.guru.jabatan;
+						}
+						applyPeran();
 						info.textContent = 'Data panitia tersimpan dari NIP sudah diisikan otomatis. Periksa dan edit bila perlu.';
 						info.hidden = false;
 					}).catch(function () {});
@@ -863,7 +890,7 @@
 			e.preventDefault();
 			erBox.hidden = true; okBox.hidden = true;
 			var v = {};
-			['nik'].concat(FIELDS).forEach(function (n) { if (F[n]) { v[n] = F[n].value.trim(); } });
+			['nik', 'peran', 'jenis_gtk'].concat(FIELDS).forEach(function (n) { if (F[n]) { v[n] = F[n].value.trim(); } });
 			v.email = (v.email || '').toLowerCase();
 			v.email_belajar = (v.email_belajar || '').toLowerCase();
 			v.simpkb = v.simpkb || '';
@@ -872,7 +899,7 @@
 			v.email_guru = v.simpkb;
 
 			// Reset indikator invalid sebelumnya
-			['nik'].concat(FIELDS).forEach(function (n) { if (F[n]) { F[n].classList.remove('is-invalid'); } });
+			['nik', 'peran', 'jenis_gtk'].concat(FIELDS).forEach(function (n) { if (F[n]) { F[n].classList.remove('is-invalid'); } });
 			if (sek.node) {
 				Array.prototype.forEach.call(sek.node.querySelectorAll('.kgtk-input'), function (inp) { inp.classList.remove('is-invalid'); });
 			}
@@ -953,7 +980,8 @@
 					errors.push({ label: 'Nomor Rekening', msg: 'Nomor rekening wajib diisi.', el: F.rekening });
 				}
 				if (!v.pengalaman_jabatan) {
-					errors.push({ label: 'Pengalaman Jabatan', msg: 'Pengalaman jabatan wajib diisi.', el: F.pengalaman_jabatan });
+					// Pengalaman jabatan opsional untuk admin
+					v.pengalaman_jabatan = (v.pengalaman_jabatan || '').trim() || '-';
 				}
 				if (v.peran === 'Peserta') {
 					if (!v.jenis_gtk) {
@@ -3134,6 +3162,13 @@
 		if (f.penyelenggara) { f.penyelenggara.value = data.penyelenggara || ''; }
 		if (f.tanggal_mulai) { f.tanggal_mulai.value = data.tanggal_mulai || ''; }
 		if (f.tanggal_selesai) { f.tanggal_selesai.value = data.tanggal_selesai || data.tanggal_mulai || ''; }
+		if (f.deadline_pendaftaran) {
+			if (data.deadline_pendaftaran) {
+				f.deadline_pendaftaran.value = data.deadline_pendaftaran.replace(' ', 'T').slice(0, 16);
+			} else {
+				f.deadline_pendaftaran.value = '';
+			}
+		}
 		if (f.lokasi) { f.lokasi.value = data.lokasi || ''; }
 		if (f.kabkota) { f.kabkota.value = data.kabkota || ''; }
 		if (f.tipe_pj) { f.tipe_pj.value = (data.tipe_pj === 'Ketua') ? 'Ketua' : 'Penanggung Jawab'; }
@@ -3209,6 +3244,7 @@
 			var penyelenggara = (f.penyelenggara.value || '').trim();
 			var mulai = (f.tanggal_mulai.value || '').trim();
 			var selesai = (f.tanggal_selesai.value || '').trim() || mulai;
+			var deadline = (f.deadline_pendaftaran ? f.deadline_pendaftaran.value : '').trim();
 			var lokasi = (f.lokasi.value || '').trim();
 			var kabkota = (f.kabkota ? f.kabkota.value : '').trim();
 			var tipePj = (f.tipe_pj.value || 'Penanggung Jawab').trim();
@@ -3248,6 +3284,7 @@
 				penyelenggara: penyelenggara,
 				tanggal_mulai: mulai,
 				tanggal_selesai: selesai,
+				deadline_pendaftaran: deadline,
 				lokasi: lokasi,
 				kabkota: kabkota,
 				tipe_pj: tipePj,

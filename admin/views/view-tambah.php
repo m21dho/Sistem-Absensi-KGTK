@@ -20,7 +20,7 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 	KGTK_Admin::head(
 		'Tambah Peserta & Tim Kegiatan',
 		$p->nama,
-		'<a class="kgtk-btn kgtk-btn--ghost" href="' . esc_url( $back ) . '">&larr; Kembali ke Detail Pelatihan</a>'
+		'<a class="kgtk-btn kgtk-btn--ghost" id="kgtk-head-back-btn" href="' . esc_url( $back ) . '">&larr; Kembali ke Detail Pelatihan</a>'
 	);
 	?>
 
@@ -175,8 +175,8 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</div>
 
 		<label class="kgtk-field" id="kgtk-wrap-pengalaman">
-			<span>Pengalaman Jabatan *</span>
-			<textarea class="kgtk-input" name="pengalaman_jabatan" rows="2" maxlength="255" required placeholder="Contoh: Guru Kelas (5 Tahun), Wakasek (2 Tahun), atau Praktisi"></textarea>
+			<span>Pengalaman Jabatan <small class="kgtk-muted" style="font-weight:normal;">(opsional)</small></span>
+			<textarea class="kgtk-input" name="pengalaman_jabatan" rows="2" maxlength="255" placeholder="Contoh: Guru Kelas (5 Tahun), Wakasek (2 Tahun), atau Praktisi (opsional)"></textarea>
 		</label>
 
 		<div class="kgtk-row2" id="kgtk-wrap-nuptk-simpkb">
@@ -246,7 +246,7 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</label>
 
 		<div class="kgtk-form-actions" style="margin-top:24px;">
-			<a class="kgtk-btn kgtk-btn--ghost" href="<?php echo esc_url( $back ); ?>">Selesai</a>
+			<a class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-selesai-tambah" href="<?php echo esc_url( $back ); ?>">Selesai</a>
 			<button type="submit" class="kgtk-btn kgtk-btn--yellow" id="kgtk-btn-submit-tambah">Simpan Data</button>
 		</div>
 	</form>

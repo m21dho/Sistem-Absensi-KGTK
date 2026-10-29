@@ -123,6 +123,84 @@ class KGTK_Helpers {
 	}
 
 	/**
+	 * Sanitasi nilai deadline pendaftaran dari input form atau API.
+	 * Format yang disimpan di database: 'Y-m-d H:i:s' atau null jika tidak ditentukan.
+	 *
+	 * @param string|null $raw
+	 * @return string|null
+	 */
+	public static function sanitize_deadline( $raw ) {
+		if ( empty( $raw ) || ! is_scalar( $raw ) ) {
+			return null;
+		}
+		$raw = trim( (string) $raw );
+		if ( '' === $raw ) {
+			return null;
+		}
+		// Dukung format HTML datetime-local (mis. '2026-10-30T23:59')
+		$raw = str_replace( 'T', ' ', $raw );
+		// Jika hanya tanggal YYYY-MM-DD
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $raw ) ) {
+			$raw .= ' 23:59:59';
+		} elseif ( preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $raw ) ) {
+			$raw .= ':00';
+		}
+
+		$d = DateTime::createFromFormat( 'Y-m-d H:i:s', $raw );
+		if ( $d && $d->format( 'Y-m-d H:i:s' ) === $raw ) {
+			return $raw;
+		}
+		return null;
+	}
+
+	/**
+	 * Format tanggal & waktu deadline dalam bahasa Indonesia yang ramah dibaca.
+	 * Mis. "30 Oktober 2026 pukul 23:59 WIB"
+	 *
+	 * @param string|null $dt
+	 * @return string
+	 */
+	public static function format_deadline( $dt ) {
+		if ( empty( $dt ) || ! is_string( $dt ) ) {
+			return '';
+		}
+		$dt = trim( $dt );
+		if ( '' === $dt || '0000-00-00 00:00:00' === $dt ) {
+			return '';
+		}
+		$ts = strtotime( $dt );
+		if ( ! $ts ) {
+			return '';
+		}
+		$tgl = self::format_tanggal( date( 'Y-m-d', $ts ) );
+		$jam = date( 'H:i', $ts );
+		return $tgl . " pukul {$jam} WIB";
+	}
+
+	/**
+	 * Periksa apakah deadline pendaftaran pelatihan sudah terlewati.
+	 *
+	 * @param object|array|string|null $pelatihan_or_dt
+	 * @return bool
+	 */
+	public static function is_deadline_passed( $pelatihan_or_dt ) {
+		$dt = '';
+		if ( is_object( $pelatihan_or_dt ) ) {
+			$dt = ! empty( $pelatihan_or_dt->deadline_pendaftaran ) ? (string) $pelatihan_or_dt->deadline_pendaftaran : '';
+		} elseif ( is_array( $pelatihan_or_dt ) ) {
+			$dt = ! empty( $pelatihan_or_dt['deadline_pendaftaran'] ) ? (string) $pelatihan_or_dt['deadline_pendaftaran'] : '';
+		} else {
+			$dt = (string) $pelatihan_or_dt;
+		}
+		$dt = trim( $dt );
+		if ( '' === $dt || '0000-00-00 00:00:00' === $dt ) {
+			return false;
+		}
+		$now = current_time( 'mysql' );
+		return $now > $dt;
+	}
+
+	/**
 	 * Daftar Kabupaten/Kota resmi di Kepulauan Riau untuk dropdown lokasi pelatihan.
 	 *
 	 * @return array

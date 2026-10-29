@@ -86,7 +86,7 @@
 		var kabSel = el('select', { class: 'kgtk-input', id: id + '-kab' }, [el('option', { value: '', text: 'Pilih kabupaten/kota' })]
 			.concat(kabs.map(function (k) { return el('option', { value: k, text: formatKabLabel(k) }); }))
 			.concat([el('option', { value: LAIN, text: 'Lainnya (di luar daftar)' })]));
-		node.appendChild(el('label', { class: 'kgtk-field', for: id + '-kab' }, [el('span', { text: 'Kabupaten/Kota *' }), kabSel]));
+		node.appendChild(el('label', { class: 'kgtk-field', for: id + '-kab' }, [el('span', { text: 'Kabupaten/Kota Instansi*' }), kabSel]));
 
 		/* ---- pencarian sekolah ---- */
 		var cari = el('input', { class: 'kgtk-input', type: 'text', id: id + '-cari', placeholder: 'Ketik untuk mencari sekolah/instansi atau NPSN', autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id + '-list' });

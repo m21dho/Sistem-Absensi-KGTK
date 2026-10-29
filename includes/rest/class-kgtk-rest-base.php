@@ -101,9 +101,12 @@ abstract class KGTK_REST_Base {
 			'pelatihan_kabkota' => isset( $p->kabkota ) ? $p->kabkota : '',
 			'keterangan'        => (string) $p->keterangan,
 			'kode'              => $p->kode,
-			'kelas'             => self::kelas_payload( $kelas ),
-			'kabkota'           => KGTK_Helpers::kabkota_list(),
-			'penuh'             => $t['penuh'],
+			'kelas'                => self::kelas_payload( $kelas ),
+			'kabkota'              => KGTK_Helpers::kabkota_list(),
+			'penuh'                => $t['penuh'],
+			'deadline_pendaftaran' => ! empty( $p->deadline_pendaftaran ) ? $p->deadline_pendaftaran : null,
+			'deadline_formatted'   => ! empty( $p->deadline_pendaftaran ) ? KGTK_Helpers::format_deadline( $p->deadline_pendaftaran ) : '',
+			'is_deadline_passed'   => KGTK_Helpers::is_deadline_passed( $p ),
 		);
 	}
 

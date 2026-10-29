@@ -21,17 +21,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 
 $pel_json = wp_json_encode( array(
-	'id'               => (int) $p->id,
-	'nama'             => $p->nama,
-	'penyelenggara'    => $p->penyelenggara,
-	'tanggal_mulai'    => $p->tanggal_mulai,
-	'tanggal_selesai'  => $p->tanggal_selesai,
-	'lokasi'           => $p->lokasi,
-	'kabkota'          => isset( $p->kabkota ) ? $p->kabkota : '',
-	'penanggung_jawab' => $p->penanggung_jawab,
-	'tipe_pj'          => isset( $p->tipe_pj ) ? $p->tipe_pj : 'Penanggung Jawab',
-	'keterangan'       => $p->keterangan,
-	'kode'             => $p->kode,
+	'id'                   => (int) $p->id,
+	'nama'                 => $p->nama,
+	'penyelenggara'        => $p->penyelenggara,
+	'tanggal_mulai'        => $p->tanggal_mulai,
+	'tanggal_selesai'      => $p->tanggal_selesai,
+	'deadline_pendaftaran' => isset( $p->deadline_pendaftaran ) ? $p->deadline_pendaftaran : null,
+	'lokasi'               => $p->lokasi,
+	'kabkota'              => isset( $p->kabkota ) ? $p->kabkota : '',
+	'penanggung_jawab'     => $p->penanggung_jawab,
+	'tipe_pj'              => isset( $p->tipe_pj ) ? $p->tipe_pj : 'Penanggung Jawab',
+	'keterangan'           => $p->keterangan,
+	'kode'                 => $p->kode,
 ) );
 
 ?>
@@ -63,7 +64,7 @@ $pel_json = wp_json_encode( array(
 			<div class="kgtk-head-toolbar-group">
 				<a class="kgtk-btn kgtk-btn--navy-glass" href="<?php echo esc_url( KGTK_Export::semua_biodata_pdf_url( $p->id ) ); ?>" target="_blank" title="Download dan cetak seluruh lembar biodata peserta (1 halaman per orang)">&#128100; Download Semua Biodata</a>
 				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-pdf" title="Pilih kategori export PDF">&#128196; Export PDF &#9662;</button>
-				<a class="kgtk-btn kgtk-btn--navy-glass" href="<?php echo esc_url( KGTK_Export::url( $p->id, 'xlsx' ) ); ?>" title="Download rekap kehadiran format Excel (XLSX)">&#128202; Export Excel</a>
+				<a class="kgtk-btn kgtk-btn--navy-glass" href="<?php echo esc_url( KGTK_Export::url( $p->id, 'xlsx' ) ); ?>" title="Download data guru peserta pelatihan format Excel (XLSX)">&#128202; Export Excel</a>
 			</div>
 		</div>
 	</div>
@@ -91,6 +92,13 @@ $pel_json = wp_json_encode( array(
 				$pj_label        => '' !== trim( (string) $p->penanggung_jawab ) ? $p->penanggung_jawab : '-',
 				'Kode Pelatihan' => $p->kode,
 			);
+			if ( ! empty( $p->deadline_pendaftaran ) ) {
+				$dl_info = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+				if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
+					$dl_info .= ' (Ditutup / Lewat)';
+				}
+				$items['Batas Pendaftaran'] = $dl_info;
+			}
 			foreach ( $items as $k => $v ) {
 				echo '<div><dt>' . esc_html( $k ) . '</dt><dd>' . esc_html( $v ) . '</dd></div>';
 			}

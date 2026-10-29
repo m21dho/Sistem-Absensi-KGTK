@@ -36,6 +36,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</label>
 		</div>
 
+		<label class="kgtk-field">
+			<span>Batas Waktu / Deadline Pendaftaran</span>
+			<input type="datetime-local" class="kgtk-input" name="deadline_pendaftaran">
+			<small>Opsional. Tentukan batas akhir pendaftaran guru. Jika diisi, guru yang mendaftar melewati waktu ini otomatis ditolak dengan pemberitahuan pendaftaran ditutup.</small>
+		</label>
+
 		<div class="kgtk-row2">
 			<label class="kgtk-field">
 				<span>Lokasi / Tempat Pelatihan</span>
