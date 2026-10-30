@@ -262,7 +262,7 @@ class KGTK_Export {
 		}
 
 		$where_sql = implode( ' AND ', $where );
-		$sql       = "SELECT ps.*, COALESCE(k.nama, '') AS kelas_label
+		$sql       = "SELECT ps.*, COALESCE(k.nama, '') AS kelas_label, k.tanggal_mulai AS kelas_tanggal_mulai, k.tanggal_selesai AS kelas_tanggal_selesai
 					  FROM {$tp} ps
 					  LEFT JOIN {$tk} k ON k.id = ps.kelas_id
 					  WHERE {$where_sql}
@@ -293,7 +293,7 @@ class KGTK_Export {
 		$tk = KGTK_DB::table( 'kelas' );
 		$peserta = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT ps.*, COALESCE(k.nama, '') AS kelas_label
+				"SELECT ps.*, COALESCE(k.nama, '') AS kelas_label, k.tanggal_mulai AS kelas_tanggal_mulai, k.tanggal_selesai AS kelas_tanggal_selesai
 				 FROM {$tp} ps
 				 LEFT JOIN {$tk} k ON k.id = ps.kelas_id
 				 WHERE ps.id = %d",
@@ -430,13 +430,15 @@ class KGTK_Export {
 		// Susun jobs lembar yang akan dibuat
 		$ws_jobs = array();
 		$sheets  = KGTK_Helpers::absen_sheets( $data, $peran_filter );
-		if ( $is_multi_day && $mode_all_days ) {
+		if ( $mode_all_days ) {
 			foreach ( $sheets as $sh ) {
-				foreach ( $daftar_hari as $dh ) {
+				$hari_kelas = KGTK_Helpers::daftar_hari_kelas( $p, $sh['kelas'] );
+				$multi_k    = count( $hari_kelas ) > 1;
+				foreach ( $hari_kelas as $dh ) {
 					$ws_jobs[] = array(
 						'sh'      => $sh,
 						'tanggal' => $dh['ymd'],
-						'suffix'  => 'H' . $dh['hari_ke'],
+						'suffix'  => $multi_k ? 'H' . $dh['hari_ke'] : '',
 					);
 				}
 			}
@@ -511,7 +513,7 @@ class KGTK_Export {
 					$ws->getRowDimension( $r )->setRowHeight( 28 );
 					$r++;
 
-					foreach ( KGTK_Helpers::baris_info_array( $p, $tgl_j ) as $info_line ) {
+					foreach ( KGTK_Helpers::baris_info_array( $p, $tgl_j, $k ) as $info_line ) {
 						$ws->setCellValueExplicit( 'A' . $r, $info_line, DataType::TYPE_STRING );
 						$ws->mergeCells( 'A' . $r . ':E' . $r );
 						$ws->getStyle( 'A' . $r )->getFont()->setSize( 12 );
@@ -547,18 +549,10 @@ class KGTK_Export {
 				$first = $r;
 				for ( $n = 0; $n < $halaman['jumlah']; $n++ ) {
 					$no_urutan = ( $halaman['mulai'] + $n + 1 );
-					$is_odd    = ( $no_urutan % 2 !== 0 );
 					$ws->setCellValueExplicit( 'A' . $r, (string) $no_urutan, DataType::TYPE_STRING );
 					if ( isset( $halaman['rows'][ $n ] ) ) {
 						$ws->setCellValueExplicit( 'B' . $r, (string) $halaman['rows'][ $n ]->nama, DataType::TYPE_STRING );
 						$ws->setCellValueExplicit( 'C' . $r, (string) $halaman['rows'][ $n ]->sekolah, DataType::TYPE_STRING );
-					}
-					if ( $is_odd ) {
-						$ws->setCellValueExplicit( 'D' . $r, $no_urutan . '.', DataType::TYPE_STRING );
-						$ws->setCellValueExplicit( 'E' . $r, '', DataType::TYPE_STRING );
-					} else {
-						$ws->setCellValueExplicit( 'D' . $r, '', DataType::TYPE_STRING );
-						$ws->setCellValueExplicit( 'E' . $r, $no_urutan . '.', DataType::TYPE_STRING );
 					}
 					$ws->getRowDimension( $r )->setRowHeight( 30 );
 					$r++;
@@ -566,9 +560,25 @@ class KGTK_Export {
 				$range = 'A' . $hr . ':E' . ( $r - 1 );
 				$ws->getStyle( $range )->getBorders()->getAllBorders()->setBorderStyle( Border::BORDER_THIN );
 				$ws->getStyle( 'A' . $first . ':E' . ( $r - 1 ) )->getFont()->setSize( 12 );
-				$ws->getStyle( 'A' . $first . ':E' . ( $r - 1 ) )->getAlignment()->setVertical( Alignment::VERTICAL_CENTER );
+				$ws->getStyle( 'A' . $first . ':C' . ( $r - 1 ) )->getAlignment()->setVertical( Alignment::VERTICAL_CENTER );
 				$ws->getStyle( 'A' . $first . ':A' . ( $r - 1 ) )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_CENTER );
-				$ws->getStyle( 'D' . $first . ':E' . ( $r - 1 ) )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_LEFT );
+
+				for ( $n = 0; $n < $halaman['jumlah']; $n += 2 ) {
+					$row_top    = $first + $n;
+					$no_urutan  = ( $halaman['mulai'] + $n + 1 );
+					$has_pair   = ( $n + 1 < $halaman['jumlah'] );
+					$ws->setCellValueExplicit( 'D' . $row_top, (string) $no_urutan, DataType::TYPE_STRING );
+					$ws->getStyle( 'D' . $row_top )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_LEFT )->setVertical( Alignment::VERTICAL_TOP );
+					if ( $has_pair ) {
+						$row_bottom = $row_top + 1;
+						$ws->mergeCells( 'D' . $row_top . ':D' . $row_bottom );
+						$ws->setCellValueExplicit( 'E' . $row_top, (string) ( $no_urutan + 1 ), DataType::TYPE_STRING );
+						$ws->mergeCells( 'E' . $row_top . ':E' . $row_bottom );
+						$ws->getStyle( 'E' . $row_top )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_RIGHT )->setVertical( Alignment::VERTICAL_BOTTOM );
+					} else {
+						$ws->setCellValueExplicit( 'E' . $row_top, '', DataType::TYPE_STRING );
+					}
+				}
 				$r++; // baris kosong
 
 				// Blok penanggung jawab (hanya muncul di halaman terakhir lembar).
@@ -896,7 +906,9 @@ th.no, td.no { text-align: center; width: 7%; font-size: 12pt; padding: 0 2px; }
 th.nama, td.nama { width: 30%; font-size: 12pt; padding: 0 6px; }
 th.inst, td.inst { width: 37%; font-size: 12pt; padding: 0 6px; }
 th.ttd { width: 26%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 13%; text-align: left; vertical-align: middle; padding-left: 6px; font-size: 11pt; }
+td.ttd-col { width: 13%; padding: 2px 6px; font-size: 11pt; line-height: 1.15; }
+td.ttd-left { text-align: left; vertical-align: top; }
+td.ttd-right { text-align: right; vertical-align: bottom; }
 table.ttd { width: 100%; margin-top: 18px; border-collapse: collapse; }
 table.ttd td { border: 0; vertical-align: top; }
 td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
@@ -906,9 +918,10 @@ div.space { height: 62px; }
 		$items  = array();
 		$sheets = KGTK_Helpers::absen_sheets( $data, $peran_filter );
 
-		if ( $is_multi_day && $mode_all_days ) {
+		if ( $mode_all_days ) {
 			foreach ( $sheets as $sh ) {
-				foreach ( $daftar_hari as $dh ) {
+				$hari_kelas = KGTK_Helpers::daftar_hari_kelas( $p, $sh['kelas'] );
+				foreach ( $hari_kelas as $dh ) {
 					$pages       = KGTK_Helpers::halaman( $sh['rows'], $sh['jumlah'] );
 					$total_pages = count( $pages );
 					foreach ( $pages as $pi => $halaman ) {
@@ -946,7 +959,7 @@ div.space { height: 62px; }
 			if ( 0 === $it['page_index'] ) {
 				$html .= KGTK_Helpers::kop_html();
 				$html .= '<h1>' . esc_html( KGTK_Helpers::judul_absen( $sh['peran'] ) ) . '</h1>';
-				$html .= KGTK_Helpers::baris_info_html( $p, $it['tanggal'] );
+				$html .= KGTK_Helpers::baris_info_html( $p, $it['tanggal'], $sh['kelas'] );
 				if ( $sh['tampil_kelas'] ) {
 					$html .= '<p class="kelas">' . esc_html( $sh['kelas']->label ) . '</p>';
 				}
@@ -957,13 +970,16 @@ div.space { height: 62px; }
 			for ( $n = 0; $n < $it['halaman']['jumlah']; $n++ ) {
 				$row       = isset( $it['halaman']['rows'][ $n ] ) ? $it['halaman']['rows'][ $n ] : null;
 				$no_urutan = $it['halaman']['mulai'] + $n + 1;
-				$is_odd    = ( $no_urutan % 2 !== 0 );
+				$is_first  = ( 0 === $n % 2 );
+				$has_pair  = ( $n + 1 < $it['halaman']['jumlah'] );
 				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . ( $row ? esc_html( $row->nama ) : '&nbsp;' )
 					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
-				if ( $is_odd ) {
-					$html .= '<td class="ttd-col">' . $no_urutan . '.</td><td class="ttd-col">&nbsp;</td>';
-				} else {
-					$html .= '<td class="ttd-col">&nbsp;</td><td class="ttd-col">' . $no_urutan . '.</td>';
+				if ( $is_first ) {
+					if ( $has_pair ) {
+						$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no_urutan . '</td><td class="ttd-col ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
+					} else {
+						$html .= '<td class="ttd-col ttd-left">' . $no_urutan . '</td><td class="ttd-col ttd-right">&nbsp;</td>';
+					}
 				}
 				$html .= '</tr>';
 			}
@@ -1004,7 +1020,8 @@ div.space { height: 62px; }
 
 		$peran   = ! empty( $peserta->peran ) ? $peserta->peran : 'PESERTA';
 		$kabkota = KGTK_Helpers::kabkota_tempat_kegiatan( $pelatihan );
-		$tgl_ttd = KGTK_Helpers::format_tanggal( $pelatihan->tanggal_mulai );
+		$tgl_mulai_bio = ( ! empty( $peserta->kelas_tanggal_mulai ) && '0000-00-00' !== $peserta->kelas_tanggal_mulai ) ? $peserta->kelas_tanggal_mulai : $pelatihan->tanggal_mulai;
+		$tgl_ttd = KGTK_Helpers::format_tanggal( $tgl_mulai_bio );
 		$lokasi  = ! empty( $pelatihan->lokasi ) ? $pelatihan->lokasi : 'Kepulauan Riau';
 
 		$h  = '<div class="bio-page">';
@@ -1227,7 +1244,9 @@ th.no, td.no { text-align: center; width: 7%; font-size: 12pt; padding: 0 2px; }
 th.nama, td.nama { width: 30%; font-size: 12pt; padding: 0 6px; }
 th.inst, td.inst { width: 37%; font-size: 12pt; padding: 0 6px; }
 th.ttd { width: 26%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 13%; text-align: left; vertical-align: middle; padding-left: 6px; font-size: 11pt; }
+td.ttd-col { width: 13%; padding: 2px 6px; font-size: 11pt; line-height: 1.15; }
+td.ttd-left { text-align: left; vertical-align: top; }
+td.ttd-right { text-align: right; vertical-align: bottom; }
 table.ttd { width: 100%; margin-top: 18px; border-collapse: collapse; }
 table.ttd td { border: 0; vertical-align: top; }
 td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
@@ -1251,13 +1270,16 @@ div.space { height: 62px; }
 			for ( $n = 0; $n < $halaman['jumlah']; $n++ ) {
 				$row       = isset( $halaman['rows'][ $n ] ) ? $halaman['rows'][ $n ] : null;
 				$no_urutan = $halaman['mulai'] + $n + 1;
-				$is_odd    = ( $no_urutan % 2 !== 0 );
+				$is_first  = ( 0 === $n % 2 );
+				$has_pair  = ( $n + 1 < $halaman['jumlah'] );
 				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . ( $row ? esc_html( $row->nama ) : '&nbsp;' )
 					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
-				if ( $is_odd ) {
-					$html .= '<td class="ttd-col">' . $no_urutan . '.</td><td class="ttd-col">&nbsp;</td>';
-				} else {
-					$html .= '<td class="ttd-col">&nbsp;</td><td class="ttd-col">' . $no_urutan . '.</td>';
+				if ( $is_first ) {
+					if ( $has_pair ) {
+						$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no_urutan . '</td><td class="ttd-col ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
+					} else {
+						$html .= '<td class="ttd-col ttd-left">' . $no_urutan . '</td><td class="ttd-col ttd-right">&nbsp;</td>';
+					}
 				}
 				$html .= '</tr>';
 			}

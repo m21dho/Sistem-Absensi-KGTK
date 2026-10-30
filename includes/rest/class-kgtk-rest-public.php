@@ -198,8 +198,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				);
 			}
 
-			if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
-				$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+			if ( KGTK_Helpers::is_deadline_passed( $p, $kelas ) ) {
+				$dl_teks = KGTK_Helpers::effective_deadline_text( $p, $kelas );
 				return self::err(
 					'pendaftaran_ditutup',
 					'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Anda tidak dapat melakukan pendaftaran baru.',
@@ -252,13 +252,24 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				array(
 					'status'    => 'terdaftar',
 					'pelatihan' => $pel,
-					'hasil'     => self::hasil( $p, $reg->nama, $reg->sekolah, $reg->peran, $reg->kelas_nama, KGTK_Helpers::PERAN_SLOT === $reg->peran ? (int) $reg->slot : 0, $reg->nomor, $reg->jenis_gtk ),
+					'hasil'     => self::hasil(
+						$p,
+						$reg->nama,
+						$reg->sekolah,
+						$reg->peran,
+						$reg->kelas_nama,
+						KGTK_Helpers::PERAN_SLOT === $reg->peran ? (int) $reg->slot : 0,
+						$reg->nomor,
+						$reg->jenis_gtk,
+						isset( $reg->kelas_tanggal_mulai ) ? (string) $reg->kelas_tanggal_mulai : '',
+						isset( $reg->kelas_tanggal_selesai ) ? (string) $reg->kelas_tanggal_selesai : ''
+					),
 				)
 			);
 		}
 
-		if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
-			$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+		if ( KGTK_Helpers::is_deadline_passed( $p, $kelas ) ) {
+			$dl_teks = KGTK_Helpers::effective_deadline_text( $p, $kelas );
 			return self::err(
 				'pendaftaran_ditutup',
 				'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Anda tidak dapat melakukan pendaftaran baru.',
@@ -328,6 +339,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT ps.id AS peserta_id, ps.pelatihan_id, ps.kelas_id, ps.peran, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS slot,
+				        k.tanggal_mulai AS kelas_tanggal_mulai, k.tanggal_selesai AS kelas_tanggal_selesai,
 				        pl.nama AS pelatihan_nama, pl.penyelenggara, pl.tanggal_mulai, pl.tanggal_selesai, pl.lokasi, pl.kabkota AS pelatihan_kabkota
 				 FROM {$tp} ps
 				 INNER JOIN {$tpel} pl ON pl.id = ps.pelatihan_id
@@ -344,11 +356,14 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE kelas_id = %d AND peran = %s AND id <= %d", $r->kelas_id, $r->peran, $r->peserta_id )
 			) : 0;
 
+			$tgl_m = ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_mulai;
+			$tgl_s = ( ! empty( $r->kelas_tanggal_selesai ) && '0000-00-00' !== $r->kelas_tanggal_selesai ) ? $r->kelas_tanggal_selesai : ( ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_selesai );
+
 			$riwayat[] = array(
 				'pelatihan_id'  => (int) $r->pelatihan_id,
 				'nama'          => $r->pelatihan_nama,
 				'penyelenggara' => $r->penyelenggara,
-				'tanggal'       => KGTK_Helpers::rentang_tanggal( $r->tanggal_mulai, $r->tanggal_selesai ),
+				'tanggal'       => KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s ),
 				'lokasi'        => $r->lokasi,
 				'kabkota'       => isset( $r->pelatihan_kabkota ) ? $r->pelatihan_kabkota : '',
 				'kelas'         => $r->kelas_nama,
@@ -963,7 +978,9 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				$k ? $k->nama : '',
 				( $k && $pakai_slot ) ? (int) $k->slot : 0,
 				$urut,
-				$d['jenis_gtk']
+				$d['jenis_gtk'],
+				( $k && ! empty( $k->tanggal_mulai ) ) ? (string) $k->tanggal_mulai : '',
+				( $k && ! empty( $k->tanggal_selesai ) ) ? (string) $k->tanggal_selesai : ''
 			),
 		);
 	}
@@ -980,7 +997,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			return self::err( 'kode_tidak_ada', 'Kode pelatihan tidak ditemukan.', 404 );
 		}
 		if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
-			$dl_teks = KGTK_Helpers::format_deadline( $p->deadline_pendaftaran );
+			$dl_teks = KGTK_Helpers::effective_deadline_text( $p );
 			return self::err(
 				'pendaftaran_ditutup',
 				'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Pendaftaran baru tidak dapat diproses.',

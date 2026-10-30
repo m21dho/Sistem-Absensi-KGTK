@@ -560,7 +560,11 @@
 
 		// Jika di halaman biodata & riwayat saya, gunakan layout simpel tanpa sidebar dan tanpa banner ganda
 		if (isBioView) {
-			var simpleLayout = el('div', { class: 'kgtk-layout kgtk-layout--simple' }, [content]);
+			var bioLayoutCls = 'kgtk-layout kgtk-layout--simple';
+			if (S.biodataState === 'result') {
+				bioLayoutCls += ' kgtk-layout--biodata-result';
+			}
+			var simpleLayout = el('div', { class: bioLayoutCls }, [content]);
 			return [topHeader, simpleLayout, footerHelp];
 		}
 
@@ -582,6 +586,18 @@
 		if (S.info && S.info.nama) {
 			// Satukan Banner: Header Terpadu Pelatihan yang Ringkas & Padat
 			var topBar = el('div', { class: 'kgtk-hero-top-bar' }, [crumbs, pillBtn]);
+			var allKelasHero = S.info.kelas || [];
+			var singleKelas = allKelasHero.length === 1 ? allKelasHero[0] : null;
+			var kelasWithInfo = allKelasHero.length > 1 ? allKelasHero.filter(function (k) { return k && (k.tanggal || k.deadline_formatted); }) : [];
+			var isMultiJadwal = kelasWithInfo.length > 0;
+			var heroTanggal = (singleKelas && singleKelas.tanggal) ? singleKelas.tanggal : S.info.tanggal;
+			var heroDeadline = S.info.deadline_formatted || (singleKelas && singleKelas.deadline_formatted ? singleKelas.deadline_formatted : '');
+			// Jika jadwal berbeda tiap kelas, tanggal & batas daftar cukup ditampilkan di kartu kelas (hindari info ganda)
+			if (isMultiJadwal) {
+				heroTanggal = '';
+				heroDeadline = '';
+			}
+
 			var metaItems = [];
 			if (S.info.penyelenggara) {
 				metaItems.push(el('div', { class: 'kgtk-hero-meta-item' }, [
@@ -589,10 +605,10 @@
 					el('span', { class: 'kgtk-hero-meta-val', text: S.info.penyelenggara })
 				]));
 			}
-			if (S.info.tanggal) {
+			if (heroTanggal) {
 				metaItems.push(el('div', { class: 'kgtk-hero-meta-item' }, [
 					el('span', { class: 'kgtk-hero-meta-lbl', text: 'Tanggal: ' }),
-					el('span', { class: 'kgtk-hero-meta-val', text: S.info.tanggal })
+					el('span', { class: 'kgtk-hero-meta-val', text: heroTanggal })
 				]));
 			}
 			if (S.info.lokasi) {
@@ -601,30 +617,54 @@
 					el('span', { class: 'kgtk-hero-meta-val', text: S.info.lokasi })
 				]));
 			}
-			if (S.info.deadline_formatted) {
+			if (heroDeadline) {
 				metaItems.push(el('div', { class: 'kgtk-hero-meta-item' }, [
 					el('span', { class: 'kgtk-hero-meta-lbl', text: 'Batas Pendaftaran: ' }),
-					el('span', { class: 'kgtk-hero-meta-val', text: S.info.deadline_formatted })
+					el('span', { class: 'kgtk-hero-meta-val', text: heroDeadline })
 				]));
 			}
 			var metaRow = el('div', { class: 'kgtk-hero-meta-row' }, metaItems);
+			var jadwalKelasBox = null;
+			if (isMultiJadwal) {
+				var jkCards = allKelasHero.map(function (k) {
+					var isClosed = !!k.is_deadline_passed;
+					var isFull = !isClosed && (typeof k.sisa === 'number' && k.sisa <= 0);
+					var statusTxt = isClosed ? 'Ditutup' : (isFull ? 'Penuh' : 'Dibuka');
+					var statusCls = isClosed ? 'is-closed' : (isFull ? 'is-full' : 'is-open');
+					var batasTxt = k.deadline_formatted ? String(k.deadline_formatted).replace(/\s*pukul 23:59 WIB$/, '') : '';
+					return el('div', { class: 'kgtk-jk-card ' + statusCls }, [
+						el('div', { class: 'kgtk-jk-head' }, [
+							el('span', { class: 'kgtk-jk-nama', text: (k.label || k.nama) }),
+							el('span', { class: 'kgtk-jk-status', text: statusTxt })
+						]),
+						el('div', { class: 'kgtk-jk-tgl', text: k.tanggal || '-' }),
+						batasTxt ? el('div', { class: 'kgtk-jk-batas', text: 'Daftar s.d. ' + batasTxt }) : null
+					]);
+				});
+				jadwalKelasBox = el('div', { class: 'kgtk-jk-wrap' }, [
+					el('div', { class: 'kgtk-jk-title', text: 'Jadwal Pelaksanaan per Kelas' }),
+					el('div', { class: 'kgtk-jk-grid' }, jkCards)
+				]);
+			}
+
+			var mainInfoChildren = [
+				el('div', { class: 'kgtk-hero-title-row' }, [
+					el('h1', { class: 'kgtk-hero-title-pelatihan', text: S.info.nama }),
+					el('span', {
+						class: 'kgtk-hero-status-pill' + (S.info.is_deadline_passed ? ' is-closed' : (S.info.penuh ? ' is-closed' : '')),
+						text: S.info.is_deadline_passed ? 'Pendaftaran Ditutup' : (S.info.penuh ? 'Kuota Penuh' : 'Pendaftaran Dibuka')
+					})
+				]),
+				metaRow
+			];
+			if (jadwalKelasBox) {
+				mainInfoChildren.push(jadwalKelasBox);
+			}
 
 			heroChildren = [
 				topBar,
-				el('div', { class: 'kgtk-hero-main-info' }, [
-					el('div', { class: 'kgtk-hero-title-row' }, [
-						el('h1', { class: 'kgtk-hero-title-pelatihan', text: S.info.nama }),
-						el('span', {
-							class: 'kgtk-hero-status-pill' + (S.info.is_deadline_passed ? ' is-closed' : (S.info.penuh ? ' is-closed' : '')),
-							text: S.info.is_deadline_passed ? 'Pendaftaran Ditutup' : (S.info.penuh ? 'Kuota Penuh' : 'Pendaftaran Dibuka')
-						})
-					]),
-					metaRow
-				])
+				el('div', { class: 'kgtk-hero-main-info' }, mainInfoChildren)
 			];
-			if (S.info.keterangan) {
-				heroChildren.push(el('div', { class: 'kgtk-hero-ket-unified', text: S.info.keterangan }));
-			}
 		} else {
 			var heroWrap = el('div', { class: 'kgtk-hero-bio-wrap' }, [pillBtn]);
 			heroChildren = [
@@ -676,7 +716,27 @@
 		rows.forEach(function (r) {
 			if (r[1]) { card.appendChild(el('div', { class: 'row' }, [el('span', { text: r[0] + ': ' }), r[1]])); }
 		});
-		if (p.keterangan) { card.appendChild(el('div', { class: 'kgtk-ket', text: p.keterangan })); }
+		var allKelasCard = p.kelas || [];
+		var kelasWithInfo = allKelasCard.length > 1 ? allKelasCard.filter(function (k) { return k && (k.tanggal || k.deadline_formatted); }) : [];
+		if (kelasWithInfo.length > 0) {
+			var jkWrap = el('div', { class: 'row', style: 'margin-top:6px;' }, [
+				el('span', { text: 'Jadwal & Batas Pendaftaran Per Kelas: ' })
+			]);
+			var jkList = el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;' });
+			allKelasCard.forEach(function (k) {
+				var isClosed = !!k.is_deadline_passed;
+				var infoTxt = (k.label || k.nama);
+				if (k.tanggal) { infoTxt += ' • ' + k.tanggal; }
+				if (k.deadline_formatted) { infoTxt += ' (Batas: ' + k.deadline_formatted + ')'; }
+				infoTxt += isClosed ? ' [Ditutup]' : ' [Dibuka]';
+				jkList.appendChild(el('span', {
+					style: 'display:inline-block;background:' + (isClosed ? '#fef2f2' : '#f1f5f9') + ';border:1px solid ' + (isClosed ? '#fecaca' : '#cbd5e1') + ';border-radius:6px;padding:3px 8px;font-size:12.5px;color:' + (isClosed ? '#991b1b' : '#1e293b') + ';',
+					text: infoTxt
+				}));
+			});
+			jkWrap.appendChild(jkList);
+			card.appendChild(jkWrap);
+		}
 		card.appendChild(el('div', { class: 'kgtk-note', style: 'margin-top:12px;', text: 'Pendaftaran pelatihan dibuka, segera daftarkan diri anda' }));
 		return card;
 	}
@@ -1511,9 +1571,12 @@
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
+		var isMultiKelas = !(S.info && Array.isArray(S.info.kelas) && S.info.kelas.length <= 1);
 		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], ['Sekolah', h.sekolah], ['Peran', h.peran]];
 		if (h.jenis_gtk) { items.push(['Jenis GTK', h.jenis_gtk]); }
-		items.push(['Pelatihan', h.pelatihan], ['Kelas', h.kelas_label], ['Tanggal Pelatihan', h.tanggal], ['Lokasi', h.lokasi || '-']);
+		items.push(['Pelatihan', h.pelatihan]);
+		if (isMultiKelas) { items.push(['Kelas', h.kelas_label]); }
+		items.push(['Tanggal Pelatihan', h.tanggal], ['Lokasi', h.lokasi || '-']);
 
 		return el('div', { class: 'kgtk-card kgtk-center' }, [
 			el('div', { class: 'kgtk-icon is-info', text: 'i' }), el('h2', { text: 'Kamu sudah terdaftar' }),
@@ -1530,9 +1593,12 @@
 		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
+		var isMultiKelas = !(S.info && Array.isArray(S.info.kelas) && S.info.kelas.length <= 1);
 		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], ['Instansi', h.sekolah], ['Peran', h.peran]];
 		if (h.jabatan || h.jenis_gtk) { items.push(['Jabatan', h.jabatan || h.jenis_gtk]); }
-		items.push(['Pelatihan', h.pelatihan], ['Kelas', h.kelas_label], ['Tanggal Pelatihan', h.tanggal], ['Lokasi', h.lokasi || '-']);
+		items.push(['Pelatihan', h.pelatihan]);
+		if (isMultiKelas) { items.push(['Kelas', h.kelas_label]); }
+		items.push(['Tanggal Pelatihan', h.tanggal], ['Lokasi', h.lokasi || '-']);
 
 		return el('div', { class: 'kgtk-card kgtk-center' }, [
 			el('div', { class: 'kgtk-icon', text: '\u2713' }), el('h2', { text: 'Pendaftaran berhasil' }),
@@ -1814,7 +1880,7 @@
 				el('dt', { text: 'NIK' }),
 				el('dd', { text: maskNik(b.nik) })
 			]);
-			var bioDl = el('dl', { class: 'kgtk-detail' });
+			var bioDl = el('dl', { class: 'kgtk-detail kgtk-detail--bio-grid' });
 			bioDl.appendChild(el('div', {}, [el('dt', { text: bioItems[0][0] }), el('dd', { text: bioItems[0][1] })]));
 			bioDl.appendChild(el('div', {}, [el('dt', { text: bioItems[1][0] }), el('dd', { text: bioItems[1][1] })]));
 			bioDl.appendChild(nikRow);
@@ -1841,18 +1907,26 @@
 				btnEditBio
 			]);
 
-			var cardBio = el('div', { class: 'kgtk-card' }, [
+			var cardBio = el('div', { class: 'kgtk-card kgtk-card--bio-detail' }, [
 				bioHeader,
 				bioDl
 			]);
 
-			var cardRiwayat = el('div', { class: 'kgtk-card' }, [
-				el('h2', { text: 'Riwayat Pelatihan' })
+			var riwayatHeader = el('div', {
+				style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;'
+			}, [
+				el('h2', { style: 'margin:0;', text: 'Riwayat Pelatihan' }),
+				el('span', { class: 'kgtk-riwayat-count-badge', text: rList.length + ' Pelatihan' })
+			]);
+
+			var cardRiwayat = el('div', { class: 'kgtk-card kgtk-card--riwayat-highlight' }, [
+				riwayatHeader
 			]);
 
 			if (!rList.length) {
 				cardRiwayat.appendChild(el('p', { class: 'kgtk-muted', text: 'Belum ada riwayat pelatihan.' }));
 			} else {
+				var riwayatListWrap = el('div', { class: 'kgtk-riwayat-list' });
 				rList.forEach(function (it, idx) {
 					var downloadBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-riwayat-dl', 'data-idx': String(idx), text: 'Lihat Biodata' });
 					downloadBtn.addEventListener('click', (function (item) {
@@ -1864,13 +1938,14 @@
 					var itemBox = el('div', { class: 'kgtk-riwayat-item' }, [
 						el('h3', { text: it.nama }),
 						it.penyelenggara ? el('div', { class: 'kgtk-riwayat-meta', text: 'Penyelenggara: ' + it.penyelenggara }) : null,
-						el('div', { class: 'kgtk-riwayat-meta', text: 'Tanggal: ' + it.tanggal }),
+						el('div', { class: 'kgtk-riwayat-meta', text: 'Tanggal Pelaksanaan: ' + it.tanggal }),
 						el('div', { class: 'kgtk-riwayat-meta', text: 'Lokasi: ' + (it.lokasi || '-') }),
 						el('div', { class: 'kgtk-riwayat-meta', text: 'Kelas & Peran: ' + it.kelas_label + ' (' + it.peran + ')' }),
 						el('div', { class: 'kgtk-riwayat-actions' }, actions)
 					]);
-					cardRiwayat.appendChild(itemBox);
+					riwayatListWrap.appendChild(itemBox);
 				});
+				cardRiwayat.appendChild(riwayatListWrap);
 			}
 
 			var btnBack = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost', text: '← Kembali' });
@@ -1925,7 +2000,12 @@
 				window.scrollTo({ top: root.offsetTop - 10, behavior: 'smooth' });
 			});
 
-			return el('div', {}, [topNavResult, printKop, cardBio, cardRiwayat, actions]);
+			var resultGrid = el('div', { class: 'kgtk-biodata-result-grid' }, [
+				cardRiwayat,
+				cardBio
+			]);
+
+			return el('div', {}, [topNavResult, printKop, resultGrid, actions]);
 		}
 
 		// State: 'input'

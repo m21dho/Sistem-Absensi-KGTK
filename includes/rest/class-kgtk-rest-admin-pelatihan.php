@@ -75,8 +75,18 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
-			$kn   = self::str( $row, 'nama' );
-			$slot = isset( $row['slot'] ) && is_numeric( $row['slot'] ) ? (int) $row['slot'] : 0;
+			$kn         = self::str( $row, 'nama' );
+			$slot       = isset( $row['slot'] ) && is_numeric( $row['slot'] ) ? (int) $row['slot'] : 0;
+			$k_mulai    = self::str( $row, 'tanggal_mulai' );
+			$k_selesai  = self::str( $row, 'tanggal_selesai' );
+			$k_dl_raw   = self::str( $row, 'deadline_pendaftaran' );
+			$k_deadline = null;
+			if ( '' !== $k_dl_raw ) {
+				$k_deadline = KGTK_Helpers::sanitize_deadline( $k_dl_raw );
+				if ( null === $k_deadline ) {
+					return self::err( 'kelas', 'Format batas pendaftaran kelas ' . $kn . ' tidak valid.', 422 );
+				}
+			}
 			if ( '' === $kn || self::len( $kn ) > 30 ) {
 				return self::err( 'kelas', 'Nama kelas wajib diisi (maksimal 30 karakter).', 422 );
 			}
@@ -87,8 +97,30 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			if ( $slot < 1 || $slot > 2000 ) {
 				return self::err( 'kelas', 'Slot kelas ' . $kn . ' harus antara 1 dan 2000.', 422 );
 			}
+			if ( '' !== $k_mulai || '' !== $k_selesai ) {
+				if ( '' === $k_mulai && '' !== $k_selesai ) {
+					$k_mulai = $k_selesai;
+				} elseif ( '' === $k_selesai && '' !== $k_mulai ) {
+					$k_selesai = $k_mulai;
+				}
+				if ( ! self::valid_date( $k_mulai ) || ! self::valid_date( $k_selesai ) ) {
+					return self::err( 'kelas', 'Format tanggal kelas ' . $kn . ' tidak valid.', 422 );
+				}
+				if ( $k_selesai < $k_mulai ) {
+					return self::err( 'kelas', 'Tanggal selesai kelas ' . $kn . ' tidak boleh sebelum tanggal mulai.', 422 );
+				}
+			} else {
+				$k_mulai   = null;
+				$k_selesai = null;
+			}
 			$seen[ $key ] = true;
-			$kelas[]      = array( 'nama' => $kn, 'slot' => $slot );
+			$kelas[]      = array(
+				'nama'                 => $kn,
+				'slot'                 => $slot,
+				'tanggal_mulai'        => $k_mulai,
+				'tanggal_selesai'      => $k_selesai,
+				'deadline_pendaftaran' => $k_deadline,
+			);
 		}
 		if ( ! $kelas ) {
 			return self::err( 'kelas', 'Tambahkan minimal satu kelas.', 422 );
@@ -151,8 +183,16 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			foreach ( $kelas as $i => $kl ) {
 				$r = $wpdb->insert(
 					$tk,
-					array( 'pelatihan_id' => $id, 'nama' => $kl['nama'], 'slot' => $kl['slot'], 'urutan' => $i + 1 ),
-					array( '%d', '%s', '%d', '%d' )
+					array(
+						'pelatihan_id'         => $id,
+						'nama'                 => $kl['nama'],
+						'slot'                 => $kl['slot'],
+						'tanggal_mulai'        => $kl['tanggal_mulai'],
+						'tanggal_selesai'      => $kl['tanggal_selesai'],
+						'deadline_pendaftaran' => $kl['deadline_pendaftaran'],
+						'urutan'               => $i + 1,
+					),
+					array( '%d', '%s', '%d', '%s', '%s', '%s', '%d' )
 				);
 				if ( ! $r ) {
 					$id = 0;
@@ -299,7 +339,7 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 
 		// Periksa jika kode diubah ke kode yang sudah dipakai kegiatan lain
 		if ( $kode !== $existing->kode ) {
-			$tp = KGTK_DB::table( 'pelatihan' );
+			$tp  = KGTK_DB::table( 'pelatihan' );
 			$ada = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tp} WHERE kode = %s AND id != %d", $kode, $id ) );
 			if ( $ada ) {
 				return self::err( 'kode', 'Kode pelatihan ' . $kode . ' sudah dipakai kegiatan lain.', 422 );
@@ -307,11 +347,13 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		}
 
 		$tp = KGTK_DB::table( 'pelatihan' );
+		$wpdb->suppress_errors( true );
+
 		$ok = $wpdb->update(
 			$tp,
 			array(
-				'nama'             => $nama,
-				'penyelenggara'    => $penyel,
+				'nama'                 => $nama,
+				'penyelenggara'        => $penyel,
 				'tanggal_mulai'        => $mulai,
 				'tanggal_selesai'      => $selesai,
 				'deadline_pendaftaran' => $deadline,
@@ -327,9 +369,263 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			array( '%d' )
 		);
 
+		$wpdb->suppress_errors( false );
+
 		if ( false === $ok ) {
 			return self::err( 'gagal', 'Gagal memperbarui pelatihan.', 500 );
 		}
+
+		// Perbarui jadwal & deadline kelas yang sudah ada jika dikirim bersama form edit pelatihan.
+		$raw_existing_kelas = isset( $in['existing_kelas'] ) && is_array( $in['existing_kelas'] ) ? $in['existing_kelas'] : array();
+		if ( ! empty( $raw_existing_kelas ) ) {
+			$tk = KGTK_DB::table( 'kelas' );
+			foreach ( $raw_existing_kelas as $ek ) {
+				if ( ! is_array( $ek ) || empty( $ek['id'] ) ) {
+					continue;
+				}
+				$kid       = absint( $ek['id'] );
+				$k_mulai   = self::str( $ek, 'tanggal_mulai' );
+				$k_selesai = self::str( $ek, 'tanggal_selesai' );
+				$k_dl_raw  = self::str( $ek, 'deadline_pendaftaran' );
+				if ( '' !== $k_mulai || '' !== $k_selesai ) {
+					if ( '' === $k_mulai && '' !== $k_selesai ) {
+						$k_mulai = $k_selesai;
+					} elseif ( '' === $k_selesai && '' !== $k_mulai ) {
+						$k_selesai = $k_mulai;
+					}
+					if ( ! self::valid_date( $k_mulai ) || ! self::valid_date( $k_selesai ) || $k_selesai < $k_mulai ) {
+						continue;
+					}
+				} else {
+					$k_mulai   = null;
+					$k_selesai = null;
+				}
+				$k_deadline = ( '' !== $k_dl_raw ) ? KGTK_Helpers::sanitize_deadline( $k_dl_raw ) : null;
+				$wpdb->update(
+					$tk,
+					array(
+						'tanggal_mulai'        => $k_mulai,
+						'tanggal_selesai'      => $k_selesai,
+						'deadline_pendaftaran' => $k_deadline,
+					),
+					array(
+						'id'           => $kid,
+						'pelatihan_id' => $id,
+					),
+					array( '%s', '%s', '%s' ),
+					array( '%d', '%d' )
+				);
+			}
+		}
+
+		return self::respond(
+			array(
+				'id'  => $id,
+				'ok'  => true,
+				'url' => KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => $id ) ),
+			)
+		);
+	}
+
+	public static function admin_update_kelas( WP_REST_Request $req ) {
+		global $wpdb;
+		$id       = absint( $req['id'] );
+		$existing = KGTK_Helpers::get_by_id( $id );
+		if ( ! $existing ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+
+		$in                 = self::params( $req );
+		$raw_kelas          = isset( $in['kelas'] ) && is_array( $in['kelas'] ) ? $in['kelas'] : array();
+		$raw_existing_kelas = isset( $in['existing_kelas'] ) && is_array( $in['existing_kelas'] ) ? $in['existing_kelas'] : array();
+		if ( empty( $raw_kelas ) && empty( $raw_existing_kelas ) ) {
+			return self::err( 'kelas', 'Tambahkan minimal satu kelas baru atau perbarui jadwal/deadline kelas.', 422 );
+		}
+
+		$tk            = KGTK_DB::table( 'kelas' );
+		$existing_rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT id, nama, urutan FROM {$tk} WHERE pelatihan_id = %d ORDER BY urutan ASC, id ASC", $id )
+		);
+
+		$existing_names = array();
+		$existing_ids   = array();
+		$max_urutan     = count( (array) $existing_rows );
+		foreach ( (array) $existing_rows as $er ) {
+			$ekey = function_exists( 'mb_strtolower' ) ? mb_strtolower( trim( (string) $er->nama ), 'UTF-8' ) : strtolower( trim( (string) $er->nama ) );
+			$existing_names[ $ekey ]        = true;
+			$existing_ids[ (int) $er->id ] = (string) $er->nama;
+			if ( (int) $er->urutan > $max_urutan ) {
+				$max_urutan = (int) $er->urutan;
+			}
+		}
+
+		if ( count( (array) $existing_rows ) + count( $raw_kelas ) > 20 ) {
+			return self::err( 'kelas', 'Maksimal 20 kelas per pelatihan.', 422 );
+		}
+
+		$updates_existing = array();
+		foreach ( $raw_existing_kelas as $ek ) {
+			if ( ! is_array( $ek ) || empty( $ek['id'] ) ) {
+				continue;
+			}
+			$kid = absint( $ek['id'] );
+			if ( ! isset( $existing_ids[ $kid ] ) ) {
+				continue;
+			}
+			$kn_ex      = $existing_ids[ $kid ];
+			$k_mulai    = self::str( $ek, 'tanggal_mulai' );
+			$k_selesai  = self::str( $ek, 'tanggal_selesai' );
+			$k_dl_raw   = self::str( $ek, 'deadline_pendaftaran' );
+			$k_deadline = null;
+			if ( '' !== $k_dl_raw ) {
+				$k_deadline = KGTK_Helpers::sanitize_deadline( $k_dl_raw );
+				if ( null === $k_deadline ) {
+					return self::err( 'kelas', 'Format batas pendaftaran kelas ' . $kn_ex . ' tidak valid.', 422 );
+				}
+			}
+			if ( '' !== $k_mulai || '' !== $k_selesai ) {
+				if ( '' === $k_mulai && '' !== $k_selesai ) {
+					$k_mulai = $k_selesai;
+				} elseif ( '' === $k_selesai && '' !== $k_mulai ) {
+					$k_selesai = $k_mulai;
+				}
+				if ( ! self::valid_date( $k_mulai ) || ! self::valid_date( $k_selesai ) ) {
+					return self::err( 'kelas', 'Format tanggal kelas ' . $kn_ex . ' tidak valid.', 422 );
+				}
+				if ( $k_selesai < $k_mulai ) {
+					return self::err( 'kelas', 'Tanggal selesai kelas ' . $kn_ex . ' tidak boleh sebelum tanggal mulai.', 422 );
+				}
+			} else {
+				$k_mulai   = null;
+				$k_selesai = null;
+			}
+			$updates_existing[] = array(
+				'id'                   => $kid,
+				'tanggal_mulai'        => $k_mulai,
+				'tanggal_selesai'      => $k_selesai,
+				'deadline_pendaftaran' => $k_deadline,
+			);
+		}
+
+		$kelas      = array();
+		$seen_kelas = array();
+		foreach ( $raw_kelas as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$kn         = self::str( $row, 'nama' );
+			$slot       = isset( $row['slot'] ) && is_numeric( $row['slot'] ) ? (int) $row['slot'] : 0;
+			$k_mulai    = self::str( $row, 'tanggal_mulai' );
+			$k_selesai  = self::str( $row, 'tanggal_selesai' );
+			$k_dl_raw   = self::str( $row, 'deadline_pendaftaran' );
+			$k_deadline = null;
+			if ( '' === $kn && ! empty( $updates_existing ) ) {
+				continue;
+			}
+			if ( '' !== $k_dl_raw ) {
+				$k_deadline = KGTK_Helpers::sanitize_deadline( $k_dl_raw );
+				if ( null === $k_deadline ) {
+					return self::err( 'kelas', 'Format batas pendaftaran kelas ' . $kn . ' tidak valid.', 422 );
+				}
+			}
+			if ( '' === $kn || self::len( $kn ) > 30 ) {
+				return self::err( 'kelas', 'Nama kelas wajib diisi (maksimal 30 karakter).', 422 );
+			}
+			$key = function_exists( 'mb_strtolower' ) ? mb_strtolower( $kn, 'UTF-8' ) : strtolower( $kn );
+			if ( isset( $existing_names[ $key ] ) ) {
+				return self::err( 'kelas', 'Kelas "' . $kn . '" sudah ada pada pelatihan ini.', 422 );
+			}
+			if ( isset( $seen_kelas[ $key ] ) ) {
+				return self::err( 'kelas', 'Nama kelas baru tidak boleh sama: ' . $kn . '.', 422 );
+			}
+			if ( $slot < 1 || $slot > 2000 ) {
+				return self::err( 'kelas', 'Slot kelas ' . $kn . ' harus antara 1 dan 2000.', 422 );
+			}
+			if ( '' !== $k_mulai || '' !== $k_selesai ) {
+				if ( '' === $k_mulai && '' !== $k_selesai ) {
+					$k_mulai = $k_selesai;
+				} elseif ( '' === $k_selesai && '' !== $k_mulai ) {
+					$k_selesai = $k_mulai;
+				}
+				if ( ! self::valid_date( $k_mulai ) || ! self::valid_date( $k_selesai ) ) {
+					return self::err( 'kelas', 'Format tanggal kelas ' . $kn . ' tidak valid.', 422 );
+				}
+				if ( $k_selesai < $k_mulai ) {
+					return self::err( 'kelas', 'Tanggal selesai kelas ' . $kn . ' tidak boleh sebelum tanggal mulai.', 422 );
+				}
+			} else {
+				$k_mulai   = null;
+				$k_selesai = null;
+			}
+			$seen_kelas[ $key ] = true;
+			$kelas[]            = array(
+				'nama'                 => $kn,
+				'slot'                 => $slot,
+				'tanggal_mulai'        => $k_mulai,
+				'tanggal_selesai'      => $k_selesai,
+				'deadline_pendaftaran' => $k_deadline,
+			);
+		}
+		if ( empty( $kelas ) && empty( $updates_existing ) ) {
+			return self::err( 'kelas', 'Tambahkan minimal satu kelas baru atau perbarui batas pendaftaran kelas.', 422 );
+		}
+
+		$wpdb->query( 'START TRANSACTION' );
+		$wpdb->suppress_errors( true );
+
+		$ok = true;
+		foreach ( $updates_existing as $ue ) {
+			$u_ok = $wpdb->update(
+				$tk,
+				array(
+					'tanggal_mulai'        => $ue['tanggal_mulai'],
+					'tanggal_selesai'      => $ue['tanggal_selesai'],
+					'deadline_pendaftaran' => $ue['deadline_pendaftaran'],
+				),
+				array(
+					'id'           => $ue['id'],
+					'pelatihan_id' => $id,
+				),
+				array( '%s', '%s', '%s' ),
+				array( '%d', '%d' )
+			);
+			if ( false === $u_ok ) {
+				$ok = false;
+				break;
+			}
+		}
+
+		if ( $ok ) {
+			foreach ( $kelas as $kl ) {
+				++$max_urutan;
+				$i_ok = $wpdb->insert(
+					$tk,
+					array(
+						'pelatihan_id'         => $id,
+						'nama'                 => $kl['nama'],
+						'slot'                 => $kl['slot'],
+						'tanggal_mulai'        => $kl['tanggal_mulai'],
+						'tanggal_selesai'      => $kl['tanggal_selesai'],
+						'deadline_pendaftaran' => $kl['deadline_pendaftaran'],
+						'urutan'               => $max_urutan,
+					),
+					array( '%d', '%s', '%d', '%s', '%s', '%s', '%d' )
+				);
+				if ( ! $i_ok ) {
+					$ok = false;
+					break;
+				}
+			}
+		}
+
+		$wpdb->suppress_errors( false );
+
+		if ( false === $ok ) {
+			$wpdb->query( 'ROLLBACK' );
+			return self::err( 'gagal', 'Gagal menambahkan kelas baru.', 500 );
+		}
+
+		$wpdb->query( 'COMMIT' );
 
 		return self::respond(
 			array(

@@ -84,6 +84,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="kgtk-actions">
 						<a class="kgtk-btn kgtk-btn--navy" href="<?php echo esc_url( $absen ); ?>">Kelola</a>
 						<?php
+						$kelas_json_card = array();
+						foreach ( $kelas as $kl_c ) {
+							$kelas_json_card[] = array(
+								'id'                   => (int) $kl_c->id,
+								'nama'                 => (string) $kl_c->nama,
+								'slot'                 => (int) $kl_c->slot,
+								'terisi'               => isset( $kl_c->terisi ) ? (int) $kl_c->terisi : 0,
+								'tanggal_mulai'        => ! empty( $kl_c->tanggal_mulai ) ? (string) $kl_c->tanggal_mulai : '',
+								'tanggal_selesai'      => ! empty( $kl_c->tanggal_selesai ) ? (string) $kl_c->tanggal_selesai : '',
+								'tanggal_label'        => ! empty( $kl_c->tanggal_label ) ? (string) $kl_c->tanggal_label : '',
+								'deadline_pendaftaran' => ! empty( $kl_c->deadline_pendaftaran ) ? (string) $kl_c->deadline_pendaftaran : '',
+								'deadline_formatted'   => ! empty( $kl_c->deadline_formatted ) ? (string) $kl_c->deadline_formatted : '',
+							);
+						}
 						$pel_json = wp_json_encode( array(
 							'id'                   => (int) $p->id,
 							'nama'                 => $p->nama,
@@ -97,6 +111,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							'tipe_pj'              => isset( $p->tipe_pj ) ? $p->tipe_pj : 'Penanggung Jawab',
 							'keterangan'           => $p->keterangan,
 							'kode'                 => $p->kode,
+							'kelas'                => $kelas_json_card,
 						) );
 						?>
 						<button type="button" class="kgtk-btn kgtk-btn--ghost" data-edit-pelatihan="<?php echo (int) $p->id; ?>" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="Edit data pelatihan">&#9998; Edit</button>

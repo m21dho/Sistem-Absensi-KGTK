@@ -12,7 +12,7 @@ class KGTK_Helpers {
 	const PERAN_SLOT           = 'Peserta';
 	const BARIS_PER_HALAMAN    = 20;
 	const BARIS_HALAMAN_AWAL   = 20;
-	const BARIS_HALAMAN_LANJUT = 25;
+	const BARIS_HALAMAN_LANJUT = 26;
 	/** Nilai kabupaten/kota untuk guru dari luar daftar sekolah. */
 	const KABKOTA_LAIN      = 'Lainnya';
 	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Peserta' );
@@ -123,6 +123,42 @@ class KGTK_Helpers {
 	}
 
 	/**
+	 * Rentang tanggal spesifik sebuah kelas bila diisi, atau fallback ke tanggal umum pelatihan.
+	 *
+	 * @param object      $p Objek pelatihan.
+	 * @param object|null $k Objek kelas (opsional).
+	 * @return string
+	 */
+	public static function rentang_tanggal_kelas( $p, $k = null ) {
+		if ( is_object( $k ) && ! empty( $k->tanggal_mulai ) && '0000-00-00' !== $k->tanggal_mulai ) {
+			$kselesai = ( ! empty( $k->tanggal_selesai ) && '0000-00-00' !== $k->tanggal_selesai ) ? $k->tanggal_selesai : $k->tanggal_mulai;
+			return self::rentang_tanggal( $k->tanggal_mulai, $kselesai );
+		}
+		if ( is_object( $p ) ) {
+			return self::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai );
+		}
+		return '';
+	}
+
+	/**
+	 * Daftar hari pelaksanaan spesifik kelas bila diisi, atau fallback ke daftar hari pelatihan induk.
+	 *
+	 * @param object      $p Objek pelatihan.
+	 * @param object|null $k Objek kelas (opsional).
+	 * @return array
+	 */
+	public static function daftar_hari_kelas( $p, $k = null ) {
+		if ( is_object( $k ) && ! empty( $k->tanggal_mulai ) && '0000-00-00' !== $k->tanggal_mulai ) {
+			$kselesai = ( ! empty( $k->tanggal_selesai ) && '0000-00-00' !== $k->tanggal_selesai ) ? $k->tanggal_selesai : $k->tanggal_mulai;
+			return self::daftar_hari_pelatihan( $k->tanggal_mulai, $kselesai );
+		}
+		if ( is_object( $p ) ) {
+			return self::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
+		}
+		return array();
+	}
+
+	/**
 	 * Sanitasi nilai deadline pendaftaran dari input form atau API.
 	 * Format yang disimpan di database: 'Y-m-d H:i:s' atau null jika tidak ditentukan.
 	 *
@@ -179,11 +215,46 @@ class KGTK_Helpers {
 
 	/**
 	 * Periksa apakah deadline pendaftaran pelatihan sudah terlewati.
+	 * Jika kelas memiliki batas pendaftaran spesifik, pendaftaran tetap dibuka selama
+	 * minimal masih ada 1 kelas yang batas pendaftarannya belum terlewati.
 	 *
-	 * @param object|array|string|null $pelatihan_or_dt
+	 * @param object|array|string|null $pelatihan_or_dt Objek pelatihan, array, atau string datetime.
+	 * @param array|null               $kelas           Daftar kelas dari kelas_stats (opsional).
 	 * @return bool
 	 */
-	public static function is_deadline_passed( $pelatihan_or_dt ) {
+	public static function is_deadline_passed( $pelatihan_or_dt, $kelas = null ) {
+		$now = current_time( 'mysql' );
+
+		if ( is_object( $pelatihan_or_dt ) && ! empty( $pelatihan_or_dt->id ) ) {
+			if ( null === $kelas ) {
+				$kelas = self::kelas_stats( (int) $pelatihan_or_dt->id );
+			}
+			if ( ! empty( $kelas ) && is_array( $kelas ) ) {
+				$has_class_dl = false;
+				foreach ( $kelas as $k ) {
+					if ( ! empty( $k->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $k->deadline_pendaftaran ) {
+						$has_class_dl = true;
+						break;
+					}
+				}
+				if ( $has_class_dl ) {
+					$general_dl = ! empty( $pelatihan_or_dt->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $pelatihan_or_dt->deadline_pendaftaran
+						? trim( (string) $pelatihan_or_dt->deadline_pendaftaran )
+						: '';
+					foreach ( $kelas as $k ) {
+						$k_dl = ( ! empty( $k->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $k->deadline_pendaftaran )
+							? trim( (string) $k->deadline_pendaftaran )
+							: $general_dl;
+						// Jika kelas ini belum melewati batas pendaftaran (atau tidak punya batas), maka masih buka.
+						if ( '' === $k_dl || $now <= $k_dl ) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+		}
+
 		$dt = '';
 		if ( is_object( $pelatihan_or_dt ) ) {
 			$dt = ! empty( $pelatihan_or_dt->deadline_pendaftaran ) ? (string) $pelatihan_or_dt->deadline_pendaftaran : '';
@@ -196,8 +267,46 @@ class KGTK_Helpers {
 		if ( '' === $dt || '0000-00-00 00:00:00' === $dt ) {
 			return false;
 		}
-		$now = current_time( 'mysql' );
 		return $now > $dt;
+	}
+
+	/**
+	 * Ambil teks deadline efektif untuk pesan penutupan pendaftaran.
+	 *
+	 * @param object     $p     Objek pelatihan.
+	 * @param array|null $kelas Daftar kelas (opsional).
+	 * @return string
+	 */
+	public static function effective_deadline_text( $p, $kelas = null ) {
+		if ( is_object( $p ) && ! empty( $p->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $p->deadline_pendaftaran ) {
+			if ( null === $kelas && ! empty( $p->id ) ) {
+				$kelas = self::kelas_stats( (int) $p->id );
+			}
+			$latest = (string) $p->deadline_pendaftaran;
+			foreach ( (array) $kelas as $k ) {
+				if ( ! empty( $k->deadline_pendaftaran ) && $k->deadline_pendaftaran > $latest ) {
+					$latest = (string) $k->deadline_pendaftaran;
+				}
+			}
+			return self::format_deadline( $latest );
+		}
+		if ( is_object( $p ) ) {
+			if ( null === $kelas && ! empty( $p->id ) ) {
+				$kelas = self::kelas_stats( (int) $p->id );
+			}
+			$latest = '';
+			foreach ( (array) $kelas as $k ) {
+				if ( ! empty( $k->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $k->deadline_pendaftaran ) {
+					if ( '' === $latest || $k->deadline_pendaftaran > $latest ) {
+						$latest = (string) $k->deadline_pendaftaran;
+					}
+				}
+			}
+			if ( '' !== $latest ) {
+				return self::format_deadline( $latest );
+			}
+		}
+		return 'batas waktu yang ditentukan';
 	}
 
 	/**
@@ -481,7 +590,8 @@ class KGTK_Helpers {
 		$tk = KGTK_DB::table( 'kelas' );
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT ps.*, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS kelas_slot
+				"SELECT ps.*, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS kelas_slot,
+				        k.tanggal_mulai AS kelas_tanggal_mulai, k.tanggal_selesai AS kelas_tanggal_selesai
 				 FROM {$tp} ps
 				 LEFT JOIN {$tk} k ON k.id = ps.kelas_id
 				 WHERE ps.pelatihan_id = %d AND ps.peran != 'Panitia'
@@ -500,7 +610,7 @@ class KGTK_Helpers {
 		);
 	}
 
-	/** Peta pelatihan_id => daftar kelas (id, nama, slot, terisi). */
+	/** Peta pelatihan_id => daftar kelas (id, nama, slot, tanggal_mulai, tanggal_selesai, deadline_pendaftaran, terisi). */
 	public static function all_kelas_stats( $only_id = 0 ) {
 		global $wpdb;
 		$k = KGTK_DB::table( 'kelas' );
@@ -508,24 +618,31 @@ class KGTK_Helpers {
 
 		$where = $only_id ? $wpdb->prepare( 'WHERE k.pelatihan_id = %d', $only_id ) : '';
 		$rows  = $wpdb->get_results(
-			"SELECT k.id, k.pelatihan_id, k.nama, k.slot, k.urutan,
+			"SELECT k.id, k.pelatihan_id, k.nama, k.slot, k.tanggal_mulai, k.tanggal_selesai, k.deadline_pendaftaran, k.urutan,
 			        SUM(CASE WHEN p.peran = 'Peserta' THEN 1 ELSE 0 END) AS terisi,
 			        SUM(CASE WHEN p.peran <> 'Peserta' AND p.peran <> 'Panitia' AND p.peran IS NOT NULL THEN 1 ELSE 0 END) AS lain
 			 FROM {$k} k LEFT JOIN {$p} p ON p.kelas_id = k.id AND p.peran != 'Panitia'
 			 {$where}
-			 GROUP BY k.id, k.pelatihan_id, k.nama, k.slot, k.urutan
+			 GROUP BY k.id, k.pelatihan_id, k.nama, k.slot, k.tanggal_mulai, k.tanggal_selesai, k.deadline_pendaftaran, k.urutan
 			 ORDER BY k.pelatihan_id, k.urutan, k.id"
 		);
 
+		$now = current_time( 'mysql' );
 		$map = array();
 		foreach ( (array) $rows as $r ) {
-			$r->id           = (int) $r->id;
-			$r->pelatihan_id = (int) $r->pelatihan_id;
-			$r->slot         = (int) $r->slot;
-			$r->terisi       = (int) $r->terisi;
-			$r->lain         = (int) $r->lain;
-			$r->sisa         = max( 0, $r->slot - $r->terisi );
-			$r->label        = self::label_kelas( $r->nama );
+			$r->id                   = (int) $r->id;
+			$r->pelatihan_id         = (int) $r->pelatihan_id;
+			$r->slot                 = (int) $r->slot;
+			$r->terisi               = (int) $r->terisi;
+			$r->lain                 = (int) $r->lain;
+			$r->sisa                 = max( 0, $r->slot - $r->terisi );
+			$r->label                = self::label_kelas( $r->nama );
+			$r->tanggal_mulai        = ( ! empty( $r->tanggal_mulai ) && '0000-00-00' !== $r->tanggal_mulai ) ? $r->tanggal_mulai : null;
+			$r->tanggal_selesai      = ( ! empty( $r->tanggal_selesai ) && '0000-00-00' !== $r->tanggal_selesai ) ? $r->tanggal_selesai : $r->tanggal_mulai;
+			$r->tanggal_label        = $r->tanggal_mulai ? self::rentang_tanggal( $r->tanggal_mulai, $r->tanggal_selesai ) : '';
+			$r->deadline_pendaftaran = ( ! empty( $r->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $r->deadline_pendaftaran ) ? $r->deadline_pendaftaran : null;
+			$r->deadline_formatted   = $r->deadline_pendaftaran ? self::format_deadline( $r->deadline_pendaftaran ) : '';
+			$r->is_deadline_passed   = $r->deadline_pendaftaran ? ( $now > $r->deadline_pendaftaran ) : false;
 			$map[ $r->pelatihan_id ][] = $r;
 		}
 		return $map;
@@ -609,7 +726,7 @@ class KGTK_Helpers {
 	}
 
 	/** Array 3 baris info kegiatan: Kegiatan, Tanggal kegiatan, Tempat kegiatan. */
-	public static function baris_info_array( $p, $tanggal_khusus = '' ) {
+	public static function baris_info_array( $p, $tanggal_khusus = '', $k = null ) {
 		$arr = array();
 		if ( ! empty( $p->nama ) ) {
 			$arr[] = (string) $p->nama;
@@ -619,7 +736,7 @@ class KGTK_Helpers {
 		if ( $is_custom_day ) {
 			$arr[] = self::format_hari_tanggal( $tanggal_khusus );
 		} else {
-			$tgl = self::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai );
+			$tgl = self::rentang_tanggal_kelas( $p, $k );
 			if ( '' !== $tgl ) {
 				$arr[] = $tgl;
 			}
@@ -631,13 +748,13 @@ class KGTK_Helpers {
 	}
 
 	/** Baris kegiatan gabungan (satu baris dipisah koma). */
-	public static function baris_info( $p, $tanggal_khusus = '' ) {
-		return implode( ', ', self::baris_info_array( $p, $tanggal_khusus ) );
+	public static function baris_info( $p, $tanggal_khusus = '', $k = null ) {
+		return implode( ', ', self::baris_info_array( $p, $tanggal_khusus, $k ) );
 	}
 
 	/** Output HTML 3 baris info kegiatan terpisah di tengah halaman. */
-	public static function baris_info_html( $p, $tanggal_khusus = '' ) {
-		$tgl_default    = self::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai );
+	public static function baris_info_html( $p, $tanggal_khusus = '', $k = null ) {
+		$tgl_default    = self::rentang_tanggal_kelas( $p, $k );
 		$tanggal_khusus = trim( (string) $tanggal_khusus );
 		$is_custom_day  = ( '' !== $tanggal_khusus && 'semua' !== strtolower( $tanggal_khusus ) && 'all' !== strtolower( $tanggal_khusus ) && 'all_days' !== strtolower( $tanggal_khusus ) && 'range' !== strtolower( $tanggal_khusus ) );
 		$tgl_display    = $is_custom_day ? self::format_hari_tanggal( $tanggal_khusus ) : $tgl_default;
@@ -682,9 +799,9 @@ class KGTK_Helpers {
 		return $out;
 	}
 
-	/** Jumlah baris lembar: Peserta = slot kelas; peran lain = jumlah yang terdaftar. */
+	/** Jumlah baris lembar: Peserta = slot kelas (minimal 1 halaman penuh); peran lain = jumlah yang terdaftar. */
 	public static function baris_lembar( $peran, $list, $k ) {
-		return self::PERAN_SLOT === $peran ? max( 1, (int) $k->slot ) : max( 1, count( $list ) );
+		return self::PERAN_SLOT === $peran ? max( self::BARIS_HALAMAN_AWAL, (int) $k->slot, count( $list ) ) : max( 1, count( $list ) );
 	}
 
 	/** Lembar absen untuk export: satu lembar per kelas per peran (lihat kelompok_absen). */

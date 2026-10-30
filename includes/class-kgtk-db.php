@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KGTK_DB {
 
-	const VERSION         = '18';
+	const VERSION         = '20';
 	const OPTION_VERSION  = 'kgtk_db_version';
 	const OPTION_PAGE_ID  = 'kgtk_page_id';
 	const DEFAULT_TIPE_PJ = 'Penanggung Jawab';
@@ -54,6 +54,7 @@ class KGTK_DB {
 		}
 
 		self::migrate_pelatihan_columns();
+		self::migrate_kelas_columns();
 		self::migrate_biodata_tables();
 		self::normalize_legacy_data();
 
@@ -93,8 +94,11 @@ class KGTK_DB {
 			"CREATE TABLE {$p}kgtk_kelas (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   pelatihan_id bigint(20) unsigned NOT NULL,
-  nama varchar(20) NOT NULL,
+  nama varchar(30) NOT NULL,
   slot int(10) unsigned NOT NULL,
+  tanggal_mulai date DEFAULT NULL,
+  tanggal_selesai date DEFAULT NULL,
+  deadline_pendaftaran datetime DEFAULT NULL,
   urutan int(10) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY  (id),
   UNIQUE KEY pelatihan_nama (pelatihan_id,nama)
@@ -268,6 +272,24 @@ class KGTK_DB {
 		);
 
 		self::add_missing_columns( $table, $spec, $existing_cols );
+	}
+
+	/**
+	 * Migrasi kolom jadwal per kelas pada tabel kgtk_kelas.
+	 */
+	private static function migrate_kelas_columns() {
+		global $wpdb;
+		$table         = self::table( 'kelas' );
+		$existing_cols = self::get_existing_columns( $table );
+
+		$spec = array(
+			'tanggal_mulai'        => 'date DEFAULT NULL AFTER slot',
+			'tanggal_selesai'      => 'date DEFAULT NULL AFTER tanggal_mulai',
+			'deadline_pendaftaran' => 'datetime DEFAULT NULL AFTER tanggal_selesai',
+		);
+
+		self::add_missing_columns( $table, $spec, $existing_cols );
+		$wpdb->query( "ALTER TABLE {$table} MODIFY COLUMN nama varchar(30) NOT NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**

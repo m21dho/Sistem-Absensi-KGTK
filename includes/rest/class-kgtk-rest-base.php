@@ -76,16 +76,27 @@ abstract class KGTK_REST_Base {
 
 	/* ====================== Payload Formatters ====================== */
 
-	public static function kelas_payload( $kelas ) {
-		$out = array();
+	public static function kelas_payload( $kelas, $p = null ) {
+		$out        = array();
+		$general_dl = ( is_object( $p ) && ! empty( $p->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $p->deadline_pendaftaran )
+			? (string) $p->deadline_pendaftaran
+			: '';
 		foreach ( $kelas as $k ) {
-			$out[] = array(
-				'id'     => $k->id,
-				'nama'   => $k->nama,
-				'slot'   => $k->slot,
-				'terisi' => $k->terisi,
-				'sisa'   => $k->sisa,
-				'label'  => $k->label,
+			$has_own_dl = ! empty( $k->deadline_pendaftaran ) && '0000-00-00 00:00:00' !== $k->deadline_pendaftaran;
+			$eff_dl     = $has_own_dl ? (string) $k->deadline_pendaftaran : $general_dl;
+			$out[]      = array(
+				'id'                   => $k->id,
+				'nama'                 => $k->nama,
+				'slot'                 => $k->slot,
+				'terisi'               => $k->terisi,
+				'sisa'                 => $k->sisa,
+				'label'                => $k->label,
+				'tanggal_mulai'        => isset( $k->tanggal_mulai ) ? $k->tanggal_mulai : '',
+				'tanggal_selesai'      => isset( $k->tanggal_selesai ) ? $k->tanggal_selesai : '',
+				'tanggal'              => isset( $k->tanggal_label ) ? $k->tanggal_label : '',
+				'deadline_pendaftaran' => $has_own_dl ? (string) $k->deadline_pendaftaran : '',
+				'deadline_formatted'   => $has_own_dl ? KGTK_Helpers::format_deadline( $k->deadline_pendaftaran ) : '',
+				'is_deadline_passed'   => '' !== $eff_dl ? KGTK_Helpers::is_deadline_passed( $eff_dl ) : false,
 			);
 		}
 		return $out;
@@ -94,23 +105,25 @@ abstract class KGTK_REST_Base {
 	public static function pelatihan_payload( $p, $kelas ) {
 		$t = KGTK_Helpers::totals( $kelas );
 		return array(
-			'nama'              => $p->nama,
-			'penyelenggara'     => $p->penyelenggara,
-			'tanggal'           => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
-			'lokasi'            => $p->lokasi,
-			'pelatihan_kabkota' => isset( $p->kabkota ) ? $p->kabkota : '',
-			'keterangan'        => (string) $p->keterangan,
-			'kode'              => $p->kode,
-			'kelas'                => self::kelas_payload( $kelas ),
+			'nama'                 => $p->nama,
+			'penyelenggara'        => $p->penyelenggara,
+			'tanggal'              => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
+			'lokasi'               => $p->lokasi,
+			'pelatihan_kabkota'    => isset( $p->kabkota ) ? $p->kabkota : '',
+			'keterangan'           => (string) $p->keterangan,
+			'kode'                 => $p->kode,
+			'kelas'                => self::kelas_payload( $kelas, $p ),
 			'kabkota'              => KGTK_Helpers::kabkota_list(),
 			'penuh'                => $t['penuh'],
 			'deadline_pendaftaran' => ! empty( $p->deadline_pendaftaran ) ? $p->deadline_pendaftaran : null,
 			'deadline_formatted'   => ! empty( $p->deadline_pendaftaran ) ? KGTK_Helpers::format_deadline( $p->deadline_pendaftaran ) : '',
-			'is_deadline_passed'   => KGTK_Helpers::is_deadline_passed( $p ),
+			'is_deadline_passed'   => KGTK_Helpers::is_deadline_passed( $p, $kelas ),
 		);
 	}
 
-	public static function hasil( $p, $nama, $sekolah, $peran, $kelas_nama, $slot, $nomor, $jenis_gtk = '' ) {
+	public static function hasil( $p, $nama, $sekolah, $peran, $kelas_nama, $slot, $nomor, $jenis_gtk = '', $kelas_tgl_mulai = '', $kelas_tgl_selesai = '' ) {
+		$tgl_m = ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_mulai;
+		$tgl_s = ( ! empty( $kelas_tgl_selesai ) && '0000-00-00' !== $kelas_tgl_selesai ) ? $kelas_tgl_selesai : ( ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_selesai );
 		return array(
 			'nama'        => $nama,
 			'sekolah'     => $sekolah,
@@ -119,7 +132,7 @@ abstract class KGTK_REST_Base {
 			'pelatihan'   => $p->nama,
 			'kelas'       => $kelas_nama,
 			'kelas_label' => KGTK_Helpers::label_kelas( $kelas_nama ),
-			'tanggal'     => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
+			'tanggal'     => KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s ),
 			'lokasi'      => $p->lokasi,
 			'kabkota'     => isset( $p->kabkota ) ? $p->kabkota : '',
 			'nomor'       => (int) $nomor,
@@ -144,7 +157,8 @@ abstract class KGTK_REST_Base {
 		$k  = KGTK_DB::table( 'kelas' );
 		$r  = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT ps.id, ps.kelas_id, ps.nama, ps.sekolah, ps.peran, ps.jenis_gtk, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS slot
+				"SELECT ps.id, ps.kelas_id, ps.nama, ps.sekolah, ps.peran, ps.jenis_gtk, COALESCE(k.nama, '') AS kelas_nama, COALESCE(k.slot, 0) AS slot,
+				        k.tanggal_mulai AS kelas_tanggal_mulai, k.tanggal_selesai AS kelas_tanggal_selesai
 				 FROM {$ps} ps LEFT JOIN {$k} k ON k.id = ps.kelas_id
 				 WHERE ps.pelatihan_id = %d AND ps.nik = %s",
 				$pelatihan_id,

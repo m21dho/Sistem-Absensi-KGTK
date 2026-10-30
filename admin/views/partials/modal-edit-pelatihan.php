@@ -52,10 +52,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 
 						<label class="kgtk-field">
-							<span>Batas Waktu / Deadline Pendaftaran</span>
+							<span>Batas Waktu / Deadline Pendaftaran Umum</span>
 							<input type="datetime-local" class="kgtk-input" id="kgtk-edit-pel-deadline" name="deadline_pendaftaran">
-							<small>Opsional. Tentukan batas akhir pendaftaran guru. Kosongkan jika tidak ada batas waktu pendaftaran.</small>
+							<small>Opsional. Tentukan batas akhir pendaftaran umum pelatihan. Kosongkan jika tidak ada batas waktu atau diatur per kelas.</small>
 						</label>
+
+						<div id="kgtk-edit-pel-kelas-deadlines-wrap" style="display:none;margin-bottom:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+							<div style="font-size:13px;font-weight:700;color:#0b2d56;margin-bottom:4px;">&#9200; Jadwal &amp; Batas Pendaftaran Per Kelas</div>
+							<small class="kgtk-muted" style="display:block;margin-bottom:10px;font-size:12px;">Atur atau perpanjang tanggal pelaksanaan serta batas waktu pendaftaran masing-masing kelas yang sudah dibuka:</small>
+							<div id="kgtk-edit-pel-kelas-deadlines-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+						</div>
 
 						<div class="kgtk-row2">
 							<label class="kgtk-field">

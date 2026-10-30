@@ -20,6 +20,22 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var bool   $multi           Apakah multi kelas.
  */
 
+$kelas_json_list = array();
+foreach ( $kelas as $kl_item ) {
+	$kelas_json_list[] = array(
+		'id'                   => (int) $kl_item->id,
+		'nama'                 => (string) $kl_item->nama,
+		'slot'                 => (int) $kl_item->slot,
+		'terisi'               => isset( $kl_item->terisi ) ? (int) $kl_item->terisi : 0,
+		'tanggal_mulai'        => ! empty( $kl_item->tanggal_mulai ) ? (string) $kl_item->tanggal_mulai : '',
+		'tanggal_selesai'      => ! empty( $kl_item->tanggal_selesai ) ? (string) $kl_item->tanggal_selesai : '',
+		'tanggal_label'        => ! empty( $kl_item->tanggal_label ) ? (string) $kl_item->tanggal_label : '',
+		'deadline_pendaftaran' => ! empty( $kl_item->deadline_pendaftaran ) ? (string) $kl_item->deadline_pendaftaran : '',
+		'deadline_formatted'   => ! empty( $kl_item->deadline_formatted ) ? (string) $kl_item->deadline_formatted : '',
+		'is_deadline_passed'   => ! empty( $kl_item->is_deadline_passed ),
+	);
+}
+
 $pel_json = wp_json_encode( array(
 	'id'                   => (int) $p->id,
 	'nama'                 => $p->nama,
@@ -33,6 +49,7 @@ $pel_json = wp_json_encode( array(
 	'tipe_pj'              => isset( $p->tipe_pj ) ? $p->tipe_pj : 'Penanggung Jawab',
 	'keterangan'           => $p->keterangan,
 	'kode'                 => $p->kode,
+	'kelas'                => $kelas_json_list,
 ) );
 
 ?>
@@ -52,10 +69,13 @@ $pel_json = wp_json_encode( array(
 					<code class="kgtk-head-code">&#127991; <?php echo esc_html( $p->kode ); ?></code>
 				</div>
 			</div>
-			<div class="kgtk-head-primary-actions">
+			<div class="kgtk-head-primary-actions" style="align-items:flex-start;">
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-edit-pelatihan-detail" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="Edit informasi dan jadwal pelatihan">&#9998; Edit Pelatihan</button>
 				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-impor-header" title="Impor Data Peserta dari berkas Excel atau CSV">&#128196; Impor Data</button>
-				<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
+				<div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;">
+					<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
+					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-kelola-kelas" data-pelatihan-id="<?php echo (int) $p->id; ?>" data-kelas="<?php echo esc_attr( wp_json_encode( $kelas_json_list ) ); ?>" title="Tambah atau kelola kelas peserta pelatihan" style="justify-content:center;">+ Tambah Kelas</button>
+				</div>
 			</div>
 		</div>
 
@@ -189,26 +209,30 @@ $pel_json = wp_json_encode( array(
 						<div class="kgtk-scard" data-filter="<?php echo (int) $k->id; ?>" role="button" tabindex="0" title="Klik untuk filter: <?php echo esc_attr( $k->label ); ?>">
 							<div class="kgtk-scard-num"><?php echo (int) $terisi_count; ?><small>/<?php echo (int) $k->slot; ?></small></div>
 							<div class="kgtk-scard-label">&#127979; <?php echo esc_html( $k->label ); ?></div>
+							<?php if ( ! empty( $k->tanggal_label ) ) : ?>
+								<div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:3px;pointer-events:none;">&#128197; <?php echo esc_html( $k->tanggal_label ); ?></div>
+							<?php endif; ?>
+							<?php if ( ! empty( $k->deadline_formatted ) ) : ?>
+								<div style="font-size:10.5px;color:<?php echo ! empty( $k->is_deadline_passed ) ? '#dc2626' : '#64748b'; ?>;font-weight:600;margin-top:2px;pointer-events:none;">
+									&#9200; Batas: <?php echo esc_html( $k->deadline_formatted . ( ! empty( $k->is_deadline_passed ) ? ' (Tutup)' : '' ) ); ?>
+								</div>
+							<?php endif; ?>
+							<div style="margin-top:5px;">
+								<button type="button" class="kgtk-btn-deadline-kelas" data-atur-deadline-kelas="<?php echo (int) $k->id; ?>" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;color:#0b2d56;font-weight:600;cursor:pointer;" title="Tambah atau ubah batas pendaftaran untuk <?php echo esc_attr( $k->label ); ?>">
+									&#9200; <?php echo ! empty( $k->deadline_formatted ) ? 'Ubah Deadline' : '+ Set Deadline'; ?>
+								</button>
+							</div>
 							<div class="kgtk-scard-bar"><span style="width:<?php echo (int) $pct; ?>%"></span></div>
 						</div>
 					<?php endforeach; ?>
 				</div>
 
-				<!-- Toolbar Pencarian & Filter -->
+				<!-- Toolbar Pencarian -->
 				<div class="kgtk-kelola-tools">
-					<div class="kgtk-search-wrap">
+					<div class="kgtk-search-wrap" style="max-width:100%;width:100%;">
 						<span class="kgtk-search-icon">&#128269;</span>
 						<input type="search" id="kgtk-peserta-search" class="kgtk-input" placeholder="Cari nama guru, NIK, asal sekolah/instansi, atau nomor HP...">
 						<button type="button" id="kgtk-search-clear" class="kgtk-search-clear" title="Bersihkan pencarian" style="display:none;">&times;</button>
-					</div>
-					<div class="kgtk-fbtns" role="group" aria-label="Filter kelas">
-						<button type="button" class="kgtk-fbtn is-active" data-filter="all">Semua <span class="kgtk-fcount"><?php echo (int) $total_pendaftar; ?></span></button>
-						<button type="button" class="kgtk-fbtn<?php echo $unassigned > 0 ? ' is-warn' : ''; ?>" data-filter="0">Belum Ada Kelas <span class="kgtk-fcount"><?php echo (int) $unassigned; ?></span></button>
-						<?php foreach ( $kelas as $k ) :
-							$terisi_count = count( $k->peserta );
-						?>
-							<button type="button" class="kgtk-fbtn" data-filter="<?php echo (int) $k->id; ?>"><?php echo esc_html( $k->label ); ?> <span class="kgtk-fcount"><?php echo (int) $terisi_count; ?></span></button>
-						<?php endforeach; ?>
 					</div>
 				</div>
 
@@ -299,7 +323,7 @@ $pel_json = wp_json_encode( array(
 											'created_at'         => ! empty( $ps->created_at ) ? $ps->created_at : '-',
 											'pelatihan'          => $p->nama,
 											'pelatihan_kode'     => $p->kode,
-											'pelatihan_tgl'      => $tgl,
+											'pelatihan_tgl'      => ( ! empty( $ps->kelas_tanggal_mulai ) && '0000-00-00' !== $ps->kelas_tanggal_mulai ) ? KGTK_Helpers::rentang_tanggal( $ps->kelas_tanggal_mulai, ! empty( $ps->kelas_tanggal_selesai ) && '0000-00-00' !== $ps->kelas_tanggal_selesai ? $ps->kelas_tanggal_selesai : $ps->kelas_tanggal_mulai ) : $tgl,
 											'pelatihan_lok'      => $lok,
 											'pelatihan_kabkota'  => isset( $p->kabkota ) ? $p->kabkota : '',
 											'pdf_url'            => KGTK_Export::biodata_pdf_url( $ps->id ),
@@ -411,5 +435,6 @@ $pel_json = wp_json_encode( array(
 	require KGTK_PATH . 'admin/views/partials/modal-edit-peserta.php';
 	require KGTK_PATH . 'admin/views/partials/modal-export-pdf.php';
 	require KGTK_PATH . 'admin/views/partials/modal-edit-pelatihan.php';
+	require KGTK_PATH . 'admin/views/partials/modal-kelola-kelas.php';
 	?>
 </div>

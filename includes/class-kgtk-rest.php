@@ -107,6 +107,15 @@ class KGTK_REST extends KGTK_REST_Base {
 		);
 		register_rest_route(
 			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/kelas',
+			array(
+				'methods'             => array( 'PUT', 'POST' ),
+				'callback'            => array( 'KGTK_REST_Admin_Pelatihan', 'admin_update_kelas' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
 			'/admin/pelatihan/(?P<id>\d+)',
 			array(
 				'methods'             => 'DELETE',

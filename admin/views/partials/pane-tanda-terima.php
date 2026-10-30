@@ -138,18 +138,21 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 									for ( $i = 0; $i < $halaman['jumlah']; $i++ ) :
 										$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
 										$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-										$is_odd    = ( $no_urutan % 2 !== 0 );
+										$is_first  = ( 0 === $i % 2 );
+										$has_pair  = ( $i + 1 < $halaman['jumlah'] );
 									?>
 										<tr>
 											<td class="c-no"><?php echo (int) $no_urutan; ?></td>
 											<td class="c-nama"><?php echo $row ? esc_html( $row->nama ) : '&nbsp;'; ?></td>
 											<td class="c-inst"><?php echo $row ? esc_html( $row->sekolah ) : '&nbsp;'; ?></td>
-											<?php if ( $is_odd ) : ?>
-												<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?>.</td>
-												<td class="c-ttd-col c-ttd-right">&nbsp;</td>
-											<?php else : ?>
-												<td class="c-ttd-col c-ttd-left">&nbsp;</td>
-												<td class="c-ttd-col c-ttd-right"><?php echo (int) $no_urutan; ?>.</td>
+											<?php if ( $is_first ) : ?>
+												<?php if ( $has_pair ) : ?>
+													<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no_urutan; ?></td>
+													<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no_urutan + 1 ); ?></td>
+												<?php else : ?>
+													<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?></td>
+													<td class="c-ttd-col c-ttd-right">&nbsp;</td>
+												<?php endif; ?>
 											<?php endif; ?>
 										</tr>
 									<?php endfor; ?>
@@ -208,18 +211,21 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 										for ( $i = 0; $i < $halaman['jumlah']; $i++ ) :
 											$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
 											$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-											$is_odd    = ( $no_urutan % 2 !== 0 );
+											$is_first  = ( 0 === $i % 2 );
+											$has_pair  = ( $i + 1 < $halaman['jumlah'] );
 										?>
 											<tr>
 												<td class="c-no"><?php echo (int) $no_urutan; ?></td>
 												<td class="c-nama"><?php echo $row ? esc_html( $row->nama ) : '&nbsp;'; ?></td>
 												<td class="c-inst"><?php echo $row ? esc_html( $row->sekolah ) : '&nbsp;'; ?></td>
-												<?php if ( $is_odd ) : ?>
-													<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?>.</td>
-													<td class="c-ttd-col c-ttd-right">&nbsp;</td>
-												<?php else : ?>
-													<td class="c-ttd-col c-ttd-left">&nbsp;</td>
-													<td class="c-ttd-col c-ttd-right"><?php echo (int) $no_urutan; ?>.</td>
+												<?php if ( $is_first ) : ?>
+													<?php if ( $has_pair ) : ?>
+														<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no_urutan; ?></td>
+														<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no_urutan + 1 ); ?></td>
+													<?php else : ?>
+														<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?></td>
+														<td class="c-ttd-col c-ttd-right">&nbsp;</td>
+													<?php endif; ?>
 												<?php endif; ?>
 											</tr>
 										<?php endfor; ?>

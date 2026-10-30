@@ -524,11 +524,26 @@
 			for (var i = 0; i < rows.length; i++) {
 				var n = rows[i].querySelector('[data-knama]').value.trim();
 				var v = parseInt(rows[i].querySelector('[data-kslot]').value, 10);
+				var kmEl = rows[i].querySelector('[data-ktgl-mulai]');
+				var ksEl = rows[i].querySelector('[data-ktgl-selesai]');
+				var kdEl = rows[i].querySelector('[data-kdeadline]');
+				var km = kmEl ? (kmEl.value || '').trim() : '';
+				var ks = ksEl ? (ksEl.value || '').trim() : '';
+				var kd = kdEl ? (kdEl.value || '').trim() : '';
 				if (!n) { return showErr('Nama kelas nomor ' + (i + 1) + ' wajib diisi.'); }
 				if (seen[n.toLowerCase()]) { return showErr('Nama kelas tidak boleh sama: ' + n + '.'); }
 				if (!(v >= 1 && v <= 2000)) { return showErr('Slot kelas ' + n + ' harus antara 1 dan 2000.'); }
+				if (km && ks && ks < km) {
+					return showErr('Tanggal selesai kelas ' + n + ' tidak boleh sebelum tanggal mulai.');
+				}
 				seen[n.toLowerCase()] = true;
-				kelas.push({ nama: n, slot: v });
+				kelas.push({
+					nama: n,
+					slot: v,
+					tanggal_mulai: km || (ks ? ks : ''),
+					tanggal_selesai: ks || (km ? km : ''),
+					deadline_pendaftaran: kd
+				});
 			}
 			if (!kelas.length) { return showErr('Tambahkan minimal satu kelas.'); }
 
@@ -3176,6 +3191,42 @@
 		if (f.kode) { f.kode.value = data.kode || ''; }
 		if (f.keterangan) { f.keterangan.value = data.keterangan || ''; }
 
+		var dlWrap = document.getElementById('kgtk-edit-pel-kelas-deadlines-wrap');
+		var dlList = document.getElementById('kgtk-edit-pel-kelas-deadlines-list');
+		if (dlWrap && dlList) {
+			dlList.innerHTML = '';
+			var rawK = Array.isArray(data.kelas) ? data.kelas : [];
+			if (rawK.length > 0) {
+				rawK.forEach(function (k) {
+					var kId = k && k.id ? parseInt(k.id, 10) : 0;
+					var kNama = k && k.nama ? String(k.nama) : '';
+					if (!kId || !kNama) { return; }
+					var km = k.tanggal_mulai ? String(k.tanggal_mulai) : '';
+					var ks = k.tanggal_selesai ? String(k.tanggal_selesai) : '';
+					var kd = k.deadline_pendaftaran ? String(k.deadline_pendaftaran).replace(' ', 'T').slice(0, 16) : '';
+					var itemRow = document.createElement('div');
+					itemRow.className = 'kgtk-edit-existing-kelas-row';
+					itemRow.setAttribute('data-edit-kelas-id', String(kId));
+					itemRow.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;';
+					itemRow.innerHTML =
+						'<strong style="min-width:110px;font-size:13px;color:#0b2d56;">' + esc(kNama) + '</strong>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Mulai <input type="date" class="kgtk-input" data-ek-mulai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Selesai <input type="date" class="kgtk-input" data-ek-selesai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ek-deadline style="width:178px;padding:4px 6px;min-height:32px;"></label>';
+					var mIn = itemRow.querySelector('[data-ek-mulai]');
+					var sIn = itemRow.querySelector('[data-ek-selesai]');
+					var dIn = itemRow.querySelector('[data-ek-deadline]');
+					if (mIn) { mIn.value = km; }
+					if (sIn) { sIn.value = ks; }
+					if (dIn) { dIn.value = kd; }
+					dlList.appendChild(itemRow);
+				});
+				dlWrap.style.display = 'block';
+			} else {
+				dlWrap.style.display = 'none';
+			}
+		}
+
 		modal.style.display = 'flex';
 		modal.classList.add('is-visible');
 		if (f.nama) { f.nama.focus(); }
@@ -3273,6 +3324,29 @@
 				return;
 			}
 
+			var existingKelasEdit = [];
+			var dlList = document.getElementById('kgtk-edit-pel-kelas-deadlines-list');
+			if (dlList) {
+				var ekRows = dlList.querySelectorAll('[data-edit-kelas-id]');
+				for (var ei = 0; ei < ekRows.length; ei++) {
+					var ekRow = ekRows[ei];
+					var ekId = parseInt(ekRow.getAttribute('data-edit-kelas-id') || '0', 10);
+					var ekm = (ekRow.querySelector('[data-ek-mulai]').value || '').trim();
+					var eks = (ekRow.querySelector('[data-ek-selesai]').value || '').trim();
+					var ekd = (ekRow.querySelector('[data-ek-deadline]').value || '').trim();
+					if (ekm && eks && eks < ekm) {
+						if (errBox) { errBox.textContent = 'Tanggal selesai kelas tidak boleh sebelum tanggal mulai.'; errBox.hidden = false; }
+						return;
+					}
+					existingKelasEdit.push({
+						id: ekId,
+						tanggal_mulai: ekm || (eks ? eks : ''),
+						tanggal_selesai: eks || (ekm ? ekm : ''),
+						deadline_pendaftaran: ekd
+					});
+				}
+			}
+
 			var simpanBtn = document.getElementById('kgtk-btn-edit-pelatihan-simpan');
 			if (simpanBtn) {
 				simpanBtn.disabled = true;
@@ -3290,7 +3364,8 @@
 				tipe_pj: tipePj,
 				penanggung_jawab: penanggungJawab,
 				kode: kode,
-				keterangan: keterangan
+				keterangan: keterangan,
+				existing_kelas: existingKelasEdit
 			}).then(function () {
 				closeEditPelatihanModal();
 				window.location.reload();
@@ -3310,6 +3385,370 @@
 		initEditPelatihan();
 	} catch (errEditPel) {
 		console.error('KGTK Init EditPelatihan Error:', errEditPel);
+	}
+
+	/* ==========================================================================
+	   MODAL TAMBAH KELAS BARU PELATIHAN
+	   ========================================================================== */
+	var currentExistingKelasNames = {};
+
+	function createKelolaKelasRow(item) {
+		var row = document.createElement('div');
+		row.className = 'kgtk-kelas-row';
+		var nama = item && item.nama ? String(item.nama) : '';
+		var slot = item && item.slot ? parseInt(item.slot, 10) : 30;
+		var tglMulai = item && item.tanggal_mulai ? String(item.tanggal_mulai) : '';
+		var tglSelesai = item && item.tanggal_selesai ? String(item.tanggal_selesai) : '';
+		var deadline = item && item.deadline_pendaftaran ? String(item.deadline_pendaftaran) : '';
+		row.innerHTML =
+			'<span class="kgtk-kelas-no" aria-hidden="true"></span>' +
+			'<input type="text" class="kgtk-input" data-knama maxlength="30" placeholder="Nama kelas baru (mis. Kelas PAUD / SD)" aria-label="Nama kelas baru" required>' +
+			'<label class="kgtk-slot">Slot <input type="number" class="kgtk-input" data-kslot min="1" max="2000" value="30" required></label>' +
+			'<label class="kgtk-slot kgtk-kelas-tgl" title="Tanggal Mulai Kelas (opsional)">Mulai <input type="date" class="kgtk-input" data-ktgl-mulai aria-label="Tanggal mulai kelas"></label>' +
+			'<label class="kgtk-slot kgtk-kelas-tgl" title="Tanggal Selesai Kelas (opsional)">Selesai <input type="date" class="kgtk-input" data-ktgl-selesai aria-label="Tanggal selesai kelas"></label>' +
+			'<label class="kgtk-slot kgtk-kelas-tgl" title="Batas Waktu Pendaftaran Kelas (opsional)">Batas Daftar <input type="datetime-local" class="kgtk-input" data-kdeadline style="width:182px;" aria-label="Batas pendaftaran kelas"></label>' +
+			'<div class="kgtk-row-actions">' +
+				'<button type="button" class="kgtk-iconbtn" data-up data-move="up" title="Geser ke atas" aria-label="Geser ke atas">&#8593;</button>' +
+				'<button type="button" class="kgtk-iconbtn" data-down data-move="down" title="Geser ke bawah" aria-label="Geser ke bawah">&#8595;</button>' +
+				'<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del title="Hapus baris" aria-label="Hapus baris">&times;</button>' +
+			'</div>';
+		var namaInput = row.querySelector('[data-knama]');
+		var slotInput = row.querySelector('[data-kslot]');
+		var mulaiInput = row.querySelector('[data-ktgl-mulai]');
+		var selesaiInput = row.querySelector('[data-ktgl-selesai]');
+		var dlInput = row.querySelector('[data-kdeadline]');
+		if (namaInput) { namaInput.value = nama; }
+		if (slotInput) { slotInput.value = String(slot > 0 ? slot : 30); }
+		if (mulaiInput && tglMulai) { mulaiInput.value = tglMulai; }
+		if (selesaiInput && tglSelesai) { selesaiInput.value = tglSelesai; }
+		if (dlInput && deadline) { dlInput.value = deadline; }
+		return row;
+	}
+
+	function refreshKelolaKelasRows() {
+		var list = document.getElementById('kgtk-kelola-kelas-list');
+		if (!list) { return; }
+		var rows = list.querySelectorAll('.kgtk-kelas-row');
+		Array.prototype.forEach.call(rows, function (r, i) {
+			var noEl = r.querySelector('.kgtk-kelas-no');
+			if (noEl) { noEl.textContent = String(i + 1); }
+			var upBtn = r.querySelector('[data-up], [data-move="up"]');
+			var downBtn = r.querySelector('[data-down], [data-move="down"]');
+			var delBtn = r.querySelector('[data-del]');
+			if (upBtn) { upBtn.disabled = (i === 0); }
+			if (downBtn) { downBtn.disabled = (i === rows.length - 1); }
+			if (delBtn) { delBtn.disabled = (rows.length <= 1); }
+		});
+	}
+
+	function openKelolaKelasModal(pelatihanId, kelasListArr, focusKelasId) {
+		var modal = document.getElementById('kgtk-modal-kelola-kelas');
+		var form = document.getElementById('kgtk-form-kelola-kelas');
+		var errBox = document.getElementById('kgtk-kelola-kelas-error');
+		var list = document.getElementById('kgtk-kelola-kelas-list');
+		var chipsBox = document.getElementById('kgtk-existing-kelas-chips');
+		var existingBox = document.getElementById('kgtk-existing-kelas-box');
+		if (!modal || !form || !list) {
+			return;
+		}
+		if (errBox) {
+			errBox.hidden = true;
+			errBox.textContent = '';
+		}
+		var idInput = document.getElementById('kgtk-kelola-kelas-pelatihan-id');
+		if (idInput) {
+			idInput.value = String(pelatihanId || 0);
+		}
+
+		currentExistingKelasNames = {};
+		var rawKelas = Array.isArray(kelasListArr) ? kelasListArr : [];
+		var focusTargetInput = null;
+		if (chipsBox) {
+			chipsBox.innerHTML = '';
+			rawKelas.forEach(function (k) {
+				var kId = k && k.id ? parseInt(k.id, 10) : 0;
+				var kNama = k && k.nama ? String(k.nama).trim() : '';
+				if (kNama) {
+					currentExistingKelasNames[kNama.toLowerCase()] = true;
+					var terisi = k.terisi ? parseInt(k.terisi, 10) : 0;
+					var slot = k.slot ? parseInt(k.slot, 10) : 30;
+					var km = k.tanggal_mulai ? String(k.tanggal_mulai) : '';
+					var ks = k.tanggal_selesai ? String(k.tanggal_selesai) : '';
+					var kd = k.deadline_pendaftaran ? String(k.deadline_pendaftaran).replace(' ', 'T').slice(0, 16) : '';
+
+					var exRow = document.createElement('div');
+					exRow.setAttribute('data-existing-kelas-id', String(kId));
+					exRow.setAttribute('data-existing-kelas-nama', kNama);
+					exRow.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;';
+					exRow.innerHTML =
+						'<div style="min-width:140px;flex:1 1 140px;">' +
+							'<strong style="font-size:13px;color:#0b2d56;display:block;">' + esc(kNama) + '</strong>' +
+							'<span style="font-size:11.5px;color:#64748b;">' + terisi + '/' + slot + ' slot terisi</span>' +
+						'</div>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Mulai <input type="date" class="kgtk-input" data-ex-mulai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Selesai <input type="date" class="kgtk-input" data-ex-selesai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
+						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ex-deadline style="width:180px;padding:4px 6px;min-height:32px;"></label>';
+					var mIn = exRow.querySelector('[data-ex-mulai]');
+					var sIn = exRow.querySelector('[data-ex-selesai]');
+					var dIn = exRow.querySelector('[data-ex-deadline]');
+					if (mIn) { mIn.value = km; }
+					if (sIn) { sIn.value = ks; }
+					if (dIn) {
+						dIn.value = kd;
+						if (focusKelasId && parseInt(focusKelasId, 10) === kId) {
+							focusTargetInput = dIn;
+							exRow.style.borderColor = '#0284c7';
+							exRow.style.boxShadow = '0 0 0 2px rgba(2,132,199,0.18)';
+						}
+					}
+					chipsBox.appendChild(exRow);
+				}
+			});
+		}
+		if (existingBox) {
+			existingBox.style.display = rawKelas.length > 0 ? 'block' : 'none';
+		}
+
+		// Selalu mulai dengan 1 baris kosong untuk Kelas Baru agar tidak menimpa kelas lama
+		list.innerHTML = '';
+		var firstNewRow = createKelolaKelasRow({ nama: '', slot: 30 });
+		list.appendChild(firstNewRow);
+		refreshKelolaKelasRows();
+
+		modal.style.display = 'flex';
+		modal.classList.add('is-visible');
+		if (focusTargetInput) {
+			focusTargetInput.focus();
+		} else {
+			var firstInput = firstNewRow.querySelector('[data-knama]');
+			if (firstInput) {
+				firstInput.focus();
+			}
+		}
+	}
+
+	function closeKelolaKelasModal() {
+		var modal = document.getElementById('kgtk-modal-kelola-kelas');
+		if (modal) {
+			modal.classList.remove('is-visible');
+			modal.style.display = 'none';
+		}
+	}
+
+	document.addEventListener('click', function (e) {
+		var dlBtn = e.target.closest('[data-atur-deadline-kelas]');
+		if (dlBtn) {
+			e.stopPropagation();
+			var kIdFocus = parseInt(dlBtn.getAttribute('data-atur-deadline-kelas') || '0', 10);
+			var mainBtn = document.getElementById('kgtk-btn-kelola-kelas');
+			if (mainBtn) {
+				var pelId = parseInt(mainBtn.getAttribute('data-pelatihan-id') || '0', 10);
+				var rawK = mainBtn.getAttribute('data-kelas') || '[]';
+				var kelasArr = [];
+				try { kelasArr = JSON.parse(rawK); } catch (ex) {}
+				openKelolaKelasModal(pelId, kelasArr, kIdFocus);
+			}
+			return;
+		}
+		var btn = e.target.closest('#kgtk-btn-kelola-kelas');
+		if (btn) {
+			var pelId2 = parseInt(btn.getAttribute('data-pelatihan-id') || '0', 10);
+			var rawK2 = btn.getAttribute('data-kelas') || '[]';
+			var kelasArr2 = [];
+			try { kelasArr2 = JSON.parse(rawK2); } catch (ex) {}
+			openKelolaKelasModal(pelId2, kelasArr2, 0);
+			return;
+		}
+		var modal = document.getElementById('kgtk-modal-kelola-kelas');
+		if (modal && modal.classList.contains('is-visible')) {
+			if (e.target === modal || e.target.closest('#kgtk-btn-kelola-kelas-close') || e.target.closest('#kgtk-btn-kelola-kelas-batal')) {
+				closeKelolaKelasModal();
+			}
+		}
+	});
+
+	function initKelolaKelas() {
+		var modal = document.getElementById('kgtk-modal-kelola-kelas');
+		var form = document.getElementById('kgtk-form-kelola-kelas');
+		var errBox = document.getElementById('kgtk-kelola-kelas-error');
+		var list = document.getElementById('kgtk-kelola-kelas-list');
+		var addBtn = document.getElementById('kgtk-kelola-kelas-add');
+		if (!modal || !form || !list) {
+			return;
+		}
+
+		if (addBtn) {
+			addBtn.addEventListener('click', function () {
+				var rows = list.querySelectorAll('.kgtk-kelas-row');
+				var existingCount = Object.keys(currentExistingKelasNames).length;
+				if (existingCount + rows.length >= 20) {
+					if (errBox) {
+						errBox.textContent = 'Maksimal total 20 kelas per pelatihan.';
+						errBox.hidden = false;
+					}
+					return;
+				}
+				var newRow = createKelolaKelasRow({ nama: '', slot: 30 });
+				list.appendChild(newRow);
+				refreshKelolaKelasRows();
+				var namaInput = newRow.querySelector('[data-knama]');
+				if (namaInput) {
+					namaInput.focus();
+				}
+			});
+		}
+
+		list.addEventListener('click', function (e) {
+			var b = e.target.closest('button');
+			if (!b || b.disabled) { return; }
+			var row = b.closest('.kgtk-kelas-row');
+			if (!row) { return; }
+			if (b.hasAttribute('data-del')) {
+				var rows = list.querySelectorAll('.kgtk-kelas-row');
+				if (rows.length <= 1) { return; }
+				row.remove();
+			} else if ((b.hasAttribute('data-up') || b.getAttribute('data-move') === 'up') && row.previousElementSibling) {
+				list.insertBefore(row, row.previousElementSibling);
+			} else if ((b.hasAttribute('data-down') || b.getAttribute('data-move') === 'down') && row.nextElementSibling) {
+				list.insertBefore(row.nextElementSibling, row);
+			}
+			refreshKelolaKelasRows();
+		});
+
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			if (errBox) {
+				errBox.hidden = true;
+				errBox.textContent = '';
+			}
+
+			var idInput = document.getElementById('kgtk-kelola-kelas-pelatihan-id');
+			var pelatihanId = idInput ? parseInt(idInput.value || '0', 10) : 0;
+			var chipsBox = document.getElementById('kgtk-existing-kelas-chips');
+			var existingKelasUpdates = [];
+			var valid = true;
+
+			if (chipsBox) {
+				var exRows = chipsBox.querySelectorAll('[data-existing-kelas-id]');
+				Array.prototype.forEach.call(exRows, function (exRow) {
+					if (!valid) { return; }
+					var exId = parseInt(exRow.getAttribute('data-existing-kelas-id') || '0', 10);
+					var exNama = exRow.getAttribute('data-existing-kelas-nama') || '';
+					var exmEl = exRow.querySelector('[data-ex-mulai]');
+					var exsEl = exRow.querySelector('[data-ex-selesai]');
+					var exdEl = exRow.querySelector('[data-ex-deadline]');
+					var exm = exmEl ? (exmEl.value || '').trim() : '';
+					var exs = exsEl ? (exsEl.value || '').trim() : '';
+					var exd = exdEl ? (exdEl.value || '').trim() : '';
+					if (exm && exs && exs < exm) {
+						if (errBox) { errBox.textContent = 'Tanggal selesai kelas "' + exNama + '" tidak boleh sebelum tanggal mulai.'; errBox.hidden = false; }
+						if (exsEl) { exsEl.focus(); }
+						valid = false;
+						return;
+					}
+					existingKelasUpdates.push({
+						id: exId,
+						tanggal_mulai: exm || (exs ? exs : ''),
+						tanggal_selesai: exs || (exm ? exm : ''),
+						deadline_pendaftaran: exd
+					});
+				});
+			}
+
+			var rows = list.querySelectorAll('.kgtk-kelas-row');
+			var kelas = [];
+			var seenKelas = {};
+
+			Array.prototype.forEach.call(rows, function (row) {
+				if (!valid) { return; }
+				var namaEl = row.querySelector('[data-knama]');
+				var slotEl = row.querySelector('[data-kslot]');
+				var kNama = namaEl ? (namaEl.value || '').trim() : '';
+				var kSlot = slotEl ? parseInt(slotEl.value, 10) : 0;
+				if (!kNama && existingKelasUpdates.length > 0) {
+					return; // Abaikan baris kelas baru yang dikosongkan bila sedang menyimpan deadline kelas lama
+				}
+				if (!kNama || kNama.length > 30) {
+					if (errBox) { errBox.textContent = 'Nama kelas baru wajib diisi (maksimal 30 karakter).'; errBox.hidden = false; }
+					if (namaEl) { namaEl.focus(); }
+					valid = false;
+					return;
+				}
+				var kKey = kNama.toLowerCase();
+				if (currentExistingKelasNames[kKey]) {
+					if (errBox) { errBox.textContent = 'Kelas "' + kNama + '" sudah ada pada pelatihan ini.'; errBox.hidden = false; }
+					if (namaEl) { namaEl.focus(); }
+					valid = false;
+					return;
+				}
+				if (seenKelas[kKey]) {
+					if (errBox) { errBox.textContent = 'Nama kelas baru tidak boleh kembar: "' + kNama + '".'; errBox.hidden = false; }
+					if (namaEl) { namaEl.focus(); }
+					valid = false;
+					return;
+				}
+				seenKelas[kKey] = true;
+				if (!kSlot || kSlot < 1 || kSlot > 2000) {
+					if (errBox) { errBox.textContent = 'Slot peserta per kelas harus antara 1 dan 2000.'; errBox.hidden = false; }
+					if (slotEl) { slotEl.focus(); }
+					valid = false;
+					return;
+				}
+				var kmEl = row.querySelector('[data-ktgl-mulai]');
+				var ksEl = row.querySelector('[data-ktgl-selesai]');
+				var kdEl = row.querySelector('[data-kdeadline]');
+				var km = kmEl ? (kmEl.value || '').trim() : '';
+				var ks = ksEl ? (ksEl.value || '').trim() : '';
+				var kd = kdEl ? (kdEl.value || '').trim() : '';
+				if (km && ks && ks < km) {
+					if (errBox) { errBox.textContent = 'Tanggal selesai kelas "' + kNama + '" tidak boleh sebelum tanggal mulai.'; errBox.hidden = false; }
+					if (ksEl) { ksEl.focus(); }
+					valid = false;
+					return;
+				}
+				kelas.push({
+					nama: kNama,
+					slot: kSlot,
+					tanggal_mulai: km || (ks ? ks : ''),
+					tanggal_selesai: ks || (km ? km : ''),
+					deadline_pendaftaran: kd
+				});
+			});
+
+			if (!valid) { return; }
+			if (!kelas.length && !existingKelasUpdates.length) {
+				if (errBox) { errBox.textContent = 'Tambahkan minimal satu kelas baru.'; errBox.hidden = false; }
+				return;
+			}
+
+			var simpanBtn = document.getElementById('kgtk-btn-kelola-kelas-simpan');
+			if (simpanBtn) {
+				simpanBtn.disabled = true;
+				simpanBtn.textContent = 'Menyimpan...';
+			}
+
+			api('admin/pelatihan/' + pelatihanId + '/kelas', 'PUT', {
+				existing_kelas: existingKelasUpdates,
+				kelas: kelas
+			}).then(function () {
+				closeKelolaKelasModal();
+				window.location.reload();
+			}).catch(function (err) {
+				if (simpanBtn) {
+					simpanBtn.disabled = false;
+					simpanBtn.innerHTML = '&#128190; Tambah Kelas';
+				}
+				if (errBox) {
+					errBox.textContent = err.message || 'Gagal menambahkan kelas baru.';
+					errBox.hidden = false;
+				}
+			});
+		});
+	}
+	try {
+		initKelolaKelas();
+	} catch (errKelolaKelas) {
+		console.error('KGTK Init KelolaKelas Error:', errKelolaKelas);
 	}
 
 	/* ==========================================================================

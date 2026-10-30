@@ -125,7 +125,8 @@ class KGTK_Admin {
 	public static function chips( $kelas ) {
 		$h = '<div class="kgtk-chips">';
 		foreach ( $kelas as $k ) {
-			$h .= '<span class="kgtk-chip' . ( $k->sisa < 1 ? ' is-full' : '' ) . '">' . esc_html( $k->nama . ' ' . $k->terisi . '/' . $k->slot ) . '</span>';
+			$tgl_part = ! empty( $k->tanggal_label ) ? ' (' . $k->tanggal_label . ') · ' : ' ';
+			$h       .= '<span class="kgtk-chip' . ( $k->sisa < 1 ? ' is-full' : '' ) . '">' . esc_html( $k->nama . $tgl_part . $k->terisi . '/' . $k->slot ) . '</span>';
 		}
 		$h .= '</div>';
 		return $h;
@@ -143,11 +144,14 @@ class KGTK_Admin {
 			. ( $hint ? '<small>' . esc_html( $hint ) . '</small>' : '' ) . '</label>';
 	}
 
-	public static function kelas_row( $nama, $slot ) {
+	public static function kelas_row( $nama, $slot, $tgl_mulai = '', $tgl_selesai = '', $deadline = '' ) {
 		return '<div class="kgtk-kelas-row">'
 			. '<span class="kgtk-kelas-no" aria-hidden="true"></span>'
-			. '<input type="text" class="kgtk-input" data-knama maxlength="30" placeholder="Nama kelas, mis. Kelas A" aria-label="Nama kelas" value="' . esc_attr( $nama ) . '">'
+			. '<input type="text" class="kgtk-input" data-knama maxlength="30" placeholder="Nama kelas, mis. Kelas PAUD" aria-label="Nama kelas" value="' . esc_attr( $nama ) . '">'
 			. '<label class="kgtk-slot">Slot <input type="number" class="kgtk-input" data-kslot min="1" max="2000" value="' . (int) $slot . '"></label>'
+			. '<label class="kgtk-slot kgtk-kelas-tgl" title="Tanggal mulai kelas ini (opsional, kosongkan jika mengikuti tanggal umum pelatihan)">Mulai <input type="date" class="kgtk-input" data-ktgl-mulai style="width:140px;" value="' . esc_attr( $tgl_mulai ) . '"></label>'
+			. '<label class="kgtk-slot kgtk-kelas-tgl" title="Tanggal selesai kelas ini (opsional)">Selesai <input type="date" class="kgtk-input" data-ktgl-selesai style="width:140px;" value="' . esc_attr( $tgl_selesai ) . '"></label>'
+			. '<label class="kgtk-slot kgtk-kelas-tgl" title="Batas waktu pendaftaran kelas ini (opsional, kosongkan jika mengikuti batas pendaftaran umum)">Batas Daftar <input type="datetime-local" class="kgtk-input" data-kdeadline style="width:182px;" value="' . esc_attr( $deadline ) . '"></label>'
 			. '<div class="kgtk-row-actions">'
 			. '<button type="button" class="kgtk-iconbtn" data-up data-move="up" title="Geser ke atas" aria-label="Geser ke atas">&#8593;</button>'
 			. '<button type="button" class="kgtk-iconbtn" data-down data-move="down" title="Geser ke bawah" aria-label="Geser ke bawah">&#8595;</button>'
@@ -306,7 +310,7 @@ class KGTK_Admin {
 			if ( 0 === $p_idx ) {
 				echo KGTK_Helpers::kop_html(); // phpcs:ignore WordPress.Security.EscapeOutput
 				echo '<h2 class="kgtk-doc-title">' . esc_html( KGTK_Helpers::judul_absen( $peran ) ) . '</h2>';
-				echo KGTK_Helpers::baris_info_html( $p, $tanggal_khusus ); // phpcs:ignore WordPress.Security.EscapeOutput
+				echo KGTK_Helpers::baris_info_html( $p, $tanggal_khusus, $k ); // phpcs:ignore WordPress.Security.EscapeOutput
 				if ( $tampil_kelas ) {
 					echo '<p class="kgtk-doc-kelas">' . esc_html( $k->label ) . '</p>';
 				}
@@ -317,15 +321,18 @@ class KGTK_Admin {
 			for ( $i = 0; $i < $halaman['jumlah']; $i++ ) {
 				$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
 				$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-				$is_odd    = ( $no_urutan % 2 !== 0 );
+				$is_first  = ( 0 === $i % 2 );
+				$has_pair  = ( $i + 1 < $halaman['jumlah'] );
 				echo '<tr>';
 				echo '<td class="c-no">' . $no_urutan . '</td>';
 				echo '<td class="c-nama">' . ( $row ? esc_html( $row->nama ) : '' ) . '</td>';
 				echo '<td class="c-inst">' . ( $row ? esc_html( $row->sekolah ) : '' ) . '</td>';
-				if ( $is_odd ) {
-					echo '<td class="c-ttd-col c-ttd-left">' . $no_urutan . '.</td><td class="c-ttd-col c-ttd-right">&nbsp;</td>';
-				} else {
-					echo '<td class="c-ttd-col c-ttd-left">&nbsp;</td><td class="c-ttd-col c-ttd-right">' . $no_urutan . '.</td>';
+				if ( $is_first ) {
+					if ( $has_pair ) {
+						echo '<td class="c-ttd-col c-ttd-left" rowspan="2">' . $no_urutan . '</td><td class="c-ttd-col c-ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
+					} else {
+						echo '<td class="c-ttd-col c-ttd-left">' . $no_urutan . '</td><td class="c-ttd-col c-ttd-right">&nbsp;</td>';
+					}
 				}
 				echo '</tr>';
 			}
@@ -338,9 +345,9 @@ class KGTK_Admin {
 	}
 
 	public static function sheet_html( $p, $k, $peran, $rows, $jumlah, $sub, $active, $tampil_kelas ) {
-		$daftar_hari  = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
+		$daftar_hari  = KGTK_Helpers::daftar_hari_kelas( $p, $k );
 		$is_multi_day = count( $daftar_hari ) > 1;
-		$tgl_default  = KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai );
+		$tgl_default  = KGTK_Helpers::rentang_tanggal_kelas( $p, $k );
 		$label        = 'Cetak ' . $k->label . ' - ' . $peran . ( $is_multi_day ? ' (Semua Hari)' : '' );
 
 		echo '<div class="kgtk-sub' . ( $active ? ' is-active' : '' ) . '" data-sub="' . esc_attr( $sub ) . '">';

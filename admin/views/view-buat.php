@@ -83,7 +83,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<fieldset class="kgtk-field">
 			<legend>Kelas dan slot <b>*</b></legend>
-			<small>Ketik nama kelas sesuai kebutuhan dan jumlah slotnya. Pendaftar otomatis masuk ke kelas paling atas yang masih punya slot; kelas berikutnya terisi setelah kelas sebelumnya penuh. Gunakan tombol panah untuk mengatur urutan.</small>
+			<small>Ketik nama kelas (mis. Kelas PAUD, Kelas SD, Kelas SMP, Kelas SMA) dan jumlah slotnya. Jika jadwal tanggal atau batas pendaftaran tiap kelas berbeda-beda, isi kolom <b>Mulai</b>, <b>Selesai</b>, dan <b>Batas Daftar</b> pada masing-masing kelas (kosongkan jika mengikuti jadwal &amp; batas pendaftaran umum di atas).</small>
 			<div class="kgtk-kelas" id="kgtk-kelas-list"><?php echo KGTK_Admin::kelas_row( 'Kelas A', 30 ); ?></div>
 			<template id="kgtk-kelas-tpl"><?php echo KGTK_Admin::kelas_row( '', 30 ); ?></template>
 			<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-kelas-add">+ Tambah kelas</button>

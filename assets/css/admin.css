@@ -88,15 +88,15 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-wrap .kgtk-head-top {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: space-between;
 	align-items: flex-start;
-	gap: 16px;
+	gap: 20px;
 	width: 100%
 }
 
 .kgtk-wrap .kgtk-head-info {
-	flex: 1 1 auto;
+	flex: 1 1 0%;
 	width: auto;
 	min-width: 0;
 	height: auto;
@@ -157,9 +157,24 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-wrap .kgtk-head-primary-actions {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+	flex: 0 0 auto;
+	flex-wrap: nowrap;
+	align-items: flex-start;
+	justify-content: flex-end;
 	gap: 10px
+}
+
+@media (max-width: 960px) {
+	.kgtk-wrap .kgtk-head-top {
+		flex-wrap: wrap
+	}
+	.kgtk-wrap .kgtk-head-info {
+		flex: 1 1 100%
+	}
+	.kgtk-wrap .kgtk-head-primary-actions {
+		flex-wrap: wrap;
+		justify-content: flex-start
+	}
 }
 
 .kgtk-wrap .kgtk-head-toolbar {
@@ -304,7 +319,7 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-wrap .kgtk-form {
-	max-width: 720px
+	max-width: 880px
 }
 
 .kgtk-wrap .kgtk-row2 {
@@ -351,7 +366,11 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-wrap .kgtk-slot .kgtk-input {
-	width: 96px
+	width: 86px
+}
+
+.kgtk-wrap .kgtk-slot.kgtk-kelas-tgl .kgtk-input {
+	width: 142px
 }
 
 .kgtk-wrap .kgtk-kelas-ctl {
@@ -734,17 +753,24 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-wrap .kgtk-table .c-ttd-col {
 	width: 13% !important;
-	text-align: left;
-	vertical-align: middle;
-	padding-left: 8px;
+	padding: 4px 6px !important;
 	font-weight: 500;
 	color: #1e293b;
+	box-sizing: border-box;
+	line-height: 1.2
+}
+
+.kgtk-wrap .kgtk-table .c-ttd-left {
+	width: 13% !important;
+	text-align: left !important;
+	vertical-align: top !important;
 	box-sizing: border-box
 }
 
-.kgtk-wrap .kgtk-table .c-ttd-left,
 .kgtk-wrap .kgtk-table .c-ttd-right {
 	width: 13% !important;
+	text-align: right !important;
+	vertical-align: bottom !important;
 	box-sizing: border-box
 }
 
@@ -851,10 +877,12 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	#wpcontent,
+	#wpbody,
 	#wpbody-content {
 		margin: 0 !important;
 		padding: 0 !important;
-		float: none !important
+		float: none !important;
+		overflow: visible !important
 	}
 
 	.kgtk-wrap {
@@ -868,12 +896,16 @@ div.kgtk-modal-overlay.is-visible,
 		display: none !important
 	}
 
-	.kgtk-wrap .kgtk-sheets .kgtk-pane {
+	.kgtk-wrap .kgtk-sheets>.kgtk-pane {
 		display: none !important
 	}
 
-	.kgtk-wrap .kgtk-sheets .kgtk-pane.kgtk-printing {
+	.kgtk-wrap .kgtk-sheets>.kgtk-pane.kgtk-printing {
 		display: block !important
+	}
+
+	.kgtk-wrap .kgtk-sheets>*:not(.kgtk-pane) {
+		display: none !important
 	}
 
 	.kgtk-wrap .kgtk-pane .kgtk-toolbar,
@@ -934,12 +966,13 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-page+.kgtk-page {
-		margin-top: 0;
-		padding-top: 0;
-		border-top: 0
+		margin-top: 0 !important;
+		padding-top: 0 !important;
+		border-top: 0 !important
 	}
 
 	.kgtk-wrap .kgtk-page {
+		display: block !important;
 		page-break-after: always;
 		break-after: page;
 		color: #000;
@@ -947,8 +980,8 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-page:last-child {
-		page-break-after: auto;
-		break-after: auto
+		page-break-after: auto !important;
+		break-after: auto !important
 	}
 
 	.kgtk-wrap .kgtk-kop-wrap {
@@ -1010,7 +1043,9 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-wrap .kgtk-table td {
 		height: 10mm;
 		font-size: 12pt;
-		padding: 0 10px
+		padding: 0 10px;
+		line-height: 1.15;
+		box-sizing: border-box
 	}
 
 	.kgtk-wrap .kgtk-table th {
@@ -1059,16 +1094,23 @@ div.kgtk-modal-overlay.is-visible,
 
 	.kgtk-wrap .kgtk-table .c-ttd-col {
 		width: 13% !important;
-		text-align: left;
-		vertical-align: middle;
-		padding-left: 6px;
+		padding: 2px 6px !important;
 		color: #000;
+		box-sizing: border-box;
+		line-height: 1.15
+	}
+
+	.kgtk-wrap .kgtk-table .c-ttd-left {
+		width: 13% !important;
+		text-align: left !important;
+		vertical-align: top !important;
 		box-sizing: border-box
 	}
 
-	.kgtk-wrap .kgtk-table .c-ttd-left,
 	.kgtk-wrap .kgtk-table .c-ttd-right {
 		width: 13% !important;
+		text-align: right !important;
+		vertical-align: bottom !important;
 		box-sizing: border-box
 	}
 
@@ -1102,7 +1144,8 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-table tr {
-		page-break-inside: avoid
+		page-break-inside: auto;
+		break-inside: auto
 	}
 }
 
@@ -1305,9 +1348,9 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-wrap .kgtk-search-wrap {
 	position: relative;
-	flex: 1 1 auto;
+	flex: 1 1 100%;
 	width: 100%;
-	max-width: 440px;
+	max-width: 100%;
 	height: 42px;
 	min-height: 42px
 }
