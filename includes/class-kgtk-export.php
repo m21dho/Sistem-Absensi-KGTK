@@ -94,7 +94,7 @@ class KGTK_Export {
 		return class_exists( '\PhpOffice\PhpSpreadsheet\Spreadsheet' ) && class_exists( '\Dompdf\Dompdf' );
 	}
 
-	public static function url( $id, $format, $peran = '', $tanggal = '' ) {
+	public static function url( $id, $format, $peran = '', $tanggal = '', $kelas_id = 0 ) {
 		$args = array(
 			'action' => 'kgtk_export',
 			'format' => rawurlencode( $format ),
@@ -107,6 +107,9 @@ class KGTK_Export {
 		$tanggal = trim( (string) $tanggal );
 		if ( '' !== $tanggal && 'all' !== strtolower( $tanggal ) && 'semua' !== strtolower( $tanggal ) ) {
 			$args['tanggal'] = $tanggal;
+		}
+		if ( 0 !== (int) $kelas_id ) {
+			$args['kelas_id'] = (int) $kelas_id;
 		}
 		return wp_nonce_url(
 			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
@@ -346,6 +349,8 @@ class KGTK_Export {
 		$tanggal_filter = trim( $tanggal_filter );
 		$has_tanggal    = ( '' !== $tanggal_filter && 'all' !== strtolower( $tanggal_filter ) && 'semua' !== strtolower( $tanggal_filter ) );
 
+		$kelas_id = isset( $_GET['kelas_id'] ) ? intval( wp_unslash( $_GET['kelas_id'] ) ) : 0;
+
 		$suffix = '';
 		if ( $is_filtered ) {
 			$suffix .= '-' . sanitize_title( $peran_filter );
@@ -358,15 +363,35 @@ class KGTK_Export {
 			$suffix .= '-' . sanitize_title( $tanggal_filter );
 		}
 
+		if ( $kelas_id > 0 ) {
+			$k_nama = '';
+			if ( ! empty( $data['kelas'] ) ) {
+				foreach ( $data['kelas'] as $k_item ) {
+					if ( (int) $k_item->id === $kelas_id ) {
+						$k_nama = $k_item->nama;
+						break;
+					}
+				}
+			}
+			if ( '' === $k_nama ) {
+				global $wpdb;
+				$tk_t   = KGTK_DB::table( 'kelas' );
+				$k_nama = (string) $wpdb->get_var( $wpdb->prepare( "SELECT nama FROM {$tk_t} WHERE id = %d", $kelas_id ) );
+			}
+			$suffix .= '-' . sanitize_title( $k_nama ?: 'kelas-' . $kelas_id );
+		} elseif ( -1 === $kelas_id ) {
+			$suffix .= '-belum-ada-kelas';
+		}
+
 		if ( 'pdf' === $format ) {
 			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
-			self::pdf( $data, $base . '.pdf', $peran_filter, $tanggal_filter );
+			self::pdf( $data, $base . '.pdf', $peran_filter, $tanggal_filter, $kelas_id );
 		} elseif ( 'xlsx_absen' === $format ) {
 			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
-			self::xlsx( $data, $base . '.xlsx', $peran_filter, $tanggal_filter );
+			self::xlsx( $data, $base . '.xlsx', $peran_filter, $tanggal_filter, $kelas_id );
 		} else {
 			$base = sanitize_file_name( 'data-guru-' . strtolower( $data['pelatihan']->kode ) . $suffix );
-			self::xlsx_data_guru( $id, $data, $base . '.xlsx', $peran_filter );
+			self::xlsx_data_guru( $id, $data, $base . '.xlsx', $peran_filter, $kelas_id );
 		}
 		exit;
 	}
@@ -407,7 +432,7 @@ class KGTK_Export {
 	 * Satu sheet per kelas per peran. Isi mengikuti formulir daftar hadir: tiap halaman berisi
 	 * judul, kegiatan, tabel 15 baris (No, Nama, Instansi, Tanda Tangan), dan blok penanggung jawab.
 	 */
-	private static function xlsx( $data, $filename, $peran_filter = '', $tanggal_filter = '' ) {
+	private static function xlsx( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0 ) {
 		$p            = $data['pelatihan'];
 		$daftar_hari  = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
 		$is_multi_day = count( $daftar_hari ) > 1;
@@ -429,7 +454,7 @@ class KGTK_Export {
 
 		// Susun jobs lembar yang akan dibuat
 		$ws_jobs = array();
-		$sheets  = KGTK_Helpers::absen_sheets( $data, $peran_filter );
+		$sheets  = KGTK_Helpers::absen_sheets( $data, $peran_filter, $kelas_id );
 		if ( $mode_all_days ) {
 			foreach ( $sheets as $sh ) {
 				$hari_kelas = KGTK_Helpers::daftar_hari_kelas( $p, $sh['kelas'] );
@@ -551,7 +576,8 @@ class KGTK_Export {
 					$no_urutan = ( $halaman['mulai'] + $n + 1 );
 					$ws->setCellValueExplicit( 'A' . $r, (string) $no_urutan, DataType::TYPE_STRING );
 					if ( isset( $halaman['rows'][ $n ] ) ) {
-						$ws->setCellValueExplicit( 'B' . $r, (string) $halaman['rows'][ $n ]->nama, DataType::TYPE_STRING );
+						$nama_cetak = KGTK_Helpers::format_nama_gelar( $halaman['rows'][ $n ] );
+						$ws->setCellValueExplicit( 'B' . $r, (string) $nama_cetak, DataType::TYPE_STRING );
 						$ws->setCellValueExplicit( 'C' . $r, (string) $halaman['rows'][ $n ]->sekolah, DataType::TYPE_STRING );
 					}
 					$ws->getRowDimension( $r )->setRowHeight( 30 );
@@ -716,7 +742,7 @@ class KGTK_Export {
 	 * @param string $peran_filter Filter peran (opsional).
 	 * @return array<int, object>
 	 */
-	private static function fetch_peserta_for_export( $pelatihan_id, $peran_filter = '' ) {
+	private static function fetch_peserta_for_export( $pelatihan_id, $peran_filter = '', $kelas_id = 0 ) {
 		global $wpdb;
 		$tp = KGTK_DB::table( 'peserta' );
 		$tk = KGTK_DB::table( 'kelas' );
@@ -731,6 +757,13 @@ class KGTK_Export {
 		if ( ! $is_all ) {
 			$where[]  = 'ps.peran = %s';
 			$params[] = $peran_clean;
+		}
+
+		if ( (int) $kelas_id > 0 ) {
+			$where[]  = 'ps.kelas_id = %d';
+			$params[] = (int) $kelas_id;
+		} elseif ( -1 === (int) $kelas_id ) {
+			$where[] = 'ps.kelas_id = 0';
 		}
 
 		$where_sql = implode( ' AND ', $where );
@@ -818,14 +851,27 @@ class KGTK_Export {
 	 * @param string $filename     Nama berkas keluaran.
 	 * @param string $peran_filter Filter peran peserta (opsional).
 	 */
-	public static function xlsx_data_guru( $pelatihan_id, $data, $filename, $peran_filter = '' ) {
-		$peserta_list = self::fetch_peserta_for_export( $pelatihan_id, $peran_filter );
+	public static function xlsx_data_guru( $pelatihan_id, $data, $filename, $peran_filter = '', $kelas_id = 0 ) {
+		$peserta_list = self::fetch_peserta_for_export( $pelatihan_id, $peran_filter, $kelas_id );
 
 		$ss = new Spreadsheet();
 		$ss->getDefaultStyle()->getFont()->setName( 'Arial' )->setSize( 10 );
 
 		$ws = $ss->getActiveSheet();
-		$ws->setTitle( 'Data Guru Pelatihan' );
+
+		$sheet_title = 'Data Guru Pelatihan';
+		if ( (int) $kelas_id > 0 && ! empty( $data['kelas'] ) ) {
+			foreach ( $data['kelas'] as $k_item ) {
+				if ( (int) $k_item->id === (int) $kelas_id ) {
+					$sheet_title = 'Data ' . $k_item->nama;
+					break;
+				}
+			}
+		} elseif ( -1 === (int) $kelas_id ) {
+			$sheet_title = 'Belum Ada Kelas';
+		}
+		$sheet_title = mb_substr( preg_replace( '/[\\\\\\/?*\\[\\]:]/', ' ', $sheet_title ), 0, 31, 'UTF-8' );
+		$ws->setTitle( $sheet_title );
 
 		$headers   = self::DATA_GURU_HEADERS;
 		$col_count = count( $headers );
@@ -871,7 +917,7 @@ class KGTK_Export {
 
 	/* ====================== PDF ====================== */
 
-	private static function pdf( $data, $filename, $peran_filter = '', $tanggal_filter = '' ) {
+	private static function pdf( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0 ) {
 		$p            = $data['pelatihan'];
 		$daftar_hari  = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
 		$is_multi_day = count( $daftar_hari ) > 1;
@@ -916,7 +962,7 @@ div.space { height: 62px; }
 </style></head><body>';
 
 		$items  = array();
-		$sheets = KGTK_Helpers::absen_sheets( $data, $peran_filter );
+		$sheets = KGTK_Helpers::absen_sheets( $data, $peran_filter, $kelas_id );
 
 		if ( $mode_all_days ) {
 			foreach ( $sheets as $sh ) {
@@ -972,7 +1018,8 @@ div.space { height: 62px; }
 				$no_urutan = $it['halaman']['mulai'] + $n + 1;
 				$is_first  = ( 0 === $n % 2 );
 				$has_pair  = ( $n + 1 < $it['halaman']['jumlah'] );
-				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . ( $row ? esc_html( $row->nama ) : '&nbsp;' )
+				$nama_cetak = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '&nbsp;';
+				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . esc_html( $nama_cetak )
 					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
 				if ( $is_first ) {
 					if ( $has_pair ) {
@@ -1272,7 +1319,8 @@ div.space { height: 62px; }
 				$no_urutan = $halaman['mulai'] + $n + 1;
 				$is_first  = ( 0 === $n % 2 );
 				$has_pair  = ( $n + 1 < $halaman['jumlah'] );
-				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . ( $row ? esc_html( $row->nama ) : '&nbsp;' )
+				$nama_cetak = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '&nbsp;';
+				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . esc_html( $nama_cetak )
 					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
 				if ( $is_first ) {
 					if ( $has_pair ) {

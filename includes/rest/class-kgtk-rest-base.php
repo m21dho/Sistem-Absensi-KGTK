@@ -121,19 +121,28 @@ abstract class KGTK_REST_Base {
 		);
 	}
 
-	public static function hasil( $p, $nama, $sekolah, $peran, $kelas_nama, $slot, $nomor, $jenis_gtk = '', $kelas_tgl_mulai = '', $kelas_tgl_selesai = '' ) {
-		$tgl_m = ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_mulai;
-		$tgl_s = ( ! empty( $kelas_tgl_selesai ) && '0000-00-00' !== $kelas_tgl_selesai ) ? $kelas_tgl_selesai : ( ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_selesai );
+	public static function hasil( $p, $nama, $sekolah, $peran, $kelas_nama, $slot, $nomor, $jenis_gtk = '', $kelas_tgl_mulai = '', $kelas_tgl_selesai = '', $kelas_id = 0 ) {
+		$has_kelas = ( (int) $kelas_id > 0 || ( ! empty( $kelas_nama ) && 'Belum Ditentukan' !== $kelas_nama && 'Belum ada kelas' !== $kelas_nama ) );
+		if ( $has_kelas ) {
+			$tgl_m       = ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_mulai;
+			$tgl_s       = ( ! empty( $kelas_tgl_selesai ) && '0000-00-00' !== $kelas_tgl_selesai ) ? $kelas_tgl_selesai : ( ( ! empty( $kelas_tgl_mulai ) && '0000-00-00' !== $kelas_tgl_mulai ) ? $kelas_tgl_mulai : $p->tanggal_selesai );
+			$tanggal_str = KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s );
+			$lokasi_str  = ! empty( $p->lokasi ) ? $p->lokasi : '-';
+		} else {
+			$tanggal_str = '-';
+			$lokasi_str  = '-';
+		}
 		return array(
 			'nama'        => $nama,
 			'sekolah'     => $sekolah,
 			'peran'       => $peran,
 			'jenis_gtk'   => $jenis_gtk,
 			'pelatihan'   => $p->nama,
+			'kelas_id'    => (int) $kelas_id,
 			'kelas'       => $kelas_nama,
 			'kelas_label' => KGTK_Helpers::label_kelas( $kelas_nama ),
-			'tanggal'     => KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s ),
-			'lokasi'      => $p->lokasi,
+			'tanggal'     => $tanggal_str,
+			'lokasi'      => $lokasi_str,
 			'kabkota'     => isset( $p->kabkota ) ? $p->kabkota : '',
 			'nomor'       => (int) $nomor,
 			'slot'        => (int) $slot,

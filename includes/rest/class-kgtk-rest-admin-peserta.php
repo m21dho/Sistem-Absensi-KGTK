@@ -177,6 +177,111 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		);
 	}
 
+	/** Admin mengubah peran satu peserta (mis. dari Pengajar menjadi Peserta). */
+	public static function admin_ubah_peran( WP_REST_Request $req ) {
+		global $wpdb;
+		$id    = absint( $req['id'] );
+		$in    = self::params( $req );
+		$peran = isset( $in['peran'] ) ? sanitize_text_field( $in['peran'] ) : '';
+
+		if ( ! in_array( $peran, KGTK_Helpers::PERAN, true ) ) {
+			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::PERAN ), 422 );
+		}
+
+		$tp      = KGTK_DB::table( 'peserta' );
+		$peserta = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tp} WHERE id = %d", $id ) );
+		if ( ! $peserta ) {
+			return self::err( 'tidak_ada', 'Peserta tidak ditemukan.', 404 );
+		}
+
+		$update = array( 'peran' => $peran );
+		if ( 'Peserta' === $peran ) {
+			if ( empty( $peserta->jenis_gtk ) || ( ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) && ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) {
+				$update['jenis_gtk'] = 'Guru';
+			}
+			if ( empty( $peserta->email_belajar ) || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $peserta->email_belajar ) ) {
+				$update['email_belajar'] = ! empty( $peserta->nik ) ? $peserta->nik . '@guru.belajar.id' : 'guru@belajar.id';
+			}
+		}
+
+		$wpdb->update( $tp, $update, array( 'id' => $id ) );
+
+		// Sinkronkan ke master data kgtk_guru
+		$tg = KGTK_DB::table( 'guru' );
+		$wpdb->update( $tg, $update, array( 'nik' => $peserta->nik ) );
+
+		return self::respond(
+			array(
+				'peserta_id' => $id,
+				'peran'      => $peran,
+				'pesan'      => 'Peran berhasil diperbarui menjadi ' . $peran . '.',
+			)
+		);
+	}
+
+	/** Admin mengubah peran banyak peserta sekaligus (bulk peran). */
+	public static function admin_bulk_ubah_peran( WP_REST_Request $req ) {
+		global $wpdb;
+		$pelatihan_id = absint( $req['id'] );
+		$in           = self::params( $req );
+		$peran        = isset( $in['peran'] ) ? sanitize_text_field( $in['peran'] ) : '';
+		$peserta_ids  = isset( $in['peserta_ids'] ) && is_array( $in['peserta_ids'] ) ? array_map( 'absint', $in['peserta_ids'] ) : array();
+		$peserta_ids  = array_filter( $peserta_ids );
+
+		if ( empty( $peserta_ids ) ) {
+			return self::err( 'kosong', 'Tidak ada peserta yang dipilih.', 422 );
+		}
+
+		if ( ! in_array( $peran, KGTK_Helpers::PERAN, true ) ) {
+			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::PERAN ), 422 );
+		}
+
+		$tp           = KGTK_DB::table( 'peserta' );
+		$placeholders = implode( ',', array_fill( 0, count( $peserta_ids ), '%d' ) );
+
+		$query = $wpdb->prepare(
+			"UPDATE {$tp} SET peran = %s WHERE pelatihan_id = %d AND id IN ({$placeholders})",
+			array_merge( array( $peran, $pelatihan_id ), $peserta_ids )
+		);
+		$updated = $wpdb->query( $query );
+
+		// Jika peran diubah menjadi Peserta, pastikan jenis_gtk valid
+		if ( 'Peserta' === $peran ) {
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$tp} SET jenis_gtk = 'Guru' WHERE pelatihan_id = %d AND id IN ({$placeholders}) AND (jenis_gtk IS NULL OR jenis_gtk = '' OR jenis_gtk NOT IN ('Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'))",
+					array_merge( array( $pelatihan_id ), $peserta_ids )
+				)
+			);
+		}
+
+		// Update juga ke kgtk_guru
+		$niks = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT nik FROM {$tp} WHERE pelatihan_id = %d AND id IN ({$placeholders})",
+				array_merge( array( $pelatihan_id ), $peserta_ids )
+			)
+		);
+		if ( ! empty( $niks ) ) {
+			$tg = KGTK_DB::table( 'guru' );
+			$nik_placeholders = implode( ',', array_fill( 0, count( $niks ), '%s' ) );
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$tg} SET peran = %s WHERE nik IN ({$nik_placeholders})",
+					array_merge( array( $peran ), $niks )
+				)
+			);
+		}
+
+		return self::respond(
+			array(
+				'updated_count' => count( $peserta_ids ),
+				'peran'         => $peran,
+				'pesan'         => 'Berhasil memperbarui peran ' . count( $peserta_ids ) . ' guru menjadi ' . $peran . '.',
+			)
+		);
+	}
+
 	/** Admin melihat detail satu peserta. */
 	public static function admin_get_peserta( WP_REST_Request $req ) {
 		global $wpdb;
@@ -216,6 +321,16 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		}
 		if ( empty( $in['rekening'] ) ) {
 			$in['rekening'] = ! empty( $peserta->rekening ) ? $peserta->rekening : '-';
+		}
+
+		$target_peran = isset( $in['peran'] ) ? sanitize_text_field( $in['peran'] ) : ( ! empty( $peserta->peran ) ? $peserta->peran : 'Peserta' );
+		if ( 'Peserta' === $target_peran ) {
+			if ( empty( $in['jenis_gtk'] ) || ( ! in_array( $in['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $in['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) ) {
+				$in['jenis_gtk'] = ( ! empty( $peserta->jenis_gtk ) && ( in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) || in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) ? $peserta->jenis_gtk : 'Guru';
+			}
+			if ( empty( $in['email_belajar'] ) || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $in['email_belajar'] ) ) {
+				$in['email_belajar'] = ( ! empty( $peserta->email_belajar ) && preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $peserta->email_belajar ) ) ? $peserta->email_belajar : ( ! empty( $in['nik'] ) ? $in['nik'] . '@guru.belajar.id' : 'guru@belajar.id' );
+			}
 		}
 
 		$d  = KGTK_REST_Public::validasi_peserta( $in );

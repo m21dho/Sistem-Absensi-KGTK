@@ -183,10 +183,28 @@ class KGTK_REST extends KGTK_REST_Base {
 		);
 		register_rest_route(
 			self::NS,
+			'/admin/peserta/(?P<id>\d+)/peran',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_ubah_peran' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
 			'/admin/pelatihan/(?P<id>\d+)/bulk-kelas',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_bulk_assign_kelas' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/bulk-peran',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_bulk_ubah_peran' ),
 				'permission_callback' => $admin,
 			)
 		);

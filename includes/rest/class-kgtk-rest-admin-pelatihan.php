@@ -375,15 +375,28 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			return self::err( 'gagal', 'Gagal memperbarui pelatihan.', 500 );
 		}
 
-		// Perbarui jadwal & deadline kelas yang sudah ada jika dikirim bersama form edit pelatihan.
+		// Perbarui nama, urutan, jadwal & deadline kelas yang sudah ada jika dikirim bersama form edit pelatihan.
 		$raw_existing_kelas = isset( $in['existing_kelas'] ) && is_array( $in['existing_kelas'] ) ? $in['existing_kelas'] : array();
 		if ( ! empty( $raw_existing_kelas ) ) {
-			$tk = KGTK_DB::table( 'kelas' );
+			$tk              = KGTK_DB::table( 'kelas' );
+			$seen_knames     = array();
+			$kelas_to_update = array();
+
 			foreach ( $raw_existing_kelas as $ek ) {
 				if ( ! is_array( $ek ) || empty( $ek['id'] ) ) {
 					continue;
 				}
-				$kid       = absint( $ek['id'] );
+				$kid   = absint( $ek['id'] );
+				$knama = isset( $ek['nama'] ) ? sanitize_text_field( (string) $ek['nama'] ) : '';
+				if ( '' === $knama ) {
+					return self::err( 'kelas', 'Nama kelas tidak boleh kosong.', 422 );
+				}
+				$k_key = function_exists( 'mb_strtolower' ) ? mb_strtolower( $knama, 'UTF-8' ) : strtolower( $knama );
+				if ( isset( $seen_knames[ $k_key ] ) ) {
+					return self::err( 'kelas', 'Nama kelas "' . $knama . '" duplikat. Nama kelas harus berbeda.', 422 );
+				}
+				$seen_knames[ $k_key ] = true;
+
 				$k_mulai   = self::str( $ek, 'tanggal_mulai' );
 				$k_selesai = self::str( $ek, 'tanggal_selesai' );
 				$k_dl_raw  = self::str( $ek, 'deadline_pendaftaran' );
@@ -401,20 +414,44 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 					$k_selesai = null;
 				}
 				$k_deadline = ( '' !== $k_dl_raw ) ? KGTK_Helpers::sanitize_deadline( $k_dl_raw ) : null;
-				$wpdb->update(
-					$tk,
-					array(
-						'tanggal_mulai'        => $k_mulai,
-						'tanggal_selesai'      => $k_selesai,
-						'deadline_pendaftaran' => $k_deadline,
-					),
-					array(
-						'id'           => $kid,
-						'pelatihan_id' => $id,
-					),
-					array( '%s', '%s', '%s' ),
-					array( '%d', '%d' )
+				$kurutan    = isset( $ek['urutan'] ) ? absint( $ek['urutan'] ) : 0;
+
+				$kelas_to_update[] = array(
+					'id'                   => $kid,
+					'nama'                 => mb_substr( $knama, 0, 30 ),
+					'urutan'               => $kurutan,
+					'tanggal_mulai'        => $k_mulai,
+					'tanggal_selesai'      => $k_selesai,
+					'deadline_pendaftaran' => $k_deadline,
 				);
+			}
+
+			if ( ! empty( $kelas_to_update ) ) {
+				// Langkah 1: Beri prefix '__tmp_' pada nama kelas untuk menghindari benturan UNIQUE KEY (pelatihan_id, nama)
+				foreach ( $kelas_to_update as $ku ) {
+					$wpdb->query(
+						$wpdb->prepare( "UPDATE {$tk} SET nama = CONCAT('__tmp_', id) WHERE id = %d AND pelatihan_id = %d", $ku['id'], $id )
+					);
+				}
+				// Langkah 2: Simpan nama definitif, urutan, jadwal pelaksanaan, dan batas pendaftaran
+				foreach ( $kelas_to_update as $ku ) {
+					$wpdb->update(
+						$tk,
+						array(
+							'nama'                 => $ku['nama'],
+							'urutan'               => $ku['urutan'],
+							'tanggal_mulai'        => $ku['tanggal_mulai'],
+							'tanggal_selesai'      => $ku['tanggal_selesai'],
+							'deadline_pendaftaran' => $ku['deadline_pendaftaran'],
+						),
+						array(
+							'id'           => $ku['id'],
+							'pelatihan_id' => $id,
+						),
+						array( '%s', '%d', '%s', '%s', '%s' ),
+						array( '%d', '%d' )
+					);
+				}
 			}
 		}
 

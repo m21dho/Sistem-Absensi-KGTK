@@ -262,7 +262,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 						$reg->nomor,
 						$reg->jenis_gtk,
 						isset( $reg->kelas_tanggal_mulai ) ? (string) $reg->kelas_tanggal_mulai : '',
-						isset( $reg->kelas_tanggal_selesai ) ? (string) $reg->kelas_tanggal_selesai : ''
+						isset( $reg->kelas_tanggal_selesai ) ? (string) $reg->kelas_tanggal_selesai : '',
+						isset( $reg->kelas_id ) ? (int) $reg->kelas_id : 0
 					),
 				)
 			);
@@ -352,25 +353,36 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 
 		$riwayat = array();
 		foreach ( (array) $rows as $r ) {
-			$nomor = ( (int) $r->kelas_id > 0 ) ? (int) $wpdb->get_var(
+			$has_kelas = ( (int) $r->kelas_id > 0 && ! empty( $r->kelas_nama ) && 'Belum Ditentukan' !== $r->kelas_nama && 'Belum ada kelas' !== $r->kelas_nama );
+			$nomor = $has_kelas ? (int) $wpdb->get_var(
 				$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE kelas_id = %d AND peran = %s AND id <= %d", $r->kelas_id, $r->peran, $r->peserta_id )
 			) : 0;
 
-			$tgl_m = ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_mulai;
-			$tgl_s = ( ! empty( $r->kelas_tanggal_selesai ) && '0000-00-00' !== $r->kelas_tanggal_selesai ) ? $r->kelas_tanggal_selesai : ( ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_selesai );
+			if ( $has_kelas ) {
+				$tgl_m       = ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_mulai;
+				$tgl_s       = ( ! empty( $r->kelas_tanggal_selesai ) && '0000-00-00' !== $r->kelas_tanggal_selesai ) ? $r->kelas_tanggal_selesai : ( ( ! empty( $r->kelas_tanggal_mulai ) && '0000-00-00' !== $r->kelas_tanggal_mulai ) ? $r->kelas_tanggal_mulai : $r->tanggal_selesai );
+				$tanggal_str = KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s );
+				$lokasi_str  = ! empty( $r->lokasi ) ? $r->lokasi : '-';
+				$kabkota_str = isset( $r->pelatihan_kabkota ) ? $r->pelatihan_kabkota : '';
+			} else {
+				$tanggal_str = '-';
+				$lokasi_str  = '-';
+				$kabkota_str = '';
+			}
 
 			$riwayat[] = array(
 				'pelatihan_id'  => (int) $r->pelatihan_id,
 				'nama'          => $r->pelatihan_nama,
 				'penyelenggara' => $r->penyelenggara,
-				'tanggal'       => KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s ),
-				'lokasi'        => $r->lokasi,
-				'kabkota'       => isset( $r->pelatihan_kabkota ) ? $r->pelatihan_kabkota : '',
+				'tanggal'       => $tanggal_str,
+				'lokasi'        => $lokasi_str,
+				'kabkota'       => $kabkota_str,
+				'kelas_id'      => (int) $r->kelas_id,
 				'kelas'         => $r->kelas_nama,
 				'kelas_label'   => KGTK_Helpers::label_kelas( $r->kelas_nama ),
 				'peran'         => $r->peran,
 				'nomor'         => $nomor,
-				'slot'          => KGTK_Helpers::PERAN_SLOT === $r->peran ? (int) $r->slot : 0,
+				'slot'          => ( $has_kelas && KGTK_Helpers::PERAN_SLOT === $r->peran ) ? (int) $r->slot : 0,
 			);
 		}
 
@@ -980,7 +992,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 				$urut,
 				$d['jenis_gtk'],
 				( $k && ! empty( $k->tanggal_mulai ) ) ? (string) $k->tanggal_mulai : '',
-				( $k && ! empty( $k->tanggal_selesai ) ) ? (string) $k->tanggal_selesai : ''
+				( $k && ! empty( $k->tanggal_selesai ) ) ? (string) $k->tanggal_selesai : '',
+				$k ? (int) $k->id : 0
 			),
 		);
 	}

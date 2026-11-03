@@ -77,8 +77,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 
 		<label class="kgtk-field">
-			<span>Keterangan</span>
-			<textarea class="kgtk-input" name="keterangan" rows="4" maxlength="2000"></textarea>
+			<span>Catatan / Pengumuman Pendaftaran (Opsional)</span>
+			<textarea class="kgtk-input" name="keterangan" rows="3" maxlength="2000" placeholder="Contoh: Kelas PAUD sudah penuh, guru PAUD tetap dapat mendaftar dan akan dialihkan ke Kelas SLB."></textarea>
+			<small>Catatan ini akan otomatis muncul pada pop up kuota kelas dan formulir pendaftaran peserta (misal: jika ada kelas penuh dan peserta dialihkan ke kelas lain).</small>
 		</label>
 
 		<fieldset class="kgtk-field">

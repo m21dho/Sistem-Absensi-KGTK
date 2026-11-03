@@ -75,6 +75,14 @@ font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-s
 .kgtk-modal-err-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:#fff5f3;border:1px solid #fecaca;border-radius:10px;font-size:13px;line-height:1.45;color:#991b1b}
 .kgtk-modal-err-item svg{flex-shrink:0;margin-top:2px;color:#dc2626}
 .kgtk-modal-err-item strong{color:#7f1d1d}
+.kgtk-modal-note{margin:12px 0 0;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:13px;line-height:1.5;color:#1e40af;text-align:left}
+.kgtk-modal-note-title{font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;color:#1e3a8a;font-size:12.5px}
+.kgtk-modal-note-title svg{flex-shrink:0;color:#2563eb}
+.kgtk-modal-note-body{white-space:pre-wrap;word-break:break-word;color:#1e3a8a}
+.kgtk-notice-box{margin:0 0 16px;padding:12px 14px;background:#f0f9ff;border:1px solid #bae6fd;border-left:4px solid #0284c7;border-radius:8px;font-size:13px;line-height:1.5;color:#0369a1;box-shadow:0 1px 3px rgba(0,0,0,.03);text-align:left}
+.kgtk-notice-box-title{font-weight:700;color:#075985;margin-bottom:4px;display:flex;align-items:center;gap:6px;font-size:13px}
+.kgtk-notice-box-title svg{flex-shrink:0;color:#0284c7}
+.kgtk-notice-box-body{white-space:pre-wrap;word-break:break-word;color:#0c4a6e}
 
 /* Responsif Mobile Komponen Umum */
 @media (max-width: 640px) {

@@ -74,10 +74,22 @@ class KGTK_REST_Admin_Undangan extends KGTK_REST_Base {
 			return self::err( 'tidak_ada', 'Data tidak ditemukan.', 404 );
 		}
 
-		$pel_id = (int) $row->pelatihan_id;
-		$ok     = KGTK_Undangan::hapus_baris( $id );
+		$pel_id     = (int) $row->pelatihan_id;
+		$peserta_id = isset( $row->peserta_id ) ? (int) $row->peserta_id : 0;
+		$ok         = KGTK_Undangan::hapus_baris( $id );
 		if ( ! $ok ) {
 			return self::err( 'gagal', 'Gagal menghapus data.', 500 );
+		}
+
+		// Jika baris penetapan sudah terhubung ke pendaftaran peserta, hapus juga pendaftarannya
+		// agar guru benar-benar keluar dari pelatihan (dan hilang dari Riwayat Pelatihan guru).
+		if ( $peserta_id > 0 ) {
+			global $wpdb;
+			$wpdb->delete(
+				KGTK_DB::table( 'peserta' ),
+				array( 'id' => $peserta_id, 'pelatihan_id' => $pel_id ),
+				array( '%d', '%d' )
+			);
 		}
 
 		return self::respond(

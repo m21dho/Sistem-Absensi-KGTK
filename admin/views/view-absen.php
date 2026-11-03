@@ -84,7 +84,7 @@ $pel_json = wp_json_encode( array(
 			<div class="kgtk-head-toolbar-group">
 				<a class="kgtk-btn kgtk-btn--navy-glass" href="<?php echo esc_url( KGTK_Export::semua_biodata_pdf_url( $p->id ) ); ?>" target="_blank" title="Download dan cetak seluruh lembar biodata peserta (1 halaman per orang)">&#128100; Download Semua Biodata</a>
 				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-pdf" title="Pilih kategori export PDF">&#128196; Export PDF &#9662;</button>
-				<a class="kgtk-btn kgtk-btn--navy-glass" href="<?php echo esc_url( KGTK_Export::url( $p->id, 'xlsx' ) ); ?>" title="Download data guru peserta pelatihan format Excel (XLSX)">&#128202; Export Excel</a>
+				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-excel" title="Pilih kategori export Excel">&#128202; Export Excel &#9662;</button>
 			</div>
 		</div>
 	</div>
@@ -203,11 +203,17 @@ $pel_json = wp_json_encode( array(
 					</div>
 
 					<?php foreach ( $kelas as $k ) :
-						$terisi_count = count( $k->peserta );
-						$pct          = min( 100, round( $terisi_count / max( 1, (int) $k->slot ) * 100 ) );
+						$peserta_slot = isset( $k->terisi ) ? (int) $k->terisi : 0;
+						$lain_count   = isset( $k->lain ) ? (int) $k->lain : 0;
+						$pct          = min( 100, round( $peserta_slot / max( 1, (int) $k->slot ) * 100 ) );
 					?>
 						<div class="kgtk-scard" data-filter="<?php echo (int) $k->id; ?>" role="button" tabindex="0" title="Klik untuk filter: <?php echo esc_attr( $k->label ); ?>">
-							<div class="kgtk-scard-num"><?php echo (int) $terisi_count; ?><small>/<?php echo (int) $k->slot; ?></small></div>
+							<div class="kgtk-scard-num">
+								<?php echo (int) $peserta_slot; ?><small>/<?php echo (int) $k->slot; ?></small>
+								<?php if ( $lain_count > 0 ) : ?>
+									<span style="display:block;font-size:10.5px;color:#d97706;font-weight:600;margin-top:2px;" title="<?php echo (int) $lain_count; ?> orang di kelas ini memiliki peran non-peserta (mis. Pengajar/Narasumber/Fasilitator) dan tidak mengurangi kuota slot peserta.">+<?php echo (int) $lain_count; ?> Non-Peserta</span>
+								<?php endif; ?>
+							</div>
 							<div class="kgtk-scard-label">&#127979; <?php echo esc_html( $k->label ); ?></div>
 							<?php if ( ! empty( $k->tanggal_label ) ) : ?>
 								<div style="font-size:11px;color:#0284c7;font-weight:600;margin-top:3px;pointer-events:none;">&#128197; <?php echo esc_html( $k->tanggal_label ); ?></div>
@@ -340,12 +346,24 @@ $pel_json = wp_json_encode( array(
 													<?php if ( $is_ditetapkan ) : ?>
 														<span class="kgtk-badge kgtk-badge--undangan" title="Peserta Ditetapkan Kementerian">&#10003; Ditetapkan</span>
 													<?php endif; ?>
+													<?php if ( ! empty( $ps->peran ) && 'Peserta' !== $ps->peran ) : ?>
+														<button type="button" class="kgtk-badge kgtk-btn-ubah-peran" data-id="<?php echo (int) $ps->id; ?>" data-nama="<?php echo esc_attr( $nama_lengkap_tampil ); ?>" data-peran="<?php echo esc_attr( $ps->peran ); ?>" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:4px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;vertical-align:middle;text-decoration:none;" title="Guru ini terdaftar sebagai <?php echo esc_attr( $ps->peran ); ?>. Klik untuk mengubah ke peran lain (mis. Peserta).">
+															<span>&#128100; <?php echo esc_html( $ps->peran ); ?></span>
+															<span style="font-size:9.5px;text-decoration:underline;opacity:0.85;">(Ubah)</span>
+														</button>
+													<?php endif; ?>
 												</strong>
 												<?php if ( $ps->hp ) : ?>
 													<div class="kgtk-guru-kontak">
 														<a href="https://wa.me/<?php echo esc_attr( $wa_num ); ?>" target="_blank" rel="noopener noreferrer" class="kgtk-wa-link" title="Kirim pesan WhatsApp">
 															<span class="kgtk-wa-icon">&#128172;</span> <?php echo esc_html( $ps->hp ); ?>
 														</a>
+													</div>
+												<?php endif; ?>
+												<?php if ( ! empty( $ps->created_at ) && '0000-00-00 00:00:00' !== $ps->created_at && '-' !== $ps->created_at ) : ?>
+													<div class="kgtk-guru-waktu" style="font-size:11px;color:#64748b;margin-top:3px;display:flex;align-items:center;gap:4px;" title="Waktu Mendaftar">
+														<span style="opacity:0.8;">&#128344;</span>
+														<span>Daftar: <?php echo esc_html( date_i18n( 'j M Y, H:i', strtotime( $ps->created_at ) ) ); ?> WIB</span>
 													</div>
 												<?php endif; ?>
 											</div>
@@ -433,7 +451,9 @@ $pel_json = wp_json_encode( array(
 	require KGTK_PATH . 'admin/views/partials/modals-undangan.php';
 	require KGTK_PATH . 'admin/views/partials/modal-biodata.php';
 	require KGTK_PATH . 'admin/views/partials/modal-edit-peserta.php';
+	require KGTK_PATH . 'admin/views/partials/modal-ubah-peran.php';
 	require KGTK_PATH . 'admin/views/partials/modal-export-pdf.php';
+	require KGTK_PATH . 'admin/views/partials/modal-export-excel.php';
 	require KGTK_PATH . 'admin/views/partials/modal-edit-pelatihan.php';
 	require KGTK_PATH . 'admin/views/partials/modal-kelola-kelas.php';
 	?>

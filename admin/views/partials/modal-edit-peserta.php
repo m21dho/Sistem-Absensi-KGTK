@@ -137,8 +137,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="kgtk-row2">
 				<label class="kgtk-field">
-					<span>Jabatan / Jenis GTK</span>
-					<input type="text" class="kgtk-input" name="jenis_gtk" id="kgtk-edit-ps-jabatan" placeholder="mis. Guru Kelas, Kepala Sekolah">
+					<span>Jabatan / Jenis GTK *</span>
+					<select class="kgtk-input" name="jenis_gtk" id="kgtk-edit-ps-jabatan">
+						<?php foreach ( KGTK_Helpers::JABATAN as $jbt ) : ?>
+							<option value="<?php echo esc_attr( $jbt ); ?>"><?php echo esc_html( $jbt ); ?></option>
+						<?php endforeach; ?>
+					</select>
 				</label>
 				<label class="kgtk-field">
 					<span>Pangkat / Golongan</span>

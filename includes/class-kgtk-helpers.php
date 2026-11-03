@@ -21,7 +21,7 @@ class KGTK_Helpers {
 	const JABATAN = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
 	const PENDIDIKAN = array( 'SMA/SMK Sederajat', 'D3', 'D4 / S1', 'S2', 'S3' );
 	const JENIS_KELAMIN = array( 'Laki-laki', 'Perempuan' );
-	const AGAMA = array( 'Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu' );
+	const AGAMA = array( 'Islam', 'Kristen Protestan', 'Kristen Katolik', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu' );
 	const PANGKAT_GOLONGAN = array(
 		'Non ASN / Honorer',
 		'Pengatur Muda (II/a)',
@@ -595,7 +595,7 @@ class KGTK_Helpers {
 				 FROM {$tp} ps
 				 LEFT JOIN {$tk} k ON k.id = ps.kelas_id
 				 WHERE ps.pelatihan_id = %d AND ps.peran != 'Panitia'
-				 ORDER BY ps.created_at DESC, ps.id DESC",
+				 ORDER BY COALESCE(NULLIF(ps.created_at, '0000-00-00 00:00:00'), '1970-01-01 00:00:00') DESC, ps.id DESC",
 				$pelatihan_id
 			)
 		);
@@ -805,12 +805,15 @@ class KGTK_Helpers {
 	}
 
 	/** Lembar absen untuk export: satu lembar per kelas per peran (lihat kelompok_absen). */
-	public static function absen_sheets( $data, $peran_filter = '' ) {
+	public static function absen_sheets( $data, $peran_filter = '', $kelas_id = 0 ) {
 		$sheets       = array();
 		$peran_filter = trim( (string) $peran_filter );
 		$is_filtered  = ( '' !== $peran_filter && 'all' !== strtolower( $peran_filter ) && 'semua' !== strtolower( $peran_filter ) );
 
 		foreach ( $data['kelas'] as $k ) {
+			if ( (int) $kelas_id > 0 && (int) $k->id !== (int) $kelas_id ) {
+				continue;
+			}
 			$kelompok = self::kelompok_absen( $k->peserta );
 
 			// Jika peran spesifik difilter, pastikan peran tersebut ada di kelompok lembar kelas ini
@@ -857,11 +860,11 @@ class KGTK_Helpers {
 		if ( empty( $panitia_rows ) && isset( $data['pelatihan']->id ) ) {
 			$tp_pan = KGTK_DB::table( 'peserta' );
 			$panitia_rows = $wpdb->get_results(
-				$wpdb->prepare( "SELECT id, nik, nama, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$tp_pan} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", (int) $data['pelatihan']->id )
+				$wpdb->prepare( "SELECT id, nik, nama, gelar_depan, gelar_belakang, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$tp_pan} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", (int) $data['pelatihan']->id )
 			);
 		}
 
-		if ( ! empty( $panitia_rows ) || ( $is_filtered && 'panitia' === strtolower( $peran_filter ) ) ) {
+		if ( (int) $kelas_id <= 0 && ( ! empty( $panitia_rows ) || ( $is_filtered && 'panitia' === strtolower( $peran_filter ) ) ) ) {
 			if ( ! $is_filtered || 'panitia' === strtolower( $peran_filter ) ) {
 				$dummy_k = (object) array(
 					'id'    => 0,
@@ -892,7 +895,7 @@ class KGTK_Helpers {
 		$kelas = self::kelas_stats( $pelatihan_id );
 		$p     = KGTK_DB::table( 'peserta' );
 		$rows  = $wpdb->get_results(
-			$wpdb->prepare( "SELECT kelas_id, nik, nama, sekolah, peran FROM {$p} WHERE pelatihan_id = %d AND peran != 'Panitia' ORDER BY id ASC", $pelatihan_id )
+			$wpdb->prepare( "SELECT kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, peran FROM {$p} WHERE pelatihan_id = %d AND peran != 'Panitia' ORDER BY id ASC", $pelatihan_id )
 		);
 		$by = array();
 		foreach ( (array) $rows as $r ) {
@@ -903,7 +906,7 @@ class KGTK_Helpers {
 		}
 
 		$panitia = $wpdb->get_results(
-			$wpdb->prepare( "SELECT id, nik, nama, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$p} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", $pelatihan_id )
+			$wpdb->prepare( "SELECT id, nik, nama, gelar_depan, gelar_belakang, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$p} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", $pelatihan_id )
 		);
 
 		return array(

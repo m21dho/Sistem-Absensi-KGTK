@@ -324,8 +324,9 @@ class KGTK_Admin {
 				$is_first  = ( 0 === $i % 2 );
 				$has_pair  = ( $i + 1 < $halaman['jumlah'] );
 				echo '<tr>';
+				$nama_tampil = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '';
 				echo '<td class="c-no">' . $no_urutan . '</td>';
-				echo '<td class="c-nama">' . ( $row ? esc_html( $row->nama ) : '' ) . '</td>';
+				echo '<td class="c-nama">' . esc_html( $nama_tampil ) . '</td>';
 				echo '<td class="c-inst">' . ( $row ? esc_html( $row->sekolah ) : '' ) . '</td>';
 				if ( $is_first ) {
 					if ( $has_pair ) {
