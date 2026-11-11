@@ -2663,6 +2663,52 @@
 
 					var kop = C.kop_html || '';
 
+					var formatRentangTgl = function (mulai, selesai) {
+						if (!mulai) { return ''; }
+						var parse = function (s) {
+							if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) { return null; }
+							var p = s.split('-');
+							return { y: p[0], m: parseInt(p[1], 10) - 1, d: parseInt(p[2], 10) };
+						};
+						var d1 = parse(mulai);
+						var d2 = parse(selesai);
+						if (!d1) { return mulai; }
+						if (!d2 || mulai === selesai) {
+							return d1.d + ' ' + months[d1.m] + ' ' + d1.y;
+						}
+						if (d1.y === d2.y && d1.m === d2.m) {
+							return d1.d + ' - ' + d2.d + ' ' + months[d1.m] + ' ' + d1.y;
+						}
+						if (d1.y === d2.y) {
+							return d1.d + ' ' + months[d1.m] + ' - ' + d2.d + ' ' + months[d2.m] + ' ' + d1.y;
+						}
+						return d1.d + ' ' + months[d1.m] + ' ' + d1.y + ' - ' + d2.d + ' ' + months[d2.m] + ' ' + d2.y;
+					};
+
+					var tglTxt = b.pelatihan_tgl || '';
+					if (!tglTxt && window.KGTK_PEL) {
+						var km = b.kelas_tanggal_mulai || window.KGTK_PEL.tanggal_mulai;
+						var ks = b.kelas_tanggal_selesai || window.KGTK_PEL.tanggal_selesai || km;
+						if (km) {
+							tglTxt = formatRentangTgl(km, ks);
+						}
+					}
+					if (!tglTxt) {
+						var docTgl = document.querySelector('.kgtk-doc-tanggal');
+						if (docTgl && docTgl.textContent) {
+							tglTxt = docTgl.textContent.trim();
+						}
+					}
+					var tglDisplay = tglTxt ? (tglTxt.toLowerCase().indexOf('tanggal') === 0 ? tglTxt : 'Tanggal ' + tglTxt) : '';
+
+					var pelNama = b.pelatihan || (window.KGTK_PEL && window.KGTK_PEL.nama ? window.KGTK_PEL.nama : '');
+					if (!pelNama) {
+						var docNama = document.querySelector('.kgtk-doc-nama');
+						if (docNama && docNama.textContent) {
+							pelNama = docNama.textContent.trim();
+						}
+					}
+
 					var html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>&nbsp;</title>' +
 						'<style>' +
 						'@page{size:A4 portrait;margin:0!important}' +
@@ -2689,8 +2735,8 @@
 						kop +
 						'<div class="title-box">' +
 						'<div class="title-main">BIODATA ' + escHtml(peranUpper) + '</div>' +
-						'<div class="title-sub">' + escHtml(b.pelatihan || '') + '</div>' +
-						(b.pelatihan_tgl ? '<div class="title-date">' + escHtml(b.pelatihan_tgl) + '</div>' : '') +
+						(pelNama ? '<div class="title-sub">' + escHtml(pelNama) + '</div>' : '') +
+						(tglDisplay ? '<div class="title-date">' + escHtml(tglDisplay) + '</div>' : '') +
 						(lokasiTxt ? '<div class="title-loc">' + escHtml(lokasiTxt) + '</div>' : '') +
 						'</div>' +
 						'<table class="bio-box">' + trRows + '</table>' +

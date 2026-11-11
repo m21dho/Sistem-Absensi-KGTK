@@ -1076,9 +1076,12 @@ div.space { height: 40px; }
 
 		$peran   = ! empty( $peserta->peran ) ? $peserta->peran : 'PESERTA';
 		$kabkota = KGTK_Helpers::kabkota_tempat_kegiatan( $pelatihan );
-		$tgl_mulai_bio = ( ! empty( $peserta->kelas_tanggal_mulai ) && '0000-00-00' !== $peserta->kelas_tanggal_mulai ) ? $peserta->kelas_tanggal_mulai : $pelatihan->tanggal_mulai;
-		$tgl_ttd = KGTK_Helpers::format_tanggal( $tgl_mulai_bio );
-		$lokasi  = ! empty( $pelatihan->lokasi ) ? $pelatihan->lokasi : 'Kepulauan Riau';
+		$tgl_mulai_bio   = ( ! empty( $peserta->kelas_tanggal_mulai ) && '0000-00-00' !== $peserta->kelas_tanggal_mulai ) ? $peserta->kelas_tanggal_mulai : $pelatihan->tanggal_mulai;
+		$tgl_selesai_bio = ( ! empty( $peserta->kelas_tanggal_selesai ) && '0000-00-00' !== $peserta->kelas_tanggal_selesai ) ? $peserta->kelas_tanggal_selesai : $pelatihan->tanggal_selesai;
+		$tgl_pelatihan   = KGTK_Helpers::rentang_tanggal( $tgl_mulai_bio, $tgl_selesai_bio );
+		$tgl_pel_txt     = $tgl_pelatihan ? ( 0 === stripos( $tgl_pelatihan, 'tanggal' ) ? $tgl_pelatihan : 'Tanggal ' . $tgl_pelatihan ) : '';
+		$tgl_ttd         = KGTK_Helpers::format_tanggal( $tgl_mulai_bio );
+		$lokasi          = ! empty( $pelatihan->lokasi ) ? $pelatihan->lokasi : 'Kepulauan Riau';
 
 		$h  = '<div class="bio-page">';
 		$h .= $kop_html;
@@ -1086,6 +1089,9 @@ div.space { height: 40px; }
 		$h .= '<div class="title-box">';
 		$h .= '<div class="title-main">BIODATA ' . esc_html( strtoupper( $peran ) ) . '</div>';
 		$h .= '<div class="title-sub">' . esc_html( $pelatihan->nama ) . '</div>';
+		if ( ! empty( $tgl_pel_txt ) ) {
+			$h .= '<div class="title-date">' . esc_html( $tgl_pel_txt ) . '</div>';
+		}
 		$lok_txt = 0 === strpos( strtolower( trim( $lokasi ) ), 'di ' ) ? $lokasi : 'di ' . $lokasi;
 		$h .= '<div class="title-loc">' . esc_html( $lok_txt ) . '</div>';
 		$h .= '</div>';
@@ -1200,6 +1206,7 @@ div.space { height: 40px; }
 		$html .= '.title-box { text-align: center; margin: 6pt 0 10pt; }';
 		$html .= '.title-main { font-size: 15pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }';
 		$html .= '.title-sub { font-size: 13pt; font-weight: bold; margin-bottom: 2px; line-height: 1.25; }';
+		$html .= '.title-date { font-size: 13pt; margin-bottom: 2px; }';
 		$html .= '.title-loc { font-size: 13pt; margin-bottom: 8pt; }';
 		$html .= 'table.bio-box { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 14px; }';
 		$html .= 'table.bio-box td { padding: 3.5px 10px; font-size: 11.5pt; vertical-align: top; border: 0; }';

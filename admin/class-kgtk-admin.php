@@ -239,6 +239,14 @@ class KGTK_Admin {
 				'created_at'         => ! empty( $item['peserta_daftar_at'] ) ? $item['peserta_daftar_at'] : '-',
 				'pdf_url'            => KGTK_Export::biodata_pdf_url( (int) $item['peserta_id'] ),
 			);
+			if ( ! empty( $item['pelatihan_id'] ) ) {
+				$p_obj = KGTK_Helpers::get_by_id( (int) $item['pelatihan_id'] );
+				if ( $p_obj ) {
+					$bio_data['pelatihan']     = $p_obj->nama;
+					$bio_data['pelatihan_tgl'] = KGTK_Helpers::rentang_tanggal( $p_obj->tanggal_mulai, $p_obj->tanggal_selesai );
+					$bio_data['pelatihan_lok'] = $p_obj->lokasi;
+				}
+			}
 			$bio_attr = ' data-biodata="' . esc_attr( wp_json_encode( $bio_data ) ) . '"';
 		}
 
