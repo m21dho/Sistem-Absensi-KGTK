@@ -106,6 +106,7 @@ abstract class KGTK_REST_Base {
 		$t = KGTK_Helpers::totals( $kelas );
 		return array(
 			'nama'                 => $p->nama,
+			'jenis'                => isset( $p->jenis ) && ! empty( $p->jenis ) ? $p->jenis : 'pelatihan',
 			'penyelenggara'        => $p->penyelenggara,
 			'tanggal'              => KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ),
 			'lokasi'               => $p->lokasi,
@@ -129,8 +130,8 @@ abstract class KGTK_REST_Base {
 			$tanggal_str = KGTK_Helpers::rentang_tanggal( $tgl_m, $tgl_s );
 			$lokasi_str  = ! empty( $p->lokasi ) ? $p->lokasi : '-';
 		} else {
-			$tanggal_str = '-';
-			$lokasi_str  = '-';
+			$tanggal_str = ( ! empty( $p->tanggal_mulai ) && '0000-00-00' !== $p->tanggal_mulai ) ? KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai ) : '-';
+			$lokasi_str  = ! empty( $p->lokasi ) ? $p->lokasi : '-';
 		}
 		return array(
 			'nama'        => $nama,

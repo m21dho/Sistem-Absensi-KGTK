@@ -345,7 +345,7 @@ class KGTK_Panitia {
 		$tp = KGTK_DB::table( 'peserta' );
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, nik, nama, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, npwp, created_at
+				"SELECT id, kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, created_at
 				 FROM {$tp}
 				 WHERE pelatihan_id = %d AND peran = 'Panitia'
 				 ORDER BY id ASC",
@@ -363,11 +363,13 @@ class KGTK_Panitia {
 	 */
 	public static function hapus_dari_pelatihan( $peserta_id, $pelatihan_id = 0 ) {
 		global $wpdb;
-		$tp = KGTK_DB::table( 'peserta' );
-		$where = array( 'id' => (int) $peserta_id, 'peran' => 'Panitia' );
+		$tp     = KGTK_DB::table( 'peserta' );
+		$where  = array( 'id' => (int) $peserta_id, 'peran' => 'Panitia' );
+		$format = array( '%d', '%s' );
 		if ( $pelatihan_id > 0 ) {
 			$where['pelatihan_id'] = (int) $pelatihan_id;
+			$format[]              = '%d';
 		}
-		return false !== $wpdb->delete( $tp, $where, array( '%d', '%s' ) );
+		return false !== $wpdb->delete( $tp, $where, $format );
 	}
 }

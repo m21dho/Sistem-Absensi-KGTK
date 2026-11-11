@@ -18,6 +18,10 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		$in = self::params( $req );
 
 		$nama    = self::str( $in, 'nama' );
+		$jenis   = self::str( $in, 'jenis' );
+		if ( ! in_array( $jenis, array( 'pelatihan', 'acara' ), true ) ) {
+			$jenis = 'pelatihan';
+		}
 		$penyel  = self::str( $in, 'penyelenggara' );
 		$mulai   = self::str( $in, 'tanggal_mulai' );
 		$selesai = self::str( $in, 'tanggal_selesai' );
@@ -68,6 +72,17 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		$kelas = array();
 		$seen  = array();
 		$raw   = isset( $in['kelas'] ) && is_array( $in['kelas'] ) ? $in['kelas'] : array();
+		if ( 'acara' === $jenis && empty( $raw ) ) {
+			$raw = array(
+				array(
+					'nama'                 => 'Peserta Acara',
+					'slot'                 => 500,
+					'tanggal_mulai'        => $mulai,
+					'tanggal_selesai'      => $selesai,
+					'deadline_pendaftaran' => $deadline,
+				),
+			);
+		}
 		if ( count( $raw ) > 20 ) {
 			return self::err( 'kelas', 'Maksimal 20 kelas per pelatihan.', 422 );
 		}
@@ -163,8 +178,9 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		$ok = $wpdb->insert(
 			$tp,
 			array(
-				'nama'            => $nama,
-				'penyelenggara'   => $penyel,
+				'nama'                 => $nama,
+				'jenis'                => $jenis,
+				'penyelenggara'        => $penyel,
 				'tanggal_mulai'        => $mulai,
 				'tanggal_selesai'      => $selesai,
 				'deadline_pendaftaran' => $deadline,
@@ -176,7 +192,7 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 				'kode'                 => $kode,
 				'created_at'           => current_time( 'mysql' ),
 			),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 		$id = $ok ? (int) $wpdb->insert_id : 0;
 		if ( $id ) {
@@ -288,6 +304,10 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		$in = self::params( $req );
 
 		$nama    = self::str( $in, 'nama' );
+		$jenis   = self::str( $in, 'jenis' );
+		if ( ! in_array( $jenis, array( 'pelatihan', 'acara' ), true ) ) {
+			$jenis = ( isset( $existing->jenis ) && in_array( $existing->jenis, array( 'pelatihan', 'acara' ), true ) ) ? $existing->jenis : 'pelatihan';
+		}
 		$penyel  = self::str( $in, 'penyelenggara' );
 		$mulai   = self::str( $in, 'tanggal_mulai' );
 		$selesai = self::str( $in, 'tanggal_selesai' );
@@ -353,6 +373,7 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 			$tp,
 			array(
 				'nama'                 => $nama,
+				'jenis'                => $jenis,
 				'penyelenggara'        => $penyel,
 				'tanggal_mulai'        => $mulai,
 				'tanggal_selesai'      => $selesai,
@@ -365,7 +386,7 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 				'kode'                 => $kode,
 			),
 			array( 'id' => $id ),
-			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 

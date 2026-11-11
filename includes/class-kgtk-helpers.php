@@ -15,7 +15,7 @@ class KGTK_Helpers {
 	const BARIS_HALAMAN_LANJUT = 26;
 	/** Nilai kabupaten/kota untuk guru dari luar daftar sekolah. */
 	const KABKOTA_LAIN      = 'Lainnya';
-	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Peserta' );
+	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Undangan', 'Peserta' );
 	const JABATAN_PANITIA = array( 'Ketua Panitia', 'Sekretaris', 'Bendahara', 'Seksi Acara', 'Seksi Konsumsi', 'Seksi Perlengkapan', 'Seksi Dokumentasi', 'Anggota Panitia' );
 	const JENIS_GTK = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
 	const JABATAN = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
@@ -601,12 +601,12 @@ class KGTK_Helpers {
 		);
 	}
 
-	/** Hitung peserta yang belum ditentukan kelasnya (kelas_id = 0, tidak termasuk Panitia). */
+	/** Hitung peserta yang belum ditentukan kelasnya (kelas_id = 0, tidak termasuk Panitia dan Undangan). */
 	public static function unassigned_count( $pelatihan_id ) {
 		global $wpdb;
 		$tp = KGTK_DB::table( 'peserta' );
 		return (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE pelatihan_id = %d AND kelas_id = 0 AND peran != 'Panitia'", $pelatihan_id )
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$tp} WHERE pelatihan_id = %d AND kelas_id = 0 AND peran != 'Panitia' AND peran != 'Undangan'", $pelatihan_id )
 		);
 	}
 
@@ -620,8 +620,8 @@ class KGTK_Helpers {
 		$rows  = $wpdb->get_results(
 			"SELECT k.id, k.pelatihan_id, k.nama, k.slot, k.tanggal_mulai, k.tanggal_selesai, k.deadline_pendaftaran, k.urutan,
 			        SUM(CASE WHEN p.peran = 'Peserta' THEN 1 ELSE 0 END) AS terisi,
-			        SUM(CASE WHEN p.peran <> 'Peserta' AND p.peran <> 'Panitia' AND p.peran IS NOT NULL THEN 1 ELSE 0 END) AS lain
-			 FROM {$k} k LEFT JOIN {$p} p ON p.kelas_id = k.id AND p.peran != 'Panitia'
+			        SUM(CASE WHEN p.peran <> 'Peserta' AND p.peran <> 'Panitia' AND p.peran <> 'Undangan' AND p.peran IS NOT NULL THEN 1 ELSE 0 END) AS lain
+			 FROM {$k} k LEFT JOIN {$p} p ON p.kelas_id = k.id AND p.peran != 'Panitia' AND p.peran != 'Undangan'
 			 {$where}
 			 GROUP BY k.id, k.pelatihan_id, k.nama, k.slot, k.tanggal_mulai, k.tanggal_selesai, k.deadline_pendaftaran, k.urutan
 			 ORDER BY k.pelatihan_id, k.urutan, k.id"
@@ -692,23 +692,49 @@ class KGTK_Helpers {
 	}
 
 	/**
-	 * Bagi baris absen menjadi halaman. Halaman pertama memuat hingga 20 baris (karena ada kop dan info kegiatan),
-	 * sedangkan halaman lanjutan memuat hingga 25 baris sehingga memenuhkan kertas terlebih dahulu sebelum pindah halaman.
-	 * Tiap halaman: array( 'rows' => peserta, 'mulai' => indeks baris pertama (0), 'jumlah' => baris di halaman ini ).
+	 * Bagi baris absen menjadi halaman.
+	 * Jika total baris <= 20: 1 halaman penuh (20 baris).
+	 * Jika total baris > 20:
+	 *   - Bila total <= 32 (misal slot 30 atau pendaftar 21-32 orang):
+	 *     Bagi secara seimbang antar 2 halaman (misal 30 dibagi 16 baris di halaman 1 dan 14 baris di halaman 2)
+	 *     sehingga halaman kedua tidak terpotong canggung hanya menyisakan sedikit baris di bawah ruang kosong besar.
+	 *   - Bila total > 32:
+	 *     Halaman 1 memuat hingga 20-22 baris, halaman berikutnya hingga 26-28 baris.
+	 * Kapasitas per halaman selalu dijamin GENAP agar nomor tanda tangan berpasangan (rowspan 2) tidak pernah terpotong antar halaman.
+	 *
+	 * @param array $rows  Data baris peserta.
+	 * @param int   $total Total baris yang diinginkan (minimal 1 atau count($rows)).
+	 * @return array
 	 */
 	public static function halaman( $rows, $total = 0 ) {
 		$rows  = array_values( (array) $rows );
 		$total = max( 1, (int) $total, count( $rows ) );
+		if ( 0 !== $total % 2 ) {
+			$total++;
+		}
 		$pages = array();
 		$mulai = 0;
 		$p_idx = 0;
 
 		while ( $mulai < $total ) {
-			$per = ( 0 === $p_idx ) ? self::BARIS_HALAMAN_AWAL : self::BARIS_HALAMAN_LANJUT;
+			if ( 0 === $p_idx ) {
+				$cap = ( $total > self::BARIS_HALAMAN_AWAL ) ? 22 : self::BARIS_HALAMAN_AWAL;
+			} else {
+				$cap = 28;
+			}
+
+			// Pastikan kapasitas selalu genap agar pembagian halaman tidak memotong pasangan tanda tangan
+			if ( 0 !== $cap % 2 ) {
+				$cap++;
+			}
+
+			$sisa = $total - $mulai;
+			$per  = ( $sisa <= $cap ) ? $sisa : $cap;
+
 			$pages[] = array(
 				'rows'   => array_slice( $rows, $mulai, $per ),
 				'mulai'  => $mulai,
-				'jumlah' => min( $per, $total - $mulai ),
+				'jumlah' => $per,
 			);
 			$mulai += $per;
 			$p_idx++;
@@ -779,29 +805,88 @@ class KGTK_Helpers {
 		return '' !== $n ? $n : '........................................';
 	}
 
-	/** Label jabatan untuk blok tanda tangan: "(Penanggung Jawab)," atau "(Ketua),". */
+	/** Label jabatan untuk blok tanda tangan: "Penanggung Jawab," atau "Ketua,". */
 	public static function label_pj( $p ) {
+		return self::label_pj_lengkap( $p ) . ',';
+	}
+
+	/** Label jabatan resmi untuk blok tanda tangan ("Ketua" atau "Penanggung Jawab"). */
+	public static function label_pj_lengkap( $p ) {
 		$tipe = ! empty( $p->tipe_pj ) ? trim( (string) $p->tipe_pj ) : 'Penanggung Jawab';
-		return '(' . $tipe . '),';
+		if ( 'Ketua' === $tipe || false !== stripos( $tipe, 'ketua' ) ) {
+			return 'Ketua';
+		}
+		if ( 'Penanggung Jawab' === $tipe || false !== stripos( $tipe, 'penanggung jawab' ) ) {
+			return 'Penanggung Jawab';
+		}
+		return $tipe;
+	}
+
+	/** Format tempat dan tanggal (titimangsa) dalam bahasa Indonesia untuk blok pengesahan tanda tangan (misal: "Bintan, 31 Oktober 2026"). */
+	public static function format_titimangsa( $p, $tanggal_khusus = '', $k = null ) {
+		$tempat = self::kabkota_tempat_kegiatan( $p );
+		$tempat = preg_replace( '/^(kota|kabupaten|kab\.)\s+/i', '', trim( (string) $tempat ) );
+		if ( empty( $tempat ) ) {
+			$tempat = 'Tempat Kegiatan';
+		}
+
+		$tgl_str        = '';
+		$tanggal_khusus = trim( (string) $tanggal_khusus );
+		if ( '' !== $tanggal_khusus && 'range' !== $tanggal_khusus && 'all_days' !== $tanggal_khusus && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $tanggal_khusus ) ) {
+			$tgl_str = self::format_tanggal( $tanggal_khusus );
+		} elseif ( is_object( $k ) && ! empty( $k->tanggal_mulai ) && '0000-00-00' !== $k->tanggal_mulai ) {
+			$tgl_str = self::format_tanggal( $k->tanggal_mulai );
+		} elseif ( ! empty( $p->tanggal_mulai ) && '0000-00-00' !== $p->tanggal_mulai ) {
+			$tgl_str = self::format_tanggal( $p->tanggal_mulai );
+		}
+
+		return $tempat . ( '' !== $tgl_str ? ', ' . $tgl_str : '' );
+	}
+
+	/** Render blok HTML tanda tangan penanggung jawab / ketua kegiatan di akhir dokumen. */
+	public static function ttd_blok_html( $p, $tanggal_khusus = '', $k = null ) {
+		$titimangsa = self::format_titimangsa( $p, $tanggal_khusus, $k );
+		$jabatan    = self::label_pj_lengkap( $p );
+		$nama       = self::nama_pj( $p );
+
+		$html  = '<div class="kgtk-ttd-blok">';
+		$html .= '<div class="kgtk-ttd-titimangsa">' . esc_html( $titimangsa ) . '</div>';
+		$html .= '<div class="kgtk-ttd-jabatan"><em>' . esc_html( $jabatan ) . ',</em></div>';
+		$html .= '<div class="kgtk-ttd-space"></div>';
+		$html .= '<div class="kgtk-ttd-nama"><strong>' . esc_html( $nama ) . '</strong></div>';
+		$html .= '</div>';
+
+		return $html;
 	}
 
 	/**
 	 * Kelompok lembar absen satu kelas: "Peserta" selalu ada dan paling depan (bisa kosong,
-	 * barisnya sebanyak slot); peran lain hanya muncul bila ada yang terdaftar.
+	 * barisnya sebanyak slot); jika $all_roles = true maka seluruh peran utama (Panitia, Pengajar,
+	 * Fasilitator, Narasumber, Pemateri) selalu ditampilkan di tab absen kelas.
 	 */
-	public static function kelompok_absen( $peserta ) {
+	public static function kelompok_absen( $peserta, $all_roles = false ) {
 		$g   = self::group_peran( $peserta );
 		$out = array( self::PERAN_SLOT => isset( $g[ self::PERAN_SLOT ] ) ? $g[ self::PERAN_SLOT ] : array() );
 		unset( $g[ self::PERAN_SLOT ] );
+		if ( $all_roles ) {
+			$default_roles = array( 'Panitia', 'Pengajar', 'Fasilitator', 'Narasumber', 'Pemateri' );
+			foreach ( $default_roles as $dr ) {
+				$out[ $dr ] = isset( $g[ $dr ] ) ? $g[ $dr ] : array();
+				unset( $g[ $dr ] );
+			}
+		}
 		foreach ( $g as $peran => $list ) {
 			$out[ $peran ] = $list;
 		}
 		return $out;
 	}
 
-	/** Jumlah baris lembar: Peserta = slot kelas (minimal 1 halaman penuh); peran lain = jumlah yang terdaftar. */
+	/** Jumlah baris lembar: Peserta = slot kelas (minimal 1 halaman penuh); peran lain = jumlah terdaftar atau 1 halaman penuh jika kosong. */
 	public static function baris_lembar( $peran, $list, $k ) {
-		return self::PERAN_SLOT === $peran ? max( self::BARIS_HALAMAN_AWAL, (int) $k->slot, count( $list ) ) : max( 1, count( $list ) );
+		if ( self::PERAN_SLOT === $peran ) {
+			return max( self::BARIS_HALAMAN_AWAL, (int) $k->slot, count( $list ) );
+		}
+		return ! empty( $list ) ? max( 1, count( $list ) ) : self::BARIS_HALAMAN_AWAL;
 	}
 
 	/** Lembar absen untuk export: satu lembar per kelas per peran (lihat kelompok_absen). */
@@ -895,7 +980,7 @@ class KGTK_Helpers {
 		$kelas = self::kelas_stats( $pelatihan_id );
 		$p     = KGTK_DB::table( 'peserta' );
 		$rows  = $wpdb->get_results(
-			$wpdb->prepare( "SELECT kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, peran FROM {$p} WHERE pelatihan_id = %d AND peran != 'Panitia' ORDER BY id ASC", $pelatihan_id )
+			$wpdb->prepare( "SELECT id, kelas_id, nik, nip, nama, gelar_depan, gelar_belakang, sekolah, kabkota, jenis_gtk AS jabatan, hp, email, bank, rekening, npwp, peran, created_at FROM {$p} WHERE pelatihan_id = %d AND (peran != 'Panitia' OR kelas_id > 0) ORDER BY id ASC", $pelatihan_id )
 		);
 		$by = array();
 		foreach ( (array) $rows as $r ) {
@@ -906,7 +991,7 @@ class KGTK_Helpers {
 		}
 
 		$panitia = $wpdb->get_results(
-			$wpdb->prepare( "SELECT id, nik, nama, gelar_depan, gelar_belakang, sekolah, jenis_gtk AS jabatan, hp, nip, nuptk, npwp FROM {$p} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", $pelatihan_id )
+			$wpdb->prepare( "SELECT id, kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, created_at FROM {$p} WHERE pelatihan_id = %d AND peran = 'Panitia' ORDER BY id ASC", $pelatihan_id )
 		);
 
 		return array(
@@ -976,18 +1061,20 @@ class KGTK_Helpers {
 			$header_src = KGTK_URL . 'assets/images/header-kemendikdasmen.png';
 		}
 
-		$html  = '<div class="kgtk-kop-wrap" style="width:100%;text-align:center;margin:0 auto 16px;">';
-		$html .= '<table class="kgtk-kop-tbl" align="center" style="width:100%;max-width:760px;margin:0 auto;border-collapse:collapse;border:0;">';
+		$html  = '<div class="kgtk-kop-wrap" style="width:100%;text-align:center;margin:0 auto 6px;">';
+		$html .= '<table class="kgtk-kop-tbl" align="center" style="margin:0 auto;border-collapse:collapse;border:0;">';
 		$html .= '<tr>';
-		$html .= '<td style="width:49%;vertical-align:middle;padding:0 14px 0 0;border:0;text-align:right;">';
+		$html .= '<td style="vertical-align:middle;padding:0 14px 0 0;border:0;text-align:right;">';
 		if ( $logo_src ) {
-			$html .= '<img src="' . esc_attr( $logo_src ) . '" style="max-height:74px;width:auto;display:inline-block;vertical-align:middle;" alt="Kemendikdasmen" />';
+			$html .= '<img src="' . esc_attr( $logo_src ) . '" height="72" style="height:72px;width:auto;display:inline-block;vertical-align:middle;" alt="Kemendikdasmen" />';
 		}
 		$html .= '</td>';
-		$html .= '<td class="kgtk-kop-line" style="width:1px;max-width:1px;min-width:1px;background-color:#0083C4;padding:0;border:0;font-size:1px;line-height:1px;">&nbsp;</td>';
-		$html .= '<td style="width:49%;vertical-align:middle;padding:0 0 0 16px;border:0;text-align:left;">';
+		$html .= '<td class="kgtk-kop-line" style="width:2px;min-width:2px;max-width:2px;background-color:#0083C4;padding:0;border:0;vertical-align:middle;">';
+		$html .= '<div style="width:2px;height:70px;background-color:#0083C4;font-size:1px;line-height:1px;">&nbsp;</div>';
+		$html .= '</td>';
+		$html .= '<td style="vertical-align:middle;padding:0 0 0 14px;border:0;text-align:left;">';
 		if ( $header_src ) {
-			$html .= '<img src="' . esc_attr( $header_src ) . '" style="max-height:80px;width:auto;display:inline-block;vertical-align:middle;" alt="Kementerian Pendidikan Dasar dan Menengah" />';
+			$html .= '<img src="' . esc_attr( $header_src ) . '" height="72" style="height:72px;width:auto;display:inline-block;vertical-align:middle;" alt="Kementerian Pendidikan Dasar dan Menengah" />';
 		}
 		$html .= '</td>';
 		$html .= '</tr>';

@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="kgtk-modal-content" style="width:100%;">
 				<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
 					<div>
-						<h3 class="kgtk-modal-title" style="margin:0;font-size:17px;">Edit Data Pelatihan</h3>
-						<p class="kgtk-muted" style="margin:2px 0 12px;font-size:12.5px;">Perbarui rincian informasi dan jadwal pelatihan.</p>
+						<h3 class="kgtk-modal-title" id="kgtk-edit-pel-modal-title" style="margin:0;font-size:17px;">Edit Data Pelatihan</h3>
+						<p class="kgtk-muted" id="kgtk-edit-pel-modal-subtitle" style="margin:2px 0 12px;font-size:12.5px;">Perbarui rincian informasi, tipe kegiatan, dan jadwal pelaksanaan.</p>
 					</div>
 					<button type="button" class="kgtk-search-clear" id="kgtk-btn-edit-pelatihan-close" style="position:static;width:28px;height:28px;font-size:20px;" title="Tutup">&times;</button>
 				</div>
@@ -29,8 +29,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div id="kgtk-edit-pel-error" class="kgtk-alert" role="alert" hidden style="margin-bottom:12px;"></div>
 
 					<div style="max-height:65vh;overflow-y:auto;padding-right:4px;">
+						<!-- Pemilihan Tipe Kegiatan: Pelatihan vs Absen Acara -->
+						<div class="kgtk-field" style="margin-bottom:14px;">
+							<span style="font-size:13px;font-weight:700;color:#0f172a;">Jenis / Tipe Kegiatan <b>*</b></span>
+							<div class="kgtk-tipe-kegiatan-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:10px;margin-top:6px;">
+								<label class="kgtk-tipe-card is-active" id="kgtk-edit-tipe-pelatihan-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid #2563eb;background:#eff6ff;border-radius:10px;cursor:pointer;transition:all 0.2s;">
+									<input type="radio" name="jenis" id="kgtk-edit-pel-jenis-pelatihan" value="pelatihan" checked style="margin-top:3px;accent-color:#2563eb;">
+									<div>
+										<strong style="display:block;color:#1e3a8a;font-size:13.5px;">Pelatihan (Diklat / Workshop)</strong>
+										<small style="color:#475569;font-size:11.5px;display:block;margin-top:2px;line-height:1.4;">Kegiatan pelatihan dengan pembagian kelas belajar, batas kuota slot peserta, dan presensi per kelas.</small>
+									</div>
+								</label>
+								<label class="kgtk-tipe-card" id="kgtk-edit-tipe-acara-card" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid #cbd5e1;background:#fff;border-radius:10px;cursor:pointer;transition:all 0.2s;">
+									<input type="radio" name="jenis" id="kgtk-edit-pel-jenis-acara" value="acara" style="margin-top:3px;accent-color:#0d9488;">
+									<div>
+										<strong style="display:block;color:#0f172a;font-size:13.5px;">Absen Acara (Presensi Kegiatan / Rapat)</strong>
+										<small style="color:#475569;font-size:11.5px;display:block;margin-top:2px;line-height:1.4;">Daftar hadir acara umum, rapat dinas, atau seminar dengan pembagian kategori/ruang.</small>
+									</div>
+								</label>
+							</div>
+						</div>
+
 						<label class="kgtk-field">
-							<span>Nama pelatihan <b>*</b></span>
+							<span id="kgtk-edit-pel-label-nama">Nama pelatihan <b>*</b></span>
 							<input type="text" class="kgtk-input" id="kgtk-edit-pel-nama" name="nama" maxlength="200" required placeholder="Nama pelatihan">
 						</label>
 

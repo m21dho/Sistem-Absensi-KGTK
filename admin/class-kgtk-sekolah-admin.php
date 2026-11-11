@@ -338,7 +338,7 @@ class KGTK_Sekolah_Admin {
 
 	private static function view_map() {
 		$d = self::ambil_sesi( isset( $_GET['t'] ) ? wp_unslash( $_GET['t'] ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification,WordPress.Security.ValidatedSanitizedInput
-		KGTK_Admin::head( 'Cocokkan kolom', 'Tentukan kolom mana yang berisi kabupaten/kota dan nama sekolah.', '<a class="kgtk-btn kgtk-btn--ghost" href="' . esc_url( admin_url( 'admin.php?page=kgtk-sekolah' ) ) . '">Batal</a>' );
+		KGTK_Admin::head( 'Cocokkan kolom', 'Tentukan kolom mana yang berisi kabupaten/kota dan nama sekolah.', '<a class="kgtk-btn kgtk-btn--ghost" href="' . esc_url( KGTK_Admin::page_url( 'sekolah' ) ) . '">Batal</a>' );
 		if ( ! $d ) {
 			echo '<div class="kgtk-alert">' . esc_html( self::pesan_error( 'kedaluwarsa' ) ) . '</div>';
 			return;
@@ -596,7 +596,10 @@ class KGTK_Sekolah_Admin {
 			return;
 		}
 
-		echo '<form method="get" class="kgtk-card kgtk-filter"><input type="hidden" name="page" value="kgtk-rekap">';
+		echo '<form method="get" action="' . esc_url( KGTK_Admin::page_url( 'rekap' ) ) . '" class="kgtk-card kgtk-filter"><input type="hidden" name="page" value="kgtk-rekap">';
+		if ( class_exists( 'KGTK_Admin_Portal' ) && KGTK_Admin_Portal::is_portal_request() && ! get_option( 'permalink_structure' ) ) {
+			echo '<input type="hidden" name="kgtk_admin_portal" value="1">';
+		}
 		echo '<label class="kgtk-field"><span>Kabupaten/Kota</span><select class="kgtk-input" name="kab"><option value="">- pilih -</option>';
 		foreach ( array_merge( $kabs, array( KGTK_Helpers::KABKOTA_LAIN ) ) as $k ) {
 			$lbl = KGTK_Helpers::KABKOTA_LAIN === $k ? 'Lainnya (sekolah di luar daftar)' : KGTK_Helpers::format_kabkota_label( $k );
@@ -933,8 +936,11 @@ class KGTK_Sekolah_Admin {
 		KGTK_Admin::head( 'Rekap Guru', 'Semua guru yang telah mengikuti pelatihan dan seluruh riwayat pelatihan yang diikuti.', $act );
 
 		// Filter Form
-		echo '<form method="get" class="kgtk-card kgtk-filter kgtk-filter-rekap-guru">';
+		echo '<form method="get" action="' . esc_url( KGTK_Admin::page_url( 'rekap-guru' ) ) . '" class="kgtk-card kgtk-filter kgtk-filter-rekap-guru">';
 		echo '<input type="hidden" name="page" value="kgtk-rekap-guru">';
+		if ( class_exists( 'KGTK_Admin_Portal' ) && KGTK_Admin_Portal::is_portal_request() && ! get_option( 'permalink_structure' ) ) {
+			echo '<input type="hidden" name="kgtk_admin_portal" value="1">';
+		}
 
 		echo '<label class="kgtk-field"><span>Pencarian</span>';
 		echo '<input type="text" class="kgtk-input" name="s" value="' . esc_attr( $filter['search'] ) . '" placeholder="Ketik nama, NIK, NIP, atau sekolah...">';
@@ -962,7 +968,7 @@ class KGTK_Sekolah_Admin {
 		echo '<div style="display:flex;gap:8px;align-items:flex-end;">';
 		echo '<button type="submit" class="kgtk-btn">Tampilkan</button>';
 		if ( '' !== $filter['kab'] || $filter['pel'] > 0 || '' !== $filter['jenis_gtk'] || '' !== $filter['search'] ) {
-			echo '<a href="' . esc_url( admin_url( 'admin.php?page=kgtk-rekap-guru' ) ) . '" class="kgtk-btn kgtk-btn--ghost" title="Reset filter">&#10005; Reset</a>';
+			echo '<a href="' . esc_url( KGTK_Admin::page_url( 'rekap-guru' ) ) . '" class="kgtk-btn kgtk-btn--ghost" title="Reset filter">&#10005; Reset</a>';
 		}
 		echo '</div>';
 		echo '</form>';

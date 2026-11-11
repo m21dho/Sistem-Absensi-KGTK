@@ -27,7 +27,7 @@
 	var C = window.KGTK_PUB || {};
 	var API = C.root || '';
 
-	var PERAN = ['Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Peserta'];
+	var PERAN = ['Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Undangan', 'Peserta'];
 	var JENIS_GTK = ['Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'];
 	var JABATAN = ['Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'];
 	var JENIS_KELAMIN = ['Laki-laki', 'Perempuan'];
@@ -465,28 +465,28 @@
 
 		var kop = getKopHtml();
 
-		var html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Biodata - ' + esc(namaLengkap) + '</title>' +
+		var html = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>&nbsp;</title>' +
 			'<style>' +
-			'@page{size:A4;margin:0.51cm 1.0cm}' +
-			'body{font-family:\'Times New Roman\',Times,Georgia,serif;margin:0;padding:0.51cm 1.0cm;color:#000;line-height:1.35;background:#fff}' +
-			'.kgtk-kop-wrap{width:100%;text-align:center;margin:0 auto 16px}' +
+			'@page{size:A4 portrait;margin:0!important}' +
+			'body{font-family:\'Times New Roman\',Times,Georgia,serif;margin:0!important;padding:1.5cm 2.2cm 1.5cm 2.8cm!important;box-sizing:border-box!important;color:#000;line-height:1.35;background:#fff}' +
+			'.kgtk-kop-wrap{width:100%;text-align:center;margin:0 auto 14px}' +
 			'.kgtk-kop-tbl{margin:0 auto;border-collapse:collapse;border:0;width:100%;max-width:760px}' +
 			'.kgtk-kop-tbl td{border:0!important;vertical-align:middle}' +
-			'.title-box{text-align:center;margin:8pt 0;font-family:\'Times New Roman\',Times,Georgia,serif}' +
-			'.title-main{font-size:16pt;font-weight:bold;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px}' +
-			'.title-sub{font-size:14pt;line-height:1.35;margin-bottom:2px;font-weight:bold}' +
-			'.title-date{font-size:14pt;margin-bottom:2px}' +
-			'.title-loc{font-size:14pt;margin-bottom:14pt}' +
-			'table.bio-box{width:100%;border-collapse:collapse;border:1.5px solid #000;margin-bottom:18px}' +
-			'table.bio-box td{padding:4.5px 8px;font-size:12pt;vertical-align:top;border:0!important}' +
+			'.title-box{text-align:center;margin:6pt 0 10pt;font-family:\'Times New Roman\',Times,Georgia,serif}' +
+			'.title-main{font-size:15pt;font-weight:bold;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px}' +
+			'.title-sub{font-size:13pt;line-height:1.3;margin-bottom:2px;font-weight:bold}' +
+			'.title-date{font-size:13pt;margin-bottom:2px}' +
+			'.title-loc{font-size:13pt;margin-bottom:10pt}' +
+			'table.bio-box{width:100%;border-collapse:collapse;border:1.5px solid #000;margin-bottom:14px}' +
+			'table.bio-box td{padding:3.5px 10px;font-size:11.5pt;vertical-align:top;border:0!important}' +
 			'td.lbl{width:34%}' +
 			'td.sep{width:3%;text-align:center}' +
 			'td.val{width:63%}' +
-			'table.ttd-tbl{width:100%;border-collapse:collapse;margin-top:15px}' +
+			'table.ttd-tbl{width:100%;border-collapse:collapse;margin-top:10px}' +
 			'table.ttd-tbl td{border:0!important;vertical-align:top}' +
 			'td.ttd-right{width:250px;text-align:center;font-size:12pt}' +
-			'.space{height:60px}' +
-			'@media print{body{padding:0!important}}' +
+			'.space{height:50px}' +
+			'@media print{body{padding:1.5cm 2.2cm 1.5cm 2.8cm!important}}' +
 			'</style></head><body>' +
 			kop +
 			'<div class="title-box">' +
@@ -499,7 +499,7 @@
 			'<table class="ttd-tbl"><tr><td>&nbsp;</td><td class="ttd-right">' +
 			'<div>' + esc(kabkotaTxt) + ', ' + esc(tglCetak) + '</div>' +
 			'<div class="space">&nbsp;</div>' +
-			'<div><u><strong>' + esc(namaLengkap) + '</strong></u></div>' +
+			'<div><strong>' + esc(namaLengkap) + '</strong></div>' +
 			'</td></tr></table>' +
 			'<script>window.onload=function(){window.print();}<\/script>' +
 			'</body></html>';
@@ -521,6 +521,17 @@
 		sukses: 'Pendaftaran selesai',
 		'biodata-saya': 'Biodata & Riwayat Saya'
 	};
+	var LABELS_ACARA = {
+		loading: 'Memuat',
+		beranda: 'Web Portal KGTK',
+		kode: 'Langkah 1 \u00b7 Kode acara',
+		nik: 'Langkah 2 \u00b7 Identitas',
+		'nik-verif': 'Langkah 2 \u00b7 Verifikasi identitas',
+		terdaftar: 'Status kehadiran',
+		biodata: 'Langkah 3 \u00b7 Mengisi absen',
+		sukses: 'Mengisi absen selesai',
+		'biodata-saya': 'Biodata & Riwayat Saya'
+	};
 	function stepNow() {
 		return { beranda: 1, kode: 1, loading: 1, nik: 2, 'nik-verif': 2, terdaftar: 2, biodata: 3, sukses: 4 }[S.view] || 1;
 	}
@@ -528,12 +539,14 @@
 	function frame(content) {
 		var isHomeView = (S.view === 'beranda');
 		var isBioView = (S.view === 'biodata-saya');
+		var isAcara = (S.info && S.info.jenis === 'acara');
 		var now = stepNow();
-		var steps = el('ol', { class: 'kgtk-steps' }, STEPS.map(function (s, i) {
+		var currentSteps = isAcara ? ['Kode acara', 'Identitas (NIK)', 'Mengisi absen'] : STEPS;
+		var steps = el('ol', { class: 'kgtk-steps' }, currentSteps.map(function (s, i) {
 			var n = i + 1;
 			return el('li', { class: !isBioView && !isHomeView && n < now ? 'is-done' : (!isBioView && !isHomeView && n === now ? 'is-now' : '') }, [el('span', { class: 'n', text: !isBioView && !isHomeView && n < now ? '\u2713' : String(n) }), s]);
 		}));
-		var side = el('aside', { class: 'kgtk-side kgtk-card' }, [el('div', { class: 'kgtk-side-title', text: 'Langkah pendaftaran' }), steps]);
+		var side = el('aside', { class: 'kgtk-side kgtk-card' }, [el('div', { class: 'kgtk-side-title', text: isAcara ? 'Langkah mengisi absen' : 'Langkah pendaftaran' }), steps]);
 
 		// Header atas dengan logo resmi Kemendikdasmen KGTK Kepulauan Riau
 		var logoImg = el('img', {
@@ -559,6 +572,8 @@
 		var badgeText = 'Web Portal KGTK';
 		if (isBioView) {
 			badgeText = 'Biodata & Riwayat Guru';
+		} else if (isAcara) {
+			badgeText = 'Mengisi Absen Acara';
 		} else if (!isHomeView) {
 			badgeText = 'Pendaftaran Pelatihan Guru';
 		}
@@ -597,7 +612,7 @@
 		var crumbs = el('div', { class: 'kgtk-crumbs' }, [
 			crumbHome,
 			el('span', { class: 'kgtk-crumb-sep', text: '\u203a' }),
-			el('span', { class: 'kgtk-crumb is-now', text: 'Pendaftaran Pelatihan' })
+			el('span', { class: 'kgtk-crumb is-now', text: isAcara ? 'Mengisi Absen Acara' : 'Pendaftaran Pelatihan' })
 		]);
 
 		var iconBioSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
@@ -642,7 +657,7 @@
 			}
 			if (heroDeadline) {
 				metaItems.push(el('div', { class: 'kgtk-hero-meta-item' }, [
-					el('span', { class: 'kgtk-hero-meta-lbl', text: 'Batas Pendaftaran: ' }),
+					el('span', { class: 'kgtk-hero-meta-lbl', text: isAcara ? 'Batas Mengisi Absen: ' : 'Batas Pendaftaran: ' }),
 					el('span', { class: 'kgtk-hero-meta-val', text: heroDeadline })
 				]));
 			}
@@ -652,7 +667,7 @@
 				var jkCards = allKelasHero.map(function (k) {
 					var isClosed = !!k.is_deadline_passed;
 					var isFull = !isClosed && (typeof k.sisa === 'number' && k.sisa <= 0);
-					var statusTxt = isClosed ? 'Ditutup' : (isFull ? 'Penuh' : 'Dibuka');
+					var statusTxt = isClosed ? (isAcara ? 'Absen Ditutup' : 'Ditutup') : (isFull ? 'Penuh' : (isAcara ? 'Dibuka' : 'Dibuka'));
 					var statusCls = isClosed ? 'is-closed' : (isFull ? 'is-full' : 'is-open');
 					var batasTxt = k.deadline_formatted ? String(k.deadline_formatted).replace(/\s*pukul 23:59 WIB$/, '') : '';
 					return el('div', { class: 'kgtk-jk-card ' + statusCls }, [
@@ -661,11 +676,11 @@
 							el('span', { class: 'kgtk-jk-status', text: statusTxt })
 						]),
 						el('div', { class: 'kgtk-jk-tgl', text: k.tanggal || '-' }),
-						batasTxt ? el('div', { class: 'kgtk-jk-batas', text: 'Daftar s.d. ' + batasTxt }) : null
+						batasTxt ? el('div', { class: 'kgtk-jk-batas', text: (isAcara ? 'Batas s.d. ' : 'Daftar s.d. ') + batasTxt }) : null
 					]);
 				});
 				jadwalKelasBox = el('div', { class: 'kgtk-jk-wrap' }, [
-					el('div', { class: 'kgtk-jk-title', text: 'Jadwal Pelaksanaan per Kelas' }),
+					el('div', { class: 'kgtk-jk-title', text: isAcara ? 'Jadwal Kegiatan per Kategori/Ruang' : 'Jadwal Pelaksanaan per Kelas' }),
 					el('div', { class: 'kgtk-jk-grid' }, jkCards)
 				]);
 			}
@@ -674,8 +689,8 @@
 				el('div', { class: 'kgtk-hero-title-row' }, [
 					el('h1', { class: 'kgtk-hero-title-pelatihan', text: S.info.nama }),
 					el('span', {
-						class: 'kgtk-hero-status-pill' + (S.info.is_deadline_passed ? ' is-closed' : (S.info.penuh ? ' is-closed' : '')),
-						text: S.info.is_deadline_passed ? 'Pendaftaran Ditutup' : (S.info.penuh ? 'Kuota Penuh' : 'Pendaftaran Dibuka')
+						class: 'kgtk-hero-status-pill' + (S.info.is_deadline_passed ? ' is-closed' : (!isAcara && S.info.penuh ? ' is-closed' : '')),
+						text: isAcara ? (S.info.is_deadline_passed ? 'Absen Ditutup' : 'Mengisi Absen Dibuka') : (S.info.is_deadline_passed ? 'Pendaftaran Ditutup' : (S.info.penuh ? 'Kuota Penuh' : 'Pendaftaran Dibuka'))
 					})
 				]),
 				metaRow
@@ -692,14 +707,15 @@
 			var heroWrap = el('div', { class: 'kgtk-hero-bio-wrap' }, [pillBtn]);
 			heroChildren = [
 				crumbs,
-				el('h1', {}, ['Pendaftaran ', el('span', { text: 'Pelatihan' })]),
-				el('p', { text: 'Daftar pelatihan guru dan tenaga kependidikan dengan kode pelatihan dan NIK. Ikuti langkah-langkah berikut.' }),
+				el('h1', {}, ['Pendaftaran Pelatihan & ', el('span', { text: 'Mengisi Absen' })]),
+				el('p', { text: 'Daftar pelatihan atau isi absen acara kegiatan guru dan tenaga kependidikan dengan kode kegiatan dan NIK.' }),
 				heroWrap
 			];
 		}
 
 		var hero = el('header', { class: 'kgtk-hero' + (S.info && S.info.nama ? ' kgtk-hero--unified' : '') }, heroChildren);
-		var main = el('div', { class: 'kgtk-main' }, [hero, el('div', { class: 'kgtk-label', text: LABELS[S.view] || '' }), content]);
+		var currentLabels = isAcara ? LABELS_ACARA : LABELS;
+		var main = el('div', { class: 'kgtk-main' }, [hero, el('div', { class: 'kgtk-label', text: currentLabels[S.view] || '' }), content]);
 		return [topHeader, el('div', { class: 'kgtk-layout' }, [side, main]), footerHelp];
 	}
 	function render() {
@@ -767,6 +783,9 @@
 		return el('dl', { class: 'kgtk-detail' }, items.map(function (i) { return el('div', {}, [el('dt', { text: i[0] }), el('dd', { text: i[1] })]); }));
 	}
 	function nomorBox(h) {
+		if (h.peran === 'Undangan') {
+			return el('div', { class: 'kgtk-nomor', style: 'background:#f0fdfa;color:#0d9488;border-color:#99f6e4;', text: 'Status: Kehadiran Tamu Undangan Berhasil Dicatat' });
+		}
 		if (h.nomor && h.slot > 0) {
 			return el('div', { class: 'kgtk-nomor', text: 'Nomor urut: ' + h.nomor + ' dari ' + h.slot + ' slot ' + h.kelas_label });
 		}
@@ -807,12 +826,12 @@
 			'<path d="M9 14l2 2 4-4"></path>' +
 			'</svg>';
 
-		var btnDaftar = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Mulai Pendaftaran Pelatihan' });
+		var btnDaftar = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Mulai Pendaftaran / Mengisi Absen' });
 
 		var cardDaftar = el('div', { class: 'kgtk-landing-card kgtk-landing-card--primary' }, [
 			iconDaftar,
-			el('h3', { text: '1. Daftar Pelatihan Baru' }),
-			el('p', { text: 'Daftarkan diri Anda pada kegiatan pelatihan KGTK yang baru dengan memasukkan kode pelatihan dari panitia.' }),
+			el('h3', { text: '1. Daftar Pelatihan & Mengisi Absen' }),
+			el('p', { text: 'Daftarkan diri Anda pada pelatihan atau isi absen kehadiran acara KGTK dengan memasukkan kode kegiatan dari panitia.' }),
 			btnDaftar
 		]);
 
@@ -834,8 +853,8 @@
 
 		var cardBio = el('div', { class: 'kgtk-landing-card kgtk-landing-card--secondary' }, [
 			iconBio,
-			el('h3', { text: '2. Lihat Pelatihan & Biodata Saya' }),
-			el('p', { text: 'Periksa status pendaftaran Anda, cetak biodata, atau lihat riwayat seluruh pelatihan yang pernah diikuti.' }),
+			el('h3', { text: '2. Riwayat Pelatihan, Acara & Biodata' }),
+			el('p', { text: 'Periksa status pendaftaran/kehadiran Anda, cetak biodata, atau lihat riwayat seluruh kegiatan yang pernah diikuti.' }),
 			btnBio
 		]);
 
@@ -852,7 +871,7 @@
 		var btnBackHome = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Beranda' });
 		btnBackHome.addEventListener('click', function () { go('beranda'); });
 
-		var f = field('Kode Pelatihan (sesuai surat undangan) *', 'kode', {
+		var f = field('Kode Kegiatan / Pelatihan (sesuai surat undangan) *', 'kode', {
 			type: 'text',
 			maxlength: 20,
 			autocapitalize: 'characters',
@@ -862,9 +881,9 @@
 		}, S.kode);
 		var err = errBox();
 		if (S.kodeError) { showErr(err, S.kodeError); S.kodeError = ''; }
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut ke Langkah 2 (Identitas)' });
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut ke Langkah Berikutnya' });
 
-		var linkBio = el('button', { type: 'button', class: 'kgtk-link', text: 'Sudah pernah mendaftar? Klik di sini untuk Lihat Pelatihan Saya' });
+		var linkBio = el('button', { type: 'button', class: 'kgtk-link', text: 'Sudah pernah mendaftar atau mengisi absen? Klik di sini untuk Lihat Riwayat Saya' });
 		linkBio.addEventListener('click', function () { goBiodataSaya(); });
 
 		var iconSvgKode = el('div', { class: 'kgtk-card-icon-circle', 'aria-hidden': 'true' });
@@ -874,8 +893,8 @@
 			el('div', { class: 'kgtk-card-header-clean' }, [
 				iconSvgKode,
 				el('div', {}, [
-					el('h2', { text: 'Langkah 1: Masukkan Kode Pelatihan' }),
-					el('p', { class: 'kgtk-card-desc', text: 'Silakan masukkan kode pelatihan yang tertera pada surat undangan atau informasi dari panitia kegiatan.' })
+					el('h2', { text: 'Langkah 1: Masukkan Kode Kegiatan' }),
+					el('p', { class: 'kgtk-card-desc', text: 'Silakan masukkan kode pelatihan atau kegiatan acara yang tertera pada surat undangan atau informasi dari panitia.' })
 				])
 			]),
 			err, f.wrap, btn,
@@ -889,9 +908,9 @@
 			var kode = f.input.value.trim().toUpperCase();
 			if (!/^[A-Z0-9-]{3,20}$/.test(kode)) {
 				f.input.classList.add('is-invalid');
-				var msg = !kode ? 'Kode pelatihan belum diisi.' : 'Format kode pelatihan tidak valid.';
+				var msg = !kode ? 'Kode kegiatan belum diisi.' : 'Format kode kegiatan tidak valid.';
 				showErr(err, msg);
-				kgtkAlert('Kode Belum Sesuai', msg + ' Silakan periksa kembali kode pelatihan yang Anda dapatkan dari panitia/undangan.', {
+				kgtkAlert('Kode Belum Sesuai', msg + ' Silakan periksa kembali kode kegiatan yang Anda dapatkan dari panitia/undangan.', {
 					type: 'warning',
 					confirmText: 'Mengerti'
 				}).then(function () {
@@ -903,10 +922,11 @@
 			getInfo(kode).then(function (d) {
 				S.kode = kode;
 				S.info = d;
+				var isAcr = (d.jenis === 'acara');
 				if (d.is_deadline_passed) {
-					busy(btn, false, 'Lanjut ke Langkah 2 (Identitas)');
-					showErr(err, 'Pendaftaran untuk pelatihan ini telah ditutup pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.');
-					kgtkAlert('Pendaftaran Sudah Ditutup', 'Batas waktu pendaftaran untuk pelatihan "' + (d.nama || '') + '" telah berakhir pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.\n\nPendaftaran baru sudah tidak dapat dilakukan karena telah melewati batas waktu (deadline) yang ditetapkan panitia.\n\nBagi guru yang sudah mendaftar sebelumnya, silakan buka menu "Lihat Pelatihan Saya" di bawah untuk melihat bukti dan data pendaftaran Anda.', {
+					busy(btn, false, 'Lanjut ke Langkah Berikutnya');
+					showErr(err, (isAcr ? 'Waktu pengisian absen untuk acara ini telah ditutup pada ' : 'Pendaftaran untuk pelatihan ini telah ditutup pada ') + (d.deadline_formatted || 'waktu yang ditentukan') + '.');
+					kgtkAlert(isAcr ? 'Absen Sudah Ditutup' : 'Pendaftaran Sudah Ditutup', 'Batas waktu kegiatan "' + (d.nama || '') + '" telah berakhir pada ' + (d.deadline_formatted || 'waktu yang ditentukan') + '.\n\nPengisian data baru sudah tidak dapat dilakukan karena telah melewati batas waktu yang ditetapkan panitia.', {
 						type: 'danger',
 						confirmText: 'Mengerti'
 					});
@@ -915,9 +935,9 @@
 				go('nik');
 			})
 				.catch(function (x) {
-					busy(btn, false, 'Lanjut');
+					busy(btn, false, 'Lanjut ke Langkah Berikutnya');
 					showErr(err, x.message);
-					kgtkAlert('Kode Tidak Ditemukan', x.message || 'Pelatihan tidak ditemukan. Pastikan kode yang dimasukkan sudah benar.', {
+					kgtkAlert('Kode Tidak Ditemukan', x.message || 'Kegiatan tidak ditemukan. Pastikan kode yang dimasukkan sudah benar.', {
 						type: 'danger',
 						confirmText: 'Coba Lagi'
 					});
@@ -927,6 +947,7 @@
 	}
 
 	function vNik() {
+		var isAcara = (S.info && S.info.jenis === 'acara');
 		var customNote = (S.info && S.info.keterangan) ? String(S.info.keterangan).trim() : '';
 
 		// Notifikasi pop up jika ada kelas yang sudah penuh atau ditutup
@@ -942,7 +963,7 @@
 				var items = fullOrClosed.map(function (k) {
 					var isClosed = !!k.is_deadline_passed;
 					var isFull = typeof k.sisa === 'number' && k.sisa <= 0 && (typeof k.slot === 'number' && k.slot > 0);
-					var statusText = isClosed ? 'Pendaftaran Ditutup' : 'Kuota Penuh';
+					var statusText = isClosed ? (isAcara ? 'Absen Ditutup' : 'Pendaftaran Ditutup') : 'Kuota Penuh';
 					var detailText = '';
 					if (isClosed && k.deadline_formatted) {
 						detailText = ' (Batas: ' + k.deadline_formatted + ')';
@@ -958,20 +979,20 @@
 				setTimeout(function () {
 					kgtkAlert(
 						'Pemberitahuan Kuota & Status Kelas',
-						'Mohon perhatian, beberapa kelas pada pelatihan ini telah PENUH atau DITUTUP',
+						isAcara ? 'Mohon perhatian, beberapa kategori/ruang pada kegiatan acara ini telah PENUH atau DITUTUP' : 'Mohon perhatian, beberapa kelas pada pelatihan ini telah PENUH atau DITUTUP',
 						{
 							type: 'warning',
 							confirmText: 'Saya Mengerti, Lanjutkan',
 							errors: items,
 							note: customNote,
-							noteTitle: 'Catatan Panitia / Penempatan Kelas:'
+							noteTitle: isAcara ? 'Catatan Panitia / Penempatan Kategori:' : 'Catatan Panitia / Penempatan Kelas:'
 						}
 					);
 				}, 250);
 			}
 		}
 
-		var btnBackKode = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali / Ganti Kode Pelatihan' });
+		var btnBackKode = el('button', { type: 'button', class: 'kgtk-btn-back', text: isAcara ? '← Ganti Kode Acara' : '← Ganti Kode Pelatihan' });
 		btnBackKode.addEventListener('click', function () {
 			S.nik = '';
 			S.nip = '';
@@ -991,8 +1012,16 @@
 			required: true
 		}, S.nik);
 		var err = errBox();
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Lanjut' });
-		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: '← Kembali / Ganti Kode Pelatihan' });
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut' });
+		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: isAcara ? '← Ganti Kode Acara' : '← Ganti Kode Pelatihan' });
+		back.addEventListener('click', function () {
+			S.nik = '';
+			S.nip = '';
+			S.idType = 'nik';
+			S.verifTipe = '';
+			S.verifNilai = '';
+			go('kode');
+		});
 
 		var noticeBox = null;
 		if (customNote) {
@@ -1000,14 +1029,14 @@
 			noticeBox.innerHTML =
 				'<div class="kgtk-notice-box-title">' +
 				'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-				'<span>Catatan Panitia / Informasi Pendaftaran:</span>' +
+				'<span>' + (isAcara ? 'Catatan Panitia / Informasi Acara:' : 'Catatan Panitia / Informasi Pendaftaran:') + '</span>' +
 				'</div>' +
 				'<div class="kgtk-notice-box-body">' + esc(customNote) + '</div>';
 		}
 
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
-			el('h2', { text: 'Nomor Induk Kependudukan (NIK)' }),
-			el('p', { class: 'kgtk-muted', text: 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mendaftar pelatihan.' }),
+			el('h2', { text: isAcara ? 'Verifikasi Identitas (NIK)' : 'Nomor Induk Kependudukan (NIK)' }),
+			el('p', { class: 'kgtk-muted', text: isAcara ? 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mengisi absen kegiatan ini.' : 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mendaftar pelatihan.' }),
 			noticeBox,
 			err,
 			f.wrap,
@@ -1062,7 +1091,8 @@
 	}
 
 	function vNikVerif() {
-		var btnBackNik = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya (NIK)' });
+		var isAcara = (S.info && S.info.jenis === 'acara');
+		var btnBackNik = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali' });
 		btnBackNik.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
@@ -1070,51 +1100,24 @@
 		});
 
 		var err = errBox();
-		var rHp = el('input', { type: 'radio', name: 'verif_type', value: 'hp', id: 'vf-hp', checked: true });
-		var rEmail = el('input', { type: 'radio', name: 'verif_type', value: 'email', id: 'vf-email' });
-
-		var lblHp = el('label', { class: 'kgtk-radio is-checked', for: 'vf-hp' }, [
-			rHp,
-			el('span', { text: 'Nomor HP / WhatsApp' })
-		]);
-		var lblEmail = el('label', { class: 'kgtk-radio', for: 'vf-email' }, [
-			rEmail,
-			el('span', { text: 'Email belajar.id' })
-		]);
-		var radios = el('div', { class: 'kgtk-radios' }, [lblHp, lblEmail]);
-
-		var fVal = field('Nomor HP / WhatsApp yang Pernah Didaftarkan *', 'f-vval', {
+		var fVal = field('No. HP / WhatsApp atau Email', 'f-vval', {
 			type: 'text',
 			required: true,
 			autocomplete: 'off',
-			placeholder: 'Contoh: 081234567890 atau 62812...'
+			placeholder: 'Ketik No. HP (0812...) atau Email Anda'
 		});
 
-		function updateLabel() {
-			var isHp = rHp.checked;
-			lblHp.classList.toggle('is-checked', isHp);
-			lblEmail.classList.toggle('is-checked', !isHp);
-			var span = fVal.wrap.querySelector('span');
-			if (span) {
-				span.textContent = isHp ? 'Nomor HP / WhatsApp yang Pernah Didaftarkan *' : 'Email belajar.id yang Pernah Didaftarkan *';
-			}
-			fVal.input.placeholder = isHp ? 'Contoh: 081234567890 atau 62812...' : 'Contoh: nama@guru.smp.belajar.id';
-		}
-		rHp.addEventListener('change', updateLabel);
-		rEmail.addEventListener('change', updateLabel);
-
-		// Tombol Aksi 1: Lanjut Pendaftaran (Sangat Nampak)
+		var btnVerifText = isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut Pendaftaran';
 		var btnVerif = el('button', {
 			type: 'submit',
 			class: 'kgtk-btn kgtk-btn-action-tarik',
-			text: 'Lanjut Pendaftaran'
+			text: btnVerifText
 		});
 
-		// Tombol Aksi 2: Lewati & Isi Data Baru (Sangat Nampak)
 		var btnSkip = el('button', {
 			type: 'button',
 			class: 'kgtk-btn kgtk-btn-action-baru',
-			text: 'Saya Peserta Baru: Lanjut Isi Formulir Pendaftaran'
+			text: isAcara ? 'Isi Data Presensi Baru' : 'Isi Formulir Pendaftaran Baru'
 		});
 		btnSkip.addEventListener('click', function () {
 			S.verifTipe = '';
@@ -1123,62 +1126,31 @@
 			go('biodata');
 		});
 
-		// Box Jalur 1: Sudah Pernah Mendaftar
 		var boxSudah = el('div', { class: 'kgtk-verif-box kgtk-verif-box--sudah' }, [
-			el('div', { class: 'kgtk-verif-badge kgtk-verif-badge--sudah', text: 'PILIHAN 1: SUDAH PERNAH MENDAFTAR' }),
-			el('div', { class: 'kgtk-verif-title', text: 'Pernah Mengikuti Pelatihan KGTK Sebelumnya?' }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Data Anda sudah tersimpan di sistem. Masukkan No. HP atau Email belajar.id di bawah ini, lalu klik tombol Lanjut Pendaftaran agar formulir langsung terisi otomatis tanpa perlu mengetik ulang.' }),
-			radios,
+			el('div', { class: 'kgtk-verif-title', text: 'Sudah Pernah Mendaftar?' }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Masukkan No. HP atau Email yang pernah didaftarkan agar biodata terisi otomatis.' }),
 			fVal.wrap,
 			btnVerif
 		]);
 
-		// Box Jalur 2: Belum Pernah Mendaftar
 		var boxBelum = el('div', { class: 'kgtk-verif-box kgtk-verif-box--belum' }, [
-			el('div', { class: 'kgtk-verif-badge kgtk-verif-badge--belum', text: 'PILIHAN 2: BELUM PERNAH MENDAFTAR (PESERTA BARU)' }),
-			el('div', { class: 'kgtk-verif-title', text: 'Peserta Baru / Pertama Kali Mendaftar' }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Jika Anda belum pernah mendaftar di pelatihan KGTK, Anda TIDAK PERLU mengisi kontak di atas. Silakan langsung klik tombol hijau di bawah ini untuk mengisi formulir pendaftaran baru:' }),
+			el('div', { class: 'kgtk-verif-title', text: 'Belum Pernah Mendaftar?' }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Langsung isi biodata baru tanpa perlu mengisi kontak di atas.' }),
 			btnSkip
 		]);
 
-		// Tombol Kembali Besar di Bawah
-		var btnBackBottom = el('button', {
-			type: 'button',
-			class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large',
-			style: 'margin-top:16px;',
-			text: '← Kembali ke Langkah Sebelumnya (NIK)'
-		});
-		btnBackBottom.addEventListener('click', function () {
-			S.verifTipe = '';
-			S.verifNilai = '';
-			go('nik');
-		});
-
-		var iconSvgVerif = el('div', { class: 'kgtk-card-icon-circle', 'aria-hidden': 'true' });
-		iconSvgVerif.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>';
-
-		var headerClean = el('div', { class: 'kgtk-card-header-clean' }, [
-			iconSvgVerif,
-			el('div', {}, [
-				el('h2', { text: 'Pilihan Pengisian Formulir' }),
-				el('p', { class: 'kgtk-card-desc', text: 'Silakan pilih salah satu jalur di bawah ini sesuai dengan kondisi Anda (Pernah mendaftar sebelumnya atau Peserta Baru).' })
-			])
-		]);
-
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
-			headerClean,
 			err,
 			boxSudah,
-			boxBelum,
-			btnBackBottom
+			boxBelum
 		]);
 
 		form.addEventListener('submit', function (e) {
 			e.preventDefault();
 			err.hidden = true;
-			var tipe = rHp.checked ? 'hp' : 'email';
 			var nilai = fVal.input.value.trim();
-			if (!nilai) { return showErr(err, tipe === 'hp' ? 'Masukkan nomor HP yang terdaftar.' : 'Masukkan email belajar.id yang terdaftar.'); }
+			if (!nilai) { return showErr(err, 'Masukkan No. HP atau Email yang pernah didaftarkan.'); }
+			var tipe = nilai.indexOf('@') > -1 ? 'email' : 'hp';
 			busy(btnVerif, true);
 			api('public/cek-nik', 'POST', { kode: S.kode, nik: S.nik, tipe: tipe, nilai: nilai }).then(function (d) {
 				S.info = d.pelatihan; S.cek = d;
@@ -1199,10 +1171,10 @@
 				}
 				go('biodata');
 			}).catch(function (x) {
-				busy(btnVerif, false, 'Lanjut Pendaftaran');
+				busy(btnVerif, false, btnVerifText);
 				var pesan = x.message || 'Terjadi kesalahan.';
 				if (pesan.indexOf('Data tidak cocok') > -1) {
-					pesan += ' Jika Anda belum pernah mendaftar sebelumnya, silakan langsung klik tombol hijau "Saya Peserta Baru" di bawah.';
+					pesan = 'No. HP / Email tidak ditemukan untuk NIK ini. Jika belum pernah mendaftar, klik tombol hijau di bawah.';
 				}
 				showErr(err, pesan);
 			});
@@ -1240,6 +1212,7 @@
 	function digitsOnly(input, max) { input.addEventListener('input', function () { input.value = input.value.replace(/\D/g, '').slice(0, max); }); }
 
 	function vBiodata() {
+		var isAcara = (S.info && S.info.jenis === 'acara');
 		var btnBackVerif = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya' });
 		btnBackVerif.addEventListener('click', function () {
 			go(S.cek && S.cek.guru ? 'nik-verif' : 'nik');
@@ -1324,9 +1297,30 @@
 
 		var fhp = field('No. HP/WhatsApp *', 'f-hp', { type: 'tel', maxlength: 20, required: true, autocomplete: 'tel', inputmode: 'tel' }, F.hp);
 		var fmail = field('Email *', 'f-email', { type: 'email', maxlength: 100, required: true, autocomplete: 'email' }, F.email);
-		var fbel = field('Email belajar.id *', 'f-belajar', { type: 'email', maxlength: 100, required: true, placeholder: 'nama@belajar.id', autocomplete: 'off' }, F.email_belajar);
+		var lblBelajar = isAcara
+			? el('span', {}, [el('span', { text: 'Email belajar.id ' }), el('small', { style: 'color:#64748b;font-weight:normal;', text: '(opsional / tidak wajib)' })])
+			: 'Email belajar.id *';
+		var fbel = field(lblBelajar, 'f-belajar', { type: 'email', maxlength: 100, required: !isAcara, placeholder: isAcara ? 'nama@belajar.id (kosongkan bila tidak ada)' : 'nama@belajar.id', autocomplete: 'off' }, F.email_belajar);
 
 		function updatePeranVisibility() {
+			if (isAcara) {
+				if (peran) { peran.style.display = 'none'; }
+				if (wrapGtk) { wrapGtk.style.display = 'none'; }
+				sel.value = 'Peserta';
+				selGtk.value = '';
+				if (fbel && fbel.input) {
+					fbel.input.required = false;
+					fbel.input.placeholder = 'nama@belajar.id (kosongkan bila tidak ada)';
+				}
+				if (fbank && fbank.input) { fbank.input.required = false; }
+				if (frek && frek.input) { frek.input.required = false; }
+				if (fpengalaman && fpengalaman.input) { fpengalaman.input.required = false; }
+				fn.wrap.style.display = '';
+				fn.wrap.querySelector('span').textContent = 'NIK (16 digit) *';
+				fnip.wrap.querySelector('span').innerHTML = 'NIP <small style="color:#64748b;font-weight:normal;">(hanya angka, kosongkan jika belum ada)</small>';
+				fnip.input.required = false;
+				return;
+			}
 			var isPeserta = sel.value === 'Peserta';
 			var isPanitia = sel.value === 'Panitia';
 			if (wrapGtk) {
@@ -1344,8 +1338,24 @@
 
 			if (fbank && fbank.input) { fbank.input.required = !isPanitia; }
 			if (frek && frek.input) { frek.input.required = !isPanitia; }
-			if (fpengalaman && fpengalaman.input) { fpengalaman.input.required = !isPanitia; }
-			if (fbel && fbel.input) { fbel.input.required = isPeserta; }
+			if (fpengalaman && fpengalaman.input) {
+				fpengalaman.input.required = !isPanitia;
+				if (fpengalaman.wrap && fpengalaman.wrap.querySelector('span')) {
+					fpengalaman.wrap.querySelector('span').innerHTML = isPeserta ? 'Pengalaman Jabatan *' : 'Pengalaman / Profesi *';
+				}
+				fpengalaman.input.placeholder = isPeserta
+					? 'Contoh: Guru Kelas (5 Tahun), Wakasek (2 Tahun)'
+					: 'Contoh: Dosen / Widyaprada / Praktisi IT / Konsultan (5 Tahun)';
+			}
+			if (fbel && fbel.input) {
+				fbel.input.required = isPeserta;
+				if (fbel.wrap && fbel.wrap.querySelector('span')) {
+					fbel.wrap.querySelector('span').innerHTML = isPeserta
+						? 'Email belajar.id *'
+						: 'Email belajar.id <small style="color:#64748b;font-weight:normal;">(opsional jika bukan guru/tidak ada)</small>';
+				}
+				fbel.input.placeholder = isPeserta ? 'nama@belajar.id' : 'nama@belajar.id (kosongkan bila tidak ada)';
+			}
 
 			// Label NIK & NIP
 			fn.wrap.style.display = '';
@@ -1364,10 +1374,10 @@
 		var checkSetuju = el('input', { type: 'checkbox', id: 'f-setuju-kirim', value: '1' });
 		var labelSetuju = el('label', { class: 'kgtk-checkbox-label', style: 'display:flex;align-items:flex-start;gap:8px;margin:16px 0;font-size:13px;line-height:1.4;cursor:pointer;' }, [
 			checkSetuju,
-			el('span', { text: 'Saya bersedia menerima pemberitahuan pelatihan melalui email atau WhatsApp.' })
+			el('span', { text: isAcara ? 'Saya bersedia menerima pemberitahuan kegiatan acara melalui email atau WhatsApp.' : 'Saya bersedia menerima pemberitahuan pelatihan melalui email atau WhatsApp.' })
 		]);
 
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Kirim Pendaftaran Pelatihan' });
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: isAcara ? 'Kirim / Simpan Absensi Kehadiran' : 'Kirim Pendaftaran Pelatihan' });
 		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: '← Kembali ke Langkah Sebelumnya' });
 
 		var customNoteBio = (S.info && S.info.keterangan) ? String(S.info.keterangan).trim() : '';
@@ -1377,19 +1387,19 @@
 			noticeBoxBio.innerHTML =
 				'<div class="kgtk-notice-box-title">' +
 				'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-				'<span>Catatan Panitia / Informasi Pendaftaran:</span>' +
+				'<span>' + (isAcara ? 'Catatan Panitia / Informasi Acara:' : 'Catatan Panitia / Informasi Pendaftaran:') + '</span>' +
 				'</div>' +
 				'<div class="kgtk-notice-box-body">' + esc(customNoteBio) + '</div>';
 		}
 
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
-			el('h2', { text: baru ? 'Lengkapi biodata' : 'Periksa biodata' }),
-			el('p', { class: 'kgtk-muted', text: baru ? 'Isi data diri Anda untuk mendaftar. Tanda * wajib diisi.' : 'Data tersimpan dari pendaftaran sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.' }),
+			el('h2', { text: isAcara ? (baru ? 'Lengkapi Data Mengisi Absen' : 'Periksa Data Mengisi Absen') : (baru ? 'Lengkapi biodata' : 'Periksa biodata') }),
+			el('p', { class: 'kgtk-muted', text: isAcara ? (baru ? 'Isi data diri Anda untuk mengisi absen kehadiran. Tanda * wajib diisi.' : 'Data Anda tersimpan dari kegiatan sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.') : (baru ? 'Isi data diri Anda untuk mendaftar. Tanda * wajib diisi.' : 'Data tersimpan dari pendaftaran sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.') }),
 			noticeBoxBio,
 			err,
 			fn.wrap,
-			peran,
-			wrapGtk,
+			isAcara ? null : peran,
+			isAcara ? null : wrapGtk,
 			fnama.wrap,
 			rowGelar,
 			fnip.wrap,
@@ -1527,7 +1537,21 @@
 				errors.push({ label: 'Peran', msg: 'Peran belum dipilih.', el: sel });
 			}
 
-			if (v.peran === 'Panitia') {
+			if (isAcara) {
+				// Acara: peran selalu Peserta, Jabatan/GTK, Bank, Rekening, Pengalaman opsional
+				v.peran = 'Peserta';
+				v.jenis_gtk = '-';
+				v.jabatan = '-';
+				if (!v.bank) { v.bank = '-'; }
+				if (!v.rekening) { v.rekening = '-'; }
+				if (!v.pengalaman_jabatan) { v.pengalaman_jabatan = '-'; }
+				if (v.email_belajar && !EMAIL.test(v.email_belajar)) {
+					errors.push({ label: 'Email belajar.id', msg: 'Format email belajar.id tidak valid (kosongkan jika tidak ada).', el: fbel.input });
+				}
+				if (v.nuptk && !/^\d{1,16}$/.test(v.nuptk)) {
+					errors.push({ label: 'NUPTK', msg: 'NUPTK harus berupa maksimal 16 digit angka (kosongkan jika tidak ada).', el: fnuptk.input });
+				}
+			} else if (v.peran === 'Panitia') {
 				// Khusus Panitia: kosongkan bank, rekening, pengalaman_jabatan, email_belajar, nuptk, simpkb, npwp
 				v.bank = '-';
 				v.rekening = '-';
@@ -1661,53 +1685,85 @@
 	function vTerdaftar() {
 		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
-		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
+		var isTamu = (h && h.peran === 'Undangan');
+		var isAcara = (S.info && S.info.jenis === 'acara');
 		var isMultiKelas = !(S.info && Array.isArray(S.info.kelas) && S.info.kelas.length <= 1);
-		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], ['Sekolah', h.sekolah], ['Peran', h.peran]];
-		if (h.jenis_gtk) { items.push(['Jenis GTK', h.jenis_gtk]); }
-		items.push(['Pelatihan', h.pelatihan]);
-		if (isMultiKelas) { items.push(['Kelas', h.kelas_label]); }
+		var labelInstansi = (isTamu || isAcara) ? 'Instansi / Asal' : (h && h.peran === 'Peserta' ? 'Sekolah' : 'Instansi');
+		var labelPeran = isTamu ? 'Tamu Undangan' : (isAcara ? 'Peserta Acara' : (h ? h.peran : ''));
+		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], [labelInstansi, h.sekolah]];
+		if (!isAcara || isTamu) {
+			items.push(['Peran', labelPeran]);
+		}
+		if (h.jabatan || h.jenis_gtk) { items.push(['Jabatan', h.jabatan || h.jenis_gtk]); }
+		items.push([isAcara ? 'Nama Acara' : 'Pelatihan', h.pelatihan]);
+		if (isMultiKelas && h.kelas_label) { items.push([isAcara ? 'Kategori / Ruang' : 'Kelas', h.kelas_label]); }
 		var hasKelasH = (h.kelas_id && parseInt(h.kelas_id, 10) > 0) || (h.kelas && h.kelas !== 'Belum Ditentukan' && h.kelas !== 'Belum ada kelas' && h.kelas_label !== 'Menunggu Penentuan Admin');
 		items.push(
-			['Tanggal Pelatihan', (hasKelasH && h.tanggal && h.tanggal !== '-') ? h.tanggal : '-'],
-			['Lokasi', (hasKelasH && h.lokasi && h.lokasi !== '-') ? h.lokasi : '-']
+			[isAcara ? 'Tanggal Acara' : 'Tanggal Pelatihan', (hasKelasH && h.tanggal && h.tanggal !== '-') ? h.tanggal : ((h.tanggal && h.tanggal !== '-') ? h.tanggal : (S.info && S.info.tanggal ? S.info.tanggal : '-'))],
+			['Lokasi', (hasKelasH && h.lokasi && h.lokasi !== '-') ? h.lokasi : ((h.lokasi && h.lokasi !== '-') ? h.lokasi : (S.info && S.info.lokasi ? S.info.lokasi : '-'))]
 		);
 
-		return el('div', { class: 'kgtk-card kgtk-center' }, [
-			el('div', { class: 'kgtk-icon is-info', text: 'i' }), el('h2', { text: 'Kamu sudah terdaftar' }),
-			el('p', { class: 'kgtk-muted', text: 'NIK ini sudah terdaftar pada pelatihan ini.' }),
-			detailList(items), nomorBox(h), btn,
-			el('div', { style: 'margin-top:12px;' }, [bioBtn])
-		]);
+		var cardTitle = isTamu ? 'Presensi Tamu Sudah Tercatat' : (isAcara ? 'Absen Anda Sudah Tercatat' : 'Kamu sudah terdaftar');
+		var cardDesc = isTamu ? 'Data NIK ini sudah terdaftar sebagai Tamu Undangan pada kegiatan ini.' : (isAcara ? 'NIK ini sudah tercatat dalam daftar hadir kegiatan ini.' : 'NIK ini sudah terdaftar pada pelatihan ini.');
+
+		var cardKids = [
+			el('div', { class: 'kgtk-icon is-info', text: 'i' }),
+			el('h2', { text: cardTitle }),
+			el('p', { class: 'kgtk-muted', text: cardDesc }),
+			detailList(items), nomorBox(h), btn
+		];
+
+		if (!isTamu) {
+			var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
+			bioBtn.addEventListener('click', goBiodataSaya);
+			cardKids.push(el('div', { style: 'margin-top:12px;' }, [bioBtn]));
+		}
+
+		return el('div', { class: 'kgtk-card kgtk-center' }, cardKids);
 	}
 
 	function vSukses() {
 		var btn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Selesai' });
 		btn.addEventListener('click', resetNik);
-		var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
-		bioBtn.addEventListener('click', goBiodataSaya);
 
 		var h = S.hasil;
+		var isTamu = (h && h.peran === 'Undangan');
+		var isAcara = (S.info && S.info.jenis === 'acara');
 		var isMultiKelas = !(S.info && Array.isArray(S.info.kelas) && S.info.kelas.length <= 1);
-		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], ['Instansi', h.sekolah], ['Peran', h.peran]];
+		var labelInstansi = (isTamu || isAcara) ? 'Instansi / Asal' : (h && h.peran === 'Peserta' ? 'Sekolah' : 'Instansi');
+		var labelPeran = isTamu ? 'Tamu Undangan' : (isAcara ? 'Peserta Acara' : (h ? h.peran : ''));
+		var items = [['Nama', formatNamaGelar(h.nama, h.gelar_depan, h.gelar_belakang)], [labelInstansi, h.sekolah]];
+		if (!isAcara || isTamu) {
+			items.push(['Peran', labelPeran]);
+		}
 		if (h.jabatan || h.jenis_gtk) { items.push(['Jabatan', h.jabatan || h.jenis_gtk]); }
-		items.push(['Pelatihan', h.pelatihan]);
-		if (isMultiKelas) { items.push(['Kelas', h.kelas_label]); }
+		items.push([isAcara ? 'Nama Acara' : 'Pelatihan', h.pelatihan]);
+		if (isMultiKelas && h.kelas_label) { items.push([isAcara ? 'Kategori / Ruang' : 'Kelas', h.kelas_label]); }
 		var hasKelasH = (h.kelas_id && parseInt(h.kelas_id, 10) > 0) || (h.kelas && h.kelas !== 'Belum Ditentukan' && h.kelas !== 'Belum ada kelas' && h.kelas_label !== 'Menunggu Penentuan Admin');
 		items.push(
-			['Tanggal Pelatihan', (hasKelasH && h.tanggal && h.tanggal !== '-') ? h.tanggal : '-'],
-			['Lokasi', (hasKelasH && h.lokasi && h.lokasi !== '-') ? h.lokasi : '-']
+			[isAcara ? 'Tanggal Acara' : 'Tanggal Pelatihan', (hasKelasH && h.tanggal && h.tanggal !== '-') ? h.tanggal : ((h.tanggal && h.tanggal !== '-') ? h.tanggal : (S.info && S.info.tanggal ? S.info.tanggal : '-'))],
+			['Lokasi', (hasKelasH && h.lokasi && h.lokasi !== '-') ? h.lokasi : ((h.lokasi && h.lokasi !== '-') ? h.lokasi : (S.info && S.info.lokasi ? S.info.lokasi : '-'))]
 		);
 
-		return el('div', { class: 'kgtk-card kgtk-center' }, [
-			el('div', { class: 'kgtk-icon', text: '\u2713' }), el('h2', { text: 'Pendaftaran berhasil' }),
-			el('p', { class: 'kgtk-muted', text: 'Simpan informasi di bawah ini sebagai bukti pendaftaran.' }),
-			detailList(items), nomorBox(h), btn,
-			el('div', { style: 'margin-top:12px;' }, [bioBtn])
-		]);
+		var successTitle = isTamu ? 'Presensi Tamu Berhasil' : (isAcara ? 'Mengisi Absen Berhasil' : 'Pendaftaran berhasil');
+		var successDesc = isTamu ? 'Terima kasih atas kehadiran Bapak/Ibu pada kegiatan ini. Data presensi Anda telah tercatat.' : (isAcara ? 'Terima kasih atas kehadiran Bapak/Ibu. Data absensi kehadiran Anda telah berhasil dicatat ke dalam sistem.' : 'Simpan informasi di bawah ini sebagai bukti pendaftaran.');
+
+		var cardKids = [
+			el('div', { class: 'kgtk-icon', text: '\u2713' }),
+			el('h2', { text: successTitle }),
+			el('p', { class: 'kgtk-muted', text: successDesc }),
+			detailList(items), nomorBox(h), btn
+		];
+
+		if (!isTamu) {
+			var bioBtn = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Lihat Biodata & Riwayat Saya' });
+			bioBtn.addEventListener('click', goBiodataSaya);
+			cardKids.push(el('div', { style: 'margin-top:12px;' }, [bioBtn]));
+		}
+
+		return el('div', { class: 'kgtk-card kgtk-center' }, cardKids);
 	}
 
 	function vBiodataSaya() {

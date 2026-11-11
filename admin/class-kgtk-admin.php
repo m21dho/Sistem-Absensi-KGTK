@@ -301,55 +301,100 @@ class KGTK_Admin {
 	/* ====================== Render Halaman-Halaman Absen ====================== */
 
 	public static function sheet_pages_html( $p, $k, $peran, $rows, $jumlah, $tampil_kelas, $tanggal_khusus = '' ) {
-		$pages       = KGTK_Helpers::halaman( $rows, $jumlah );
-		$total_pages = count( $pages );
+		$rows       = array_values( (array) $rows );
+		$total_rows = max( 1, (int) $jumlah, count( $rows ) );
+		if ( 0 !== $total_rows % 2 ) {
+			$total_rows++;
+		}
 
-		foreach ( $pages as $p_idx => $halaman ) {
-			$is_last_page = ( $p_idx === $total_pages - 1 );
-			echo '<section class="kgtk-page">';
-			if ( 0 === $p_idx ) {
-				echo KGTK_Helpers::kop_html(); // phpcs:ignore WordPress.Security.EscapeOutput
-				echo '<h2 class="kgtk-doc-title">' . esc_html( KGTK_Helpers::judul_absen( $peran ) ) . '</h2>';
-				echo KGTK_Helpers::baris_info_html( $p, $tanggal_khusus, $k ); // phpcs:ignore WordPress.Security.EscapeOutput
-				if ( $tampil_kelas ) {
-					echo '<p class="kgtk-doc-kelas">' . esc_html( $k->label ) . '</p>';
+		echo '<section class="kgtk-page kgtk-page--first">';
+		echo KGTK_Helpers::kop_html(); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '<h2 class="kgtk-doc-title">' . esc_html( KGTK_Helpers::judul_absen( $peran ) ) . '</h2>';
+		echo KGTK_Helpers::baris_info_html( $p, $tanggal_khusus, $k ); // phpcs:ignore WordPress.Security.EscapeOutput
+		if ( $tampil_kelas ) {
+			echo '<p class="kgtk-doc-kelas">' . esc_html( $k->label ) . '</p>';
+		}
+		echo '<div class="kgtk-scroll"><table class="kgtk-table" style="table-layout:fixed;width:100%;box-sizing:border-box;">';
+		$col_inst_title = ( 'Panitia' === $peran ) ? 'Jabatan / Instansi' : 'Instansi';
+		echo '<colgroup><col style="width:6%;"><col style="width:31%;"><col style="width:31%;"><col style="width:16%;"><col style="width:16%;"></colgroup>';
+		echo '<thead><tr><th class="c-no">No</th><th class="c-nama">Nama</th><th class="c-inst">' . esc_html( $col_inst_title ) . '</th><th class="c-ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead>';
+		for ( $i = 0; $i < $total_rows; $i += 2 ) {
+			$row1       = isset( $rows[ $i ] ) ? $rows[ $i ] : null;
+			$no1        = (int) ( $i + 1 );
+			$nama1      = $row1 ? KGTK_Helpers::format_nama_gelar( $row1 ) : '';
+			$inst1      = '';
+			if ( $row1 ) {
+				$jab1 = ! empty( $row1->jabatan ) ? $row1->jabatan : ( ! empty( $row1->jenis_gtk ) ? $row1->jenis_gtk : '' );
+				$sek1 = ! empty( $row1->sekolah ) ? $row1->sekolah : '';
+				if ( 'Panitia' === $peran ) {
+					if ( ! empty( $jab1 ) && ! empty( $sek1 ) && $jab1 !== $sek1 ) {
+						$inst1 = $jab1 . ' - ' . $sek1;
+					} elseif ( ! empty( $jab1 ) ) {
+						$inst1 = $jab1;
+					} else {
+						$inst1 = $sek1;
+					}
+				} else {
+					$inst1 = $sek1;
 				}
 			}
-			echo '<div class="kgtk-scroll"><table class="kgtk-table" style="table-layout:fixed;width:100%;">';
-			echo '<colgroup><col style="width:7%;"><col style="width:30%;"><col style="width:37%;"><col style="width:13%;"><col style="width:13%;"></colgroup>';
-			echo '<thead><tr><th class="c-no">No</th><th class="c-nama">Nama</th><th class="c-inst">Instansi</th><th class="c-ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead><tbody>';
-			for ( $i = 0; $i < $halaman['jumlah']; $i++ ) {
-				$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
-				$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-				$is_first  = ( 0 === $i % 2 );
-				$has_pair  = ( $i + 1 < $halaman['jumlah'] );
-				echo '<tr>';
-				$nama_tampil = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '';
-				echo '<td class="c-no">' . $no_urutan . '</td>';
-				echo '<td class="c-nama">' . esc_html( $nama_tampil ) . '</td>';
-				echo '<td class="c-inst">' . ( $row ? esc_html( $row->sekolah ) : '' ) . '</td>';
-				if ( $is_first ) {
-					if ( $has_pair ) {
-						echo '<td class="c-ttd-col c-ttd-left" rowspan="2">' . $no_urutan . '</td><td class="c-ttd-col c-ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
+			$has_second = ( $i + 1 < $total_rows );
+
+			echo '<tbody class="kgtk-pair">';
+			echo '<tr>';
+			echo '<td class="c-no">' . $no1 . '</td>';
+			echo '<td class="c-nama">' . esc_html( $nama1 ) . '</td>';
+			echo '<td class="c-inst">' . esc_html( $inst1 ) . '</td>';
+			if ( $has_second ) {
+				$no2 = $no1 + 1;
+				echo '<td class="c-ttd-col c-ttd-left" rowspan="2">' . $no1 . '.</td>';
+				echo '<td class="c-ttd-col c-ttd-right" rowspan="2">' . $no2 . '.</td>';
+			} else {
+				echo '<td class="c-ttd-col c-ttd-left">' . $no1 . '.</td>';
+				echo '<td class="c-ttd-col c-ttd-right">&nbsp;</td>';
+			}
+			echo '</tr>';
+
+			if ( $has_second ) {
+				$row2  = isset( $rows[ $i + 1 ] ) ? $rows[ $i + 1 ] : null;
+				$no2   = (int) ( $i + 2 );
+				$nama2 = $row2 ? KGTK_Helpers::format_nama_gelar( $row2 ) : '';
+				$inst2 = '';
+				if ( $row2 ) {
+					$jab2 = ! empty( $row2->jabatan ) ? $row2->jabatan : ( ! empty( $row2->jenis_gtk ) ? $row2->jenis_gtk : '' );
+					$sek2 = ! empty( $row2->sekolah ) ? $row2->sekolah : '';
+					if ( 'Panitia' === $peran ) {
+						if ( ! empty( $jab2 ) && ! empty( $sek2 ) && $jab2 !== $sek2 ) {
+							$inst2 = $jab2 . ' - ' . $sek2;
+						} elseif ( ! empty( $jab2 ) ) {
+							$inst2 = $jab2;
+						} else {
+							$inst2 = $sek2;
+						}
 					} else {
-						echo '<td class="c-ttd-col c-ttd-left">' . $no_urutan . '</td><td class="c-ttd-col c-ttd-right">&nbsp;</td>';
+						$inst2 = $sek2;
 					}
 				}
+				echo '<tr>';
+				echo '<td class="c-no">' . $no2 . '</td>';
+				echo '<td class="c-nama">' . esc_html( $nama2 ) . '</td>';
+				echo '<td class="c-inst">' . esc_html( $inst2 ) . '</td>';
 				echo '</tr>';
 			}
-			echo '</tbody></table></div>';
-			if ( $is_last_page ) {
-				echo '<div class="kgtk-ttd-blok"><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="kgtk-ttd-space"></div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></div>';
-			}
-			echo '</section>';
+			echo '</tbody>';
 		}
+		echo '</table></div>';
+		echo KGTK_Helpers::ttd_blok_html( $p, $tanggal_khusus, $k ); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '</section>';
 	}
 
 	public static function sheet_html( $p, $k, $peran, $rows, $jumlah, $sub, $active, $tampil_kelas ) {
 		$daftar_hari  = KGTK_Helpers::daftar_hari_kelas( $p, $k );
 		$is_multi_day = count( $daftar_hari ) > 1;
 		$tgl_default  = KGTK_Helpers::rentang_tanggal_kelas( $p, $k );
-		$label        = 'Cetak ' . $k->label . ' - ' . $peran . ( $is_multi_day ? ' (Semua Hari)' : '' );
+		$is_class_ctx = ( is_object( $k ) && ! empty( $k->id ) && (int) $k->id > 0 );
+		$base_label   = ( 'Panitia' === $peran && ! $is_class_ctx ) ? 'Cetak Presensi Panitia' : ( 'Cetak ' . ( isset( $k->label ) ? $k->label : '' ) . ' - ' . $peran );
+		$label        = $base_label . ( $is_multi_day ? ' (Semua Hari)' : '' );
 
 		echo '<div class="kgtk-sub' . ( $active ? ' is-active' : '' ) . '" data-sub="' . esc_attr( $sub ) . '">';
 		echo '<div class="kgtk-toolbar kgtk-toolbar--split">';
@@ -367,7 +412,7 @@ class KGTK_Admin {
 		} else {
 			echo '<div></div>';
 		}
-		echo '<button type="button" class="kgtk-btn kgtk-btn--navy" data-cetak="' . esc_attr( $sub ) . '" data-base-label="' . esc_attr( 'Cetak ' . $k->label . ' - ' . $peran ) . '">&#128424;&#65039; ' . esc_html( $label ) . '</button>';
+		echo '<button type="button" class="kgtk-btn kgtk-btn--navy" data-cetak="' . esc_attr( $sub ) . '" data-base-label="' . esc_attr( $base_label ) . '">&#128424;&#65039; ' . esc_html( $label ) . '</button>';
 		echo '</div>';
 		echo '<div class="kgtk-card kgtk-sheet">';
 
@@ -517,9 +562,22 @@ class KGTK_Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Anda tidak memiliki akses.' );
 		}
+		$saved_notice = false;
+		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['_kgtk_settings_nonce'] ) ) {
+			$nonce = sanitize_text_field( wp_unslash( $_POST['_kgtk_settings_nonce'] ) );
+			if ( wp_verify_nonce( $nonce, 'kgtk_save_settings' ) ) {
+				$new_lebar = isset( $_POST['kgtk_lebar'] ) && 'tema' === $_POST['kgtk_lebar'] ? 'tema' : 'penuh';
+				$new_wa    = isset( $_POST['kgtk_wa_help'] ) ? sanitize_text_field( wp_unslash( $_POST['kgtk_wa_help'] ) ) : '08136798163';
+				$new_hapus = ! empty( $_POST['kgtk_hapus_saat_uninstall'] ) ? 1 : 0;
+				update_option( 'kgtk_lebar', $new_lebar );
+				update_option( 'kgtk_wa_help', $new_wa );
+				update_option( 'kgtk_hapus_saat_uninstall', $new_hapus );
+				$saved_notice = true;
+			}
+		}
 		$lebar   = get_option( 'kgtk_lebar', 'penuh' );
 		$wa_help = get_option( 'kgtk_wa_help', '08136798163' );
 
-		self::render_view( 'view-pengaturan', compact( 'lebar', 'wa_help' ) );
+		self::render_view( 'view-pengaturan', compact( 'lebar', 'wa_help', 'saved_notice' ) );
 	}
 }

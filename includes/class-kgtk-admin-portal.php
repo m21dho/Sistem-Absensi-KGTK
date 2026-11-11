@@ -93,10 +93,16 @@ class KGTK_Admin_Portal {
 			return true;
 		}
 
-		// 4. Jika sedang berada di admin-post.php (misalnya saat upload atau export), cek referer
-		if ( is_admin() && isset( $_SERVER['SCRIPT_NAME'] ) && false !== strpos( $_SERVER['SCRIPT_NAME'], 'admin-post.php' ) ) {
+		// 4. Jika sedang berada di admin-post.php, REST API, atau AJAX, cek referer apakah berasal dari portal
+		$is_bg_req = ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| ( defined( 'DOING_AJAX' ) && DOING_AJAX )
+			|| ( isset( $_SERVER['SCRIPT_NAME'] ) && false !== strpos( $_SERVER['SCRIPT_NAME'], 'admin-post.php' ) );
+		if ( $is_bg_req ) {
 			$ref = wp_get_raw_referer();
-			if ( $ref && ( false !== strpos( $ref, 'admin-pelatihan' ) || false !== strpos( $ref, 'kgtk_admin_portal=1' ) ) ) {
+			if ( ! $ref && isset( $_SERVER['HTTP_REFERER'] ) ) {
+				$ref = wp_unslash( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			}
+			if ( $ref && ( false !== strpos( $ref, 'admin-pelatihan' ) || false !== strpos( $ref, 'kgtk_admin_portal=1' ) || false !== strpos( $ref, 'kgtk_portal=admin' ) ) ) {
 				return true;
 			}
 		}

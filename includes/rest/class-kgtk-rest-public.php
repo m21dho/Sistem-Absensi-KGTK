@@ -140,25 +140,26 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 
 		if ( 'hp' === $tipe ) {
 			$stored = self::norm_hp( $guru_row['hp'] );
-		} else {
-			$stored = self::norm_email( $guru_row['email_belajar'] );
-		}
-
-		// Bila nilai tersimpan kosong, verifikasi harus gagal. Jangan cocokkan string kosong dengan string kosong.
-		if ( '' === $stored ) {
-			if ( 'hp' === $tipe ) {
+			if ( '' === $stored ) {
 				hash_equals( '089999999999', $target );
-			} else {
-				hash_equals( 'dummy@belajar.id', $target );
+				return false;
+			}
+			if ( hash_equals( $stored, $target ) ) {
+				return $guru_row;
 			}
 			return false;
+		} else {
+			$stored_bel = self::norm_email( $guru_row['email_belajar'] );
+			$stored_em  = self::norm_email( $guru_row['email'] );
+			if ( '' !== $stored_bel && hash_equals( $stored_bel, $target ) ) {
+				return $guru_row;
+			}
+			if ( '' !== $stored_em && hash_equals( $stored_em, $target ) ) {
+				return $guru_row;
+			}
+			hash_equals( 'dummy@belajar.id', $target );
+			return false;
 		}
-
-		if ( hash_equals( $stored, $target ) ) {
-			return $guru_row;
-		}
-
-		return false;
 	}
 
 	public static function public_cek_nik( WP_REST_Request $req ) {
@@ -566,7 +567,12 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 	}
 
 	/** Validasi dan sanitasi biodata peserta. Mengembalikan array data atau WP_Error. */
-	public static function validasi_peserta( $in ) {
+	public static function validasi_peserta( $in, $is_admin = false, $pelatihan = null ) {
+		if ( null === $pelatihan && ! empty( $in['kode'] ) ) {
+			$pelatihan = self::find_pelatihan( self::str( $in, 'kode' ) );
+		}
+		$is_acara = ( $pelatihan && isset( $pelatihan->jenis ) && 'acara' === $pelatihan->jenis );
+
 		$d = array(
 			'nik'                => self::str( $in, 'nik' ),
 			'nama'               => self::str( $in, 'nama' ),
@@ -663,11 +669,35 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$d['kabkota']    = $sek['kabkota'];
 		$d['sekolah_id'] = $sek['sekolah_id'];
 		$d['sekolah']    = $sek['sekolah'];
+
+		if ( $is_acara && empty( $d['peran'] ) ) {
+			$d['peran'] = 'Peserta';
+		}
+
 		if ( ! in_array( $d['peran'], KGTK_Helpers::PERAN, true ) ) {
 			return self::err( 'peran', 'Pilih peran yang tersedia: ' . implode( ', ', KGTK_Helpers::PERAN ) . '.', 422 );
 		}
 
-		if ( 'Panitia' === $d['peran'] ) {
+		if ( $is_acara ) {
+			// Acara: Bank, Rekening, Pengalaman Jabatan, NPWP opsional (default '-' jika kosong)
+			$d['bank']               = '' !== $d['bank'] ? $d['bank'] : '-';
+			$d['rekening']           = '' !== $d['rekening'] ? $d['rekening'] : '-';
+			$d['pengalaman_jabatan'] = '' !== $d['pengalaman_jabatan'] ? $d['pengalaman_jabatan'] : '-';
+			$d['jenis_gtk']          = '' !== $d['jenis_gtk'] ? $d['jenis_gtk'] : '-';
+			if ( '' !== $d['npwp'] && self::len( $d['npwp'] ) > 30 ) {
+				return self::err( 'npwp', 'NPWP maksimal 30 karakter (kosongkan jika tidak ada).', 422 );
+			}
+			$b = $d['email_belajar'];
+			if ( '' !== $b && ( ! is_email( $b ) || self::len( $b ) > 100 ) ) {
+				return self::err( 'email_belajar', 'Format email belajar.id tidak valid (kosongkan jika tidak ada).', 422 );
+			}
+			if ( '' !== $d['nuptk'] && ! preg_match( '/^\d{1,16}$/', $d['nuptk'] ) ) {
+				return self::err( 'nuptk', 'NUPTK harus berupa angka (maksimal 16 digit, kosongkan jika belum ada).', 422 );
+			}
+			if ( '' !== $d['simpkb'] && self::len( $d['simpkb'] ) > 100 ) {
+				return self::err( 'simpkb', 'SIMPKB maksimal 100 karakter (kosongkan jika tidak ada).', 422 );
+			}
+		} elseif ( 'Panitia' === $d['peran'] ) {
 			// Bank dan rekening untuk Panitia bersifat opsional
 			$d['bank']               = '' !== $d['bank'] ? $d['bank'] : '-';
 			$d['rekening']           = '' !== $d['rekening'] ? $d['rekening'] : '-';
@@ -679,6 +709,24 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 
 			if ( '' === $d['jenis_gtk'] ) {
 				$d['jenis_gtk'] = 'Panitia Pelaksana';
+			}
+		} elseif ( 'Undangan' === $d['peran'] ) {
+			// Bank dan rekening untuk Tamu Undangan bersifat opsional
+			$d['bank']               = '' !== $d['bank'] ? $d['bank'] : '-';
+			$d['rekening']           = '' !== $d['rekening'] ? $d['rekening'] : '-';
+			$d['pengalaman_jabatan'] = '' !== $d['pengalaman_jabatan'] ? $d['pengalaman_jabatan'] : '-';
+			$d['nuptk']              = '';
+			$d['simpkb']             = '';
+			if ( '' !== $d['npwp'] && self::len( $d['npwp'] ) > 30 ) {
+				return self::err( 'npwp', 'NPWP maksimal 30 karakter (kosongkan jika tidak ada).', 422 );
+			}
+			if ( '' === $d['jenis_gtk'] ) {
+				$d['jenis_gtk'] = ! empty( $in['jabatan'] ) ? self::str( $in, 'jabatan' ) : 'Tamu Undangan';
+			}
+			// Email belajar.id opsional untuk Tamu Undangan
+			$b = $d['email_belajar'];
+			if ( '' !== $b && ( ! is_email( $b ) || self::len( $b ) > 100 ) ) {
+				return self::err( 'email_belajar', 'Format email belajar.id tidak valid (kosongkan jika tidak ada).', 422 );
 			}
 		} else {
 			// Untuk yang lainnya (Peserta, Narasumber, Pengajar, Fasilitator, Penceramah, Pemateri): tetap sama
@@ -700,7 +748,11 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 					return self::err( 'jenis_gtk', 'Pilih Jabatan: ' . implode( ', ', KGTK_Helpers::JABATAN ) . '.', 422 );
 				}
 				$b = $d['email_belajar'];
-				if ( ! is_email( $b ) || self::len( $b ) > 100 || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $b ) ) {
+				$allow_empty_belajar = ( $is_admin || current_user_can( 'manage_options' ) );
+				if ( '' === $b && $allow_empty_belajar ) {
+					// Diizinkan kosong khusus admin saat input guru manual tanpa belajar.id
+					$d['email_belajar'] = '';
+				} elseif ( ! is_email( $b ) || self::len( $b ) > 100 || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $b ) ) {
 					return self::err( 'email_belajar', 'Email belajar.id wajib diisi dan harus berakhiran belajar.id untuk peran Peserta.', 422 );
 				}
 			} else {
@@ -778,8 +830,8 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		);
 
 		$k = null;
-		if ( 'Panitia' === $d['peran'] ) {
-			// Panitia tidak pernah terikat pada kelas peserta dan tidak mengurangi slot kelas.
+		if ( 'Panitia' === $d['peran'] || 'Undangan' === $d['peran'] ) {
+			// Panitia dan Undangan tidak pernah terikat pada kelas peserta dan tidak mengurangi slot kelas.
 			$k        = null;
 			$kelas_id = 0;
 		} elseif ( $kelas_id ) {
@@ -1007,17 +1059,18 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 
 		$p = self::find_pelatihan( self::str( $in, 'kode' ) );
 		if ( ! $p ) {
-			return self::err( 'kode_tidak_ada', 'Kode pelatihan tidak ditemukan.', 404 );
+			return self::err( 'kode_tidak_ada', 'Kode kegiatan tidak ditemukan.', 404 );
 		}
-		if ( KGTK_Helpers::is_deadline_passed( $p ) ) {
+		$peran_req = self::str( $in, 'peran' );
+		$is_acara  = ( isset( $p->jenis ) && 'acara' === $p->jenis );
+		if ( 'Undangan' !== $peran_req && KGTK_Helpers::is_deadline_passed( $p ) ) {
 			$dl_teks = KGTK_Helpers::effective_deadline_text( $p );
-			return self::err(
-				'pendaftaran_ditutup',
-				'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Pendaftaran baru tidak dapat diproses.',
-				422
-			);
+			$pesan   = $is_acara
+				? ( 'Waktu pengisian absen untuk kegiatan acara ini telah ditutup pada ' . $dl_teks . '. Pengisian absen baru tidak dapat diproses.' )
+				: ( 'Pendaftaran untuk kegiatan pelatihan ini telah ditutup pada ' . $dl_teks . '. Pendaftaran baru tidak dapat diproses.' );
+			return self::err( 'pendaftaran_ditutup', $pesan, 422 );
 		}
-		$d = self::validasi_peserta( $in );
+		$d = self::validasi_peserta( $in, false, $p );
 		if ( is_wp_error( $d ) ) {
 			return $d;
 		}

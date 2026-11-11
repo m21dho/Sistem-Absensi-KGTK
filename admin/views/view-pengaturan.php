@@ -10,10 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 ?>
 <div class="wrap kgtk-wrap kgtk-ui">
-	<?php KGTK_Admin::head( 'Pengaturan', 'Pengaturan plugin KGTK Pelatihan.' ); ?>
+	<?php KGTK_Admin::head( 'Pengaturan', 'Pengaturan sistem KGTK.' ); ?>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" class="kgtk-card kgtk-form">
-		<?php settings_fields( 'kgtk_settings' ); ?>
+	<?php if ( ! empty( $saved_notice ) ) : ?>
+		<div class="kgtk-ok" role="status" style="margin-bottom:14px;">Pengaturan berhasil disimpan.</div>
+	<?php endif; ?>
+
+	<form method="post" action="<?php echo esc_url( KGTK_Admin::page_url( 'pengaturan' ) ); ?>" class="kgtk-card kgtk-form">
+		<?php wp_nonce_field( 'kgtk_save_settings', '_kgtk_settings_nonce' ); ?>
 
 		<label class="kgtk-field">
 			<span>Lebar halaman pendaftaran</span>

@@ -28,7 +28,8 @@ foreach ( $kelas as $k ) {
 
 $pages_all = KGTK_Helpers::halaman( $tt_peserta, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, $tt_count ) );
 
-$default_pdf_url = KGTK_Export::tanda_terima_pdf_url( $p->id, 'Baju' );
+$default_extra   = 10;
+$default_pdf_url = KGTK_Export::tanda_terima_pdf_url( $p->id, 'Baju', 0, $default_extra );
 
 // Data untuk ATK Pengajar / Fasilitator / Pemateri
 $atk_items = KGTK_Helpers::get_atk_items( $p->id );
@@ -98,26 +99,106 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 					</div>
 				</div>
 			</div>
+
+			<div style="margin-top:14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+				<label for="kgtk-tt-extra-slots" style="font-weight:700;font-size:13px;color:#0b2d56;display:inline-flex;align-items:center;gap:6px;">
+					<span>&#9997;&#65039; Slot Tambahan Baris Kosong (Tanda Tangan Manual):</span>
+				</label>
+				<input type="number" class="kgtk-input" id="kgtk-tt-extra-slots" value="10" min="0" max="60" step="2" style="width:75px;padding:4px 8px;font-weight:700;text-align:center;">
+				<span class="kgtk-muted" style="font-size:12px;">baris kosong disediakan di akhir lembar tanda terima untuk peserta tambahan/susulan di lokasi.</span>
+			</div>
 		</div>
 
 		<!-- Lembar Tanda Terima Peserta Siap Cetak (A4) -->
 		<div class="kgtk-card kgtk-sheet" id="kgtk-tt-sheet-container">
 			<!-- Group 1: Semua Peserta -->
-			<div class="kgtk-tt-group" data-tt-group="all">
-				<?php
-				$tot_all_pages = count( $pages_all );
-				foreach ( $pages_all as $p_idx => $halaman ) :
-					$is_last = ( $p_idx === $tot_all_pages - 1 );
-				?>
-					<section class="kgtk-page">
-						<?php if ( 0 === $p_idx ) : ?>
-							<?php echo KGTK_Helpers::kop_html(); ?>
-							<h2 class="kgtk-doc-title">DAFTAR TANDA TERIMA<span class="kgtk-tt-item-display"> BAJU</span></h2>
-							<?php echo KGTK_Helpers::baris_info_html( $p ); ?>
-						<?php endif; ?>
+			<?php
+			$base_all_rows = (int) ( ceil( $tt_count / 2 ) * 2 );
+			$tot_all_rows  = $base_all_rows + $default_extra;
+			if ( 0 !== $tot_all_rows % 2 ) {
+				$tot_all_rows++;
+			}
+			?>
+			<div class="kgtk-tt-group is-active" data-tt-group="all" data-base-count="<?php echo (int) $tt_count; ?>">
+				<section class="kgtk-page kgtk-page--first">
+					<?php echo KGTK_Helpers::kop_html(); ?>
+					<h2 class="kgtk-doc-title">DAFTAR TANDA TERIMA<span class="kgtk-tt-item-display"> BAJU</span></h2>
+					<?php echo KGTK_Helpers::baris_info_html( $p ); ?>
+
+					<div class="kgtk-scroll">
+						<table class="kgtk-table kgtk-tt-table" style="table-layout:fixed;width:100%;">
+							<colgroup>
+								<col style="width:7%;">
+								<col style="width:30%;">
+								<col style="width:37%;">
+								<col style="width:13%;">
+								<col style="width:13%;">
+							</colgroup>
+							<thead>
+								<tr>
+									<th class="c-no">No</th>
+									<th class="c-nama">Nama Peserta</th>
+									<th class="c-inst">Asal Sekolah / Instansi</th>
+									<th class="c-ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th>
+								</tr>
+							</thead>
+							<tbody class="kgtk-tt-tbody">
+							<?php
+							for ( $i = 0; $i < $tot_all_rows; $i += 2 ) :
+								$row1     = isset( $tt_peserta[ $i ] ) ? $tt_peserta[ $i ] : null;
+								$no1      = (int) ( $i + 1 );
+								$has_pair = ( $i + 1 < $tot_all_rows );
+								$row2     = ( $has_pair && isset( $tt_peserta[ $i + 1 ] ) ) ? $tt_peserta[ $i + 1 ] : null;
+								$no2      = (int) ( $i + 2 );
+								$is_extra = ( $i >= $base_all_rows );
+							?>
+								<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) $i; ?>">
+									<td class="c-no"><?php echo (int) $no1; ?></td>
+									<td class="c-nama"><?php echo $row1 ? esc_html( KGTK_Helpers::format_nama_gelar( $row1 ) ) : '&nbsp;'; ?></td>
+									<td class="c-inst"><?php echo $row1 ? esc_html( $row1->sekolah ) : '&nbsp;'; ?></td>
+									<?php if ( $has_pair ) : ?>
+										<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no1; ?>.</td>
+										<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no1 + 1 ); ?>.</td>
+									<?php else : ?>
+										<td class="c-ttd-col c-ttd-left"><?php echo (int) $no1; ?>.</td>
+										<td class="c-ttd-col c-ttd-right">&nbsp;</td>
+									<?php endif; ?>
+								</tr>
+								<?php if ( $has_pair ) : ?>
+									<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) ( $i + 1 ); ?>">
+										<td class="c-no"><?php echo (int) $no2; ?></td>
+										<td class="c-nama"><?php echo $row2 ? esc_html( KGTK_Helpers::format_nama_gelar( $row2 ) ) : '&nbsp;'; ?></td>
+										<td class="c-inst"><?php echo $row2 ? esc_html( $row2->sekolah ) : '&nbsp;'; ?></td>
+									</tr>
+								<?php endif; ?>
+							<?php endfor; ?>
+							</tbody>
+						</table>
+					</div>
+
+					<?php echo KGTK_Helpers::ttd_blok_html( $p ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+				</section>
+			</div>
+
+			<!-- Group Per Kelas (Bila Multi Kelas atau spesifik kelas) -->
+			<?php foreach ( $kelas as $k ) :
+				$rows_k      = isset( $by_kelas[ (int) $k->id ] ) ? $by_kelas[ (int) $k->id ] : array();
+				$k_count     = count( $rows_k );
+				$base_k_rows = (int) ( ceil( $k_count / 2 ) * 2 );
+				$tot_k_rows  = $base_k_rows + $default_extra;
+				if ( 0 !== $tot_k_rows % 2 ) {
+					$tot_k_rows++;
+				}
+			?>
+				<div class="kgtk-tt-group is-hidden" data-tt-group="<?php echo (int) $k->id; ?>" data-base-count="<?php echo (int) $k_count; ?>" style="display:none;">
+					<section class="kgtk-page kgtk-page--first">
+						<?php echo KGTK_Helpers::kop_html(); ?>
+						<h2 class="kgtk-doc-title">DAFTAR TANDA TERIMA<span class="kgtk-tt-item-display"> BAJU</span></h2>
+						<?php echo KGTK_Helpers::baris_info_html( $p, '', $k ); ?>
+						<p class="kgtk-doc-kelas"><?php echo esc_html( $k->label ); ?></p>
 
 						<div class="kgtk-scroll">
-							<table class="kgtk-table" style="table-layout:fixed;width:100%;">
+							<table class="kgtk-table kgtk-tt-table" style="table-layout:fixed;width:100%;">
 								<colgroup>
 									<col style="width:7%;">
 									<col style="width:30%;">
@@ -133,115 +214,42 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 										<th class="c-ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th>
 									</tr>
 								</thead>
-								<tbody>
-									<?php
-									for ( $i = 0; $i < $halaman['jumlah']; $i++ ) :
-										$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
-										$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-										$is_first  = ( 0 === $i % 2 );
-										$has_pair  = ( $i + 1 < $halaman['jumlah'] );
-									?>
-										<tr>
-											<td class="c-no"><?php echo (int) $no_urutan; ?></td>
-											<td class="c-nama"><?php echo $row ? esc_html( $row->nama ) : '&nbsp;'; ?></td>
-											<td class="c-inst"><?php echo $row ? esc_html( $row->sekolah ) : '&nbsp;'; ?></td>
-											<?php if ( $is_first ) : ?>
-												<?php if ( $has_pair ) : ?>
-													<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no_urutan; ?></td>
-													<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no_urutan + 1 ); ?></td>
-												<?php else : ?>
-													<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?></td>
-													<td class="c-ttd-col c-ttd-right">&nbsp;</td>
-												<?php endif; ?>
-											<?php endif; ?>
+								<tbody class="kgtk-tt-tbody">
+								<?php
+								for ( $i = 0; $i < $tot_k_rows; $i += 2 ) :
+									$row1     = isset( $rows_k[ $i ] ) ? $rows_k[ $i ] : null;
+									$no1      = (int) ( $i + 1 );
+									$has_pair = ( $i + 1 < $tot_k_rows );
+									$row2     = ( $has_pair && isset( $rows_k[ $i + 1 ] ) ) ? $rows_k[ $i + 1 ] : null;
+									$no2      = (int) ( $i + 2 );
+									$is_extra = ( $i >= $base_k_rows );
+								?>
+									<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) $i; ?>">
+										<td class="c-no"><?php echo (int) $no1; ?></td>
+										<td class="c-nama"><?php echo $row1 ? esc_html( KGTK_Helpers::format_nama_gelar( $row1 ) ) : '&nbsp;'; ?></td>
+										<td class="c-inst"><?php echo $row1 ? esc_html( $row1->sekolah ) : '&nbsp;'; ?></td>
+										<?php if ( $has_pair ) : ?>
+											<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no1; ?>.</td>
+											<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no1 + 1 ); ?>.</td>
+										<?php else : ?>
+											<td class="c-ttd-col c-ttd-left"><?php echo (int) $no1; ?>.</td>
+											<td class="c-ttd-col c-ttd-right">&nbsp;</td>
+										<?php endif; ?>
+									</tr>
+									<?php if ( $has_pair ) : ?>
+										<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) ( $i + 1 ); ?>">
+											<td class="c-no"><?php echo (int) $no2; ?></td>
+											<td class="c-nama"><?php echo $row2 ? esc_html( KGTK_Helpers::format_nama_gelar( $row2 ) ) : '&nbsp;'; ?></td>
+											<td class="c-inst"><?php echo $row2 ? esc_html( $row2->sekolah ) : '&nbsp;'; ?></td>
 										</tr>
-									<?php endfor; ?>
+									<?php endif; ?>
+								<?php endfor; ?>
 								</tbody>
 							</table>
 						</div>
 
-						<?php if ( $is_last ) : ?>
-							<div class="kgtk-ttd-blok">
-								<em><?php echo esc_html( KGTK_Helpers::label_pj( $p ) ); ?></em>
-								<div class="kgtk-ttd-space"></div>
-								<strong><?php echo esc_html( KGTK_Helpers::nama_pj( $p ) ); ?></strong>
-							</div>
-						<?php endif; ?>
+						<?php echo KGTK_Helpers::ttd_blok_html( $p, '', $k ); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 					</section>
-				<?php endforeach; ?>
-			</div>
-
-			<!-- Group Per Kelas (Bila Multi Kelas atau spesifik kelas) -->
-			<?php foreach ( $kelas as $k ) :
-				$rows_k    = isset( $by_kelas[ (int) $k->id ] ) ? $by_kelas[ (int) $k->id ] : array();
-				$pages_k   = KGTK_Helpers::halaman( $rows_k, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, count( $rows_k ) ) );
-				$tot_k_pgs = count( $pages_k );
-			?>
-				<div class="kgtk-tt-group" data-tt-group="<?php echo (int) $k->id; ?>" style="display:none;">
-					<?php foreach ( $pages_k as $p_idx => $halaman ) :
-						$is_last = ( $p_idx === $tot_k_pgs - 1 );
-					?>
-						<section class="kgtk-page">
-							<?php if ( 0 === $p_idx ) : ?>
-								<?php echo KGTK_Helpers::kop_html(); ?>
-								<h2 class="kgtk-doc-title">DAFTAR TANDA TERIMA<span class="kgtk-tt-item-display"> BAJU</span></h2>
-								<?php echo KGTK_Helpers::baris_info_html( $p ); ?>
-								<p class="kgtk-doc-kelas"><?php echo esc_html( $k->label ); ?></p>
-							<?php endif; ?>
-
-							<div class="kgtk-scroll">
-								<table class="kgtk-table" style="table-layout:fixed;width:100%;">
-									<colgroup>
-										<col style="width:7%;">
-										<col style="width:30%;">
-										<col style="width:37%;">
-										<col style="width:13%;">
-										<col style="width:13%;">
-									</colgroup>
-									<thead>
-										<tr>
-											<th class="c-no">No</th>
-											<th class="c-nama">Nama Peserta</th>
-											<th class="c-inst">Asal Sekolah / Instansi</th>
-											<th class="c-ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th>
-										</tr>
-									</thead>
-									<tbody>
-										<?php
-										for ( $i = 0; $i < $halaman['jumlah']; $i++ ) :
-											$row       = isset( $halaman['rows'][ $i ] ) ? $halaman['rows'][ $i ] : null;
-											$no_urutan = (int) ( $halaman['mulai'] + $i + 1 );
-											$is_first  = ( 0 === $i % 2 );
-											$has_pair  = ( $i + 1 < $halaman['jumlah'] );
-										?>
-											<tr>
-												<td class="c-no"><?php echo (int) $no_urutan; ?></td>
-												<td class="c-nama"><?php echo $row ? esc_html( $row->nama ) : '&nbsp;'; ?></td>
-												<td class="c-inst"><?php echo $row ? esc_html( $row->sekolah ) : '&nbsp;'; ?></td>
-												<?php if ( $is_first ) : ?>
-													<?php if ( $has_pair ) : ?>
-														<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no_urutan; ?></td>
-														<td class="c-ttd-col c-ttd-right" rowspan="2"><?php echo (int) ( $no_urutan + 1 ); ?></td>
-													<?php else : ?>
-														<td class="c-ttd-col c-ttd-left"><?php echo (int) $no_urutan; ?></td>
-														<td class="c-ttd-col c-ttd-right">&nbsp;</td>
-													<?php endif; ?>
-												<?php endif; ?>
-											</tr>
-										<?php endfor; ?>
-									</tbody>
-								</table>
-							</div>
-
-							<?php if ( $is_last ) : ?>
-								<div class="kgtk-ttd-blok">
-									<em><?php echo esc_html( KGTK_Helpers::label_pj( $p ) ); ?></em>
-									<div class="kgtk-ttd-space"></div>
-									<strong><?php echo esc_html( KGTK_Helpers::nama_pj( $p ) ); ?></strong>
-								</div>
-							<?php endif; ?>
-						</section>
-					<?php endforeach; ?>
 				</div>
 			<?php endforeach; ?>
 		</div>

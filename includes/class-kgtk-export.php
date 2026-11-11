@@ -149,10 +149,11 @@ class KGTK_Export {
 		);
 	}
 
-	public static function tanda_terima_pdf_url( $id, $barang = 'Baju', $kelas_id = 0 ) {
+	public static function tanda_terima_pdf_url( $id, $barang = 'Baju', $kelas_id = 0, $extra_slots = 10 ) {
 		$args = array(
-			'action' => 'kgtk_tanda_terima_pdf',
-			'id'     => (int) $id,
+			'action'      => 'kgtk_tanda_terima_pdf',
+			'id'          => (int) $id,
+			'extra_slots' => (int) $extra_slots,
 		);
 		$barang = trim( (string) $barang );
 		if ( '' !== $barang ) {
@@ -209,10 +210,11 @@ class KGTK_Export {
 			wp_die( 'Library PDF belum terpasang.', 'Error', array( 'response' => 500 ) );
 		}
 
-		$barang   = isset( $_GET['barang'] ) ? sanitize_text_field( wp_unslash( $_GET['barang'] ) ) : 'Baju';
-		$kelas_id = isset( $_GET['kelas_id'] ) ? absint( $_GET['kelas_id'] ) : 0;
+		$barang      = isset( $_GET['barang'] ) ? sanitize_text_field( wp_unslash( $_GET['barang'] ) ) : 'Baju';
+		$kelas_id    = isset( $_GET['kelas_id'] ) ? absint( $_GET['kelas_id'] ) : 0;
+		$extra_slots = isset( $_GET['extra_slots'] ) ? absint( $_GET['extra_slots'] ) : 10;
 
-		self::pdf_tanda_terima( $pelatihan, $barang, $kelas_id );
+		self::pdf_tanda_terima( $pelatihan, $barang, $kelas_id, $extra_slots );
 	}
 
 	public static function handle_semua_biodata_pdf() {
@@ -933,32 +935,34 @@ class KGTK_Export {
 			$title_suffix .= ' - ' . KGTK_Helpers::format_hari_tanggal( $tanggal_filter );
 		}
 		$html         = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Daftar Hadir' . esc_html( $title_suffix ) . ' - ' . esc_html( $p->nama ) . '</title><style>
-@page { margin: 0.51cm 1.0cm 0.51cm 1.0cm; }
+@page { margin: 0.6cm 1.8cm 0.6cm 1.8cm; }
 body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 12pt; color: #000; }
-.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 16px; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 4px; }
 .kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
-.kgtk-kop-tbl td.kgtk-kop-line { width: 1px !important; max-width: 1px !important; min-width: 1px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }
 .page { page-break-after: always; }
 .page.last { page-break-after: auto; }
-h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 1px; margin: 0 0 6px; }
-.kgtk-doc-info { text-align: center; margin: 6px 0 12px; font-size: 12pt; line-height: 1.4; }
+h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 2px; }
+.kgtk-doc-info { text-align: center; margin: 2px 0 4px; font-size: 12pt; line-height: 1.25; }
 .kgtk-doc-info div { font-size: 12pt; }
-p.info { text-align: center; margin: 0 0 4px; font-size: 12pt; }
+p.info { text-align: center; margin: 0 0 3px; font-size: 12pt; }
 p.kelas { text-align: center; margin: 0 0 4px; font-size: 12pt; font-weight: bold; }
-table.abs { width: 100%; border-collapse: collapse; margin-top: 14px; margin-bottom: 18px; table-layout: fixed; }
-table.abs th, table.abs td { border: 1px solid #000; padding: 0 8px; height: 33px; font-size: 12pt; }
+table.abs { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 0; table-layout: fixed; }
+table.abs tbody.kgtk-pair { page-break-inside: avoid; }
+table.abs tr { page-break-inside: avoid; }
+table.abs th, table.abs td { border: 1px solid #000; padding: 1px 6px; height: 32px; font-size: 12pt; vertical-align: middle; }
 table.abs th { background: none; color: #000; text-align: center; height: 26px; font-size: 12pt; font-weight: bold; }
-th.no, td.no { text-align: center; width: 7%; font-size: 12pt; padding: 0 2px; }
-th.nama, td.nama { width: 30%; font-size: 12pt; padding: 0 6px; }
-th.inst, td.inst { width: 37%; font-size: 12pt; padding: 0 6px; }
-th.ttd { width: 26%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 13%; padding: 2px 6px; font-size: 11pt; line-height: 1.15; }
+th.no, td.no { text-align: center; width: 6%; font-size: 12pt; padding: 0 2px; }
+th.nama, td.nama { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
+th.inst, td.inst { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
+th.ttd { width: 32%; white-space: nowrap; text-align: center; }
+td.ttd-col { width: 16%; padding: 2px 5px; font-size: 11pt; font-weight: bold; line-height: 1.15; }
 td.ttd-left { text-align: left; vertical-align: top; }
 td.ttd-right { text-align: right; vertical-align: bottom; }
-table.ttd { width: 100%; margin-top: 18px; border-collapse: collapse; }
-table.ttd td { border: 0; vertical-align: top; }
+table.ttd { display: none; }
 td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
-div.space { height: 62px; }
+div.space { height: 40px; }
 </style></head><body>';
 
 		$items  = array();
@@ -1011,29 +1015,34 @@ div.space { height: 62px; }
 				}
 			}
 			$html .= '<table class="abs">';
-			$html .= '<colgroup><col style="width:7%;"><col style="width:30%;"><col style="width:37%;"><col style="width:13%;"><col style="width:13%;"></colgroup>';
-			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama</th><th class="inst">Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead><tbody>';
-			for ( $n = 0; $n < $it['halaman']['jumlah']; $n++ ) {
-				$row       = isset( $it['halaman']['rows'][ $n ] ) ? $it['halaman']['rows'][ $n ] : null;
-				$no_urutan = $it['halaman']['mulai'] + $n + 1;
-				$is_first  = ( 0 === $n % 2 );
-				$has_pair  = ( $n + 1 < $it['halaman']['jumlah'] );
-				$nama_cetak = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '&nbsp;';
-				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . esc_html( $nama_cetak )
-					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
-				if ( $is_first ) {
-					if ( $has_pair ) {
-						$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no_urutan . '</td><td class="ttd-col ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
-					} else {
-						$html .= '<td class="ttd-col ttd-left">' . $no_urutan . '</td><td class="ttd-col ttd-right">&nbsp;</td>';
-					}
+			$html .= '<colgroup><col style="width:6%;"><col style="width:31%;"><col style="width:31%;"><col style="width:16%;"><col style="width:16%;"></colgroup>';
+			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama</th><th class="inst">Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead>';
+			for ( $n = 0; $n < $it['halaman']['jumlah']; $n += 2 ) {
+				$row1       = isset( $it['halaman']['rows'][ $n ] ) ? $it['halaman']['rows'][ $n ] : null;
+				$no1        = $it['halaman']['mulai'] + $n + 1;
+				$nama1      = $row1 ? KGTK_Helpers::format_nama_gelar( $row1 ) : '&nbsp;';
+				$inst1      = $row1 ? esc_html( $row1->sekolah ) : '&nbsp;';
+				$has_second = ( $n + 1 < $it['halaman']['jumlah'] );
+
+				$html .= '<tbody class="kgtk-pair">';
+				$html .= '<tr><td class="no">' . $no1 . '</td><td class="nama">' . esc_html( $nama1 ) . '</td><td class="inst">' . $inst1 . '</td>';
+				if ( $has_second ) {
+					$no2   = $no1 + 1;
+					$row2  = isset( $it['halaman']['rows'][ $n + 1 ] ) ? $it['halaman']['rows'][ $n + 1 ] : null;
+					$nama2 = $row2 ? KGTK_Helpers::format_nama_gelar( $row2 ) : '&nbsp;';
+					$inst2 = $row2 ? esc_html( $row2->sekolah ) : '&nbsp;';
+					$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no1 . '.</td><td class="ttd-col ttd-right" rowspan="2">' . $no2 . '.</td></tr>';
+					$html .= '<tr><td class="no">' . $no2 . '</td><td class="nama">' . esc_html( $nama2 ) . '</td><td class="inst">' . $inst2 . '</td></tr>';
+				} else {
+					$html .= '<td class="ttd-col ttd-left">' . $no1 . '.</td><td class="ttd-col ttd-right">&nbsp;</td></tr>';
 				}
-				$html .= '</tr>';
+				$html .= '</tbody>';
 			}
-			$html .= '</tbody></table>';
+			$html .= '</table>';
 
 			if ( $it['is_last'] ) {
-				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
+				$titimangsa_pdf = KGTK_Helpers::format_titimangsa( $p, $it['tanggal'], $s['kelas'] );
+				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><div>' . esc_html( $titimangsa_pdf ) . '</div><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
 			}
 			$html .= '</div>';
 		}
@@ -1126,7 +1135,7 @@ div.space { height: 62px; }
 		$h .= '<tr><td>&nbsp;</td><td class="ttd-right">';
 		$h .= '<div>' . esc_html( $kabkota ) . ', ' . esc_html( $tgl_ttd ) . '</div>';
 		$h .= '<div class="space">&nbsp;</div>';
-		$h .= '<div><u><strong>' . esc_html( $nama_lengkap ) . '</strong></u></div>';
+		$h .= '<div><strong>' . esc_html( $nama_lengkap ) . '</strong></div>';
 		$h .= '</td></tr></table>';
 
 		$h .= '</div>';
@@ -1179,20 +1188,21 @@ div.space { height: 62px; }
 		$html  = '<!DOCTYPE html><html><head><meta charset="utf-8">';
 		$html .= '<title>' . esc_html( $doc_title ) . '</title>';
 		$html .= '<style>';
-		/* Margin disamakan dengan cetak absen: Atas 0.51cm, Bawah 0.51cm, Kiri 1.0cm, Kanan 1.0cm */
-		$html .= '@page { margin: 0.51cm 1.0cm 0.51cm 1.0cm; size: A4 portrait; }';
+		/* Margin proporsional lebih ke dalam untuk kebutuhan jilid: Atas 1.5cm, Kanan 2.2cm, Bawah 1.5cm, Kiri 2.8cm */
+		$html .= '@page { margin: 1.5cm 2.2cm 1.5cm 2.8cm; size: A4 portrait; }';
 		$html .= 'body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 12pt; color: #000; line-height: 1.35; margin: 0; padding: 0; }';
 		$html .= '.bio-page { page-break-after: always; clear: both; }';
 		$html .= '.bio-page:last-child { page-break-after: avoid; }';
-		$html .= '.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 12px; }';
+		$html .= '.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 10px; }';
 		$html .= '.kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }';
-		$html .= '.kgtk-kop-tbl td.kgtk-kop-line { width: 1px !important; max-width: 1px !important; min-width: 1px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }';
+		$html .= '.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }';
+		$html .= '.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }';
 		$html .= '.title-box { text-align: center; margin: 6pt 0 10pt; }';
 		$html .= '.title-main { font-size: 15pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }';
 		$html .= '.title-sub { font-size: 13pt; font-weight: bold; margin-bottom: 2px; line-height: 1.25; }';
 		$html .= '.title-loc { font-size: 13pt; margin-bottom: 8pt; }';
 		$html .= 'table.bio-box { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 14px; }';
-		$html .= 'table.bio-box td { padding: 3.5px 8px; font-size: 11.5pt; vertical-align: top; border: 0; }';
+		$html .= 'table.bio-box td { padding: 3.5px 10px; font-size: 11.5pt; vertical-align: top; border: 0; }';
 		$html .= 'td.lbl { width: 34%; }';
 		$html .= 'td.sep { width: 4%; text-align: center; }';
 		$html .= 'td.val { width: 62%; }';
@@ -1230,7 +1240,7 @@ div.space { height: 62px; }
 	 * @param string $barang   Nama barang yang diterima.
 	 * @param int    $kelas_id ID kelas (0 untuk semua kelas).
 	 */
-	public static function pdf_tanda_terima( $p, $barang = 'Baju', $kelas_id = 0 ) {
+	public static function pdf_tanda_terima( $p, $barang = 'Baju', $kelas_id = 0, $extra_slots = 10 ) {
 		global $wpdb;
 		$tp = KGTK_DB::table( 'peserta' );
 		$tk = KGTK_DB::table( 'kelas' );
@@ -1269,35 +1279,45 @@ div.space { height: 62px; }
 		$barang_upper = $barang_clean ? strtoupper( $barang_clean ) : '';
 		$judul        = 'DAFTAR TANDA TERIMA' . ( $barang_upper ? ' ' . $barang_upper : '' );
 
-		$pages       = KGTK_Helpers::halaman( $rows, max( KGTK_Helpers::BARIS_HALAMAN_AWAL, count( $rows ) ) );
+		// Sediakan slot baris kosong tambahan untuk antisipasi peserta tambahan manual di lokasi
+		$extra_slots     = max( 0, (int) $extra_slots );
+		$base_count      = (int) ( ceil( count( $rows ) / 2 ) * 2 );
+		$tot_export_rows = $base_count + $extra_slots;
+		if ( 0 !== $tot_export_rows % 2 ) {
+			$tot_export_rows++;
+		}
+
+		$pages       = KGTK_Helpers::halaman( $rows, $tot_export_rows );
 		$total_pages = count( $pages );
 
 		$html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' . esc_html( $judul . ' - ' . $p->nama ) . '</title><style>
-@page { margin: 0.51cm 1.0cm 0.51cm 1.0cm; }
+@page { margin: 0.6cm 1.8cm 0.6cm 1.8cm; }
 body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 12pt; color: #000; }
-.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 16px; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 4px; }
 .kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
-.kgtk-kop-tbl td.kgtk-kop-line { width: 1px !important; max-width: 1px !important; min-width: 1px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }
 .page { page-break-after: always; }
 .page.last { page-break-after: auto; }
-h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 1px; margin: 0 0 6px; }
-.kgtk-doc-info { text-align: center; margin: 6px 0 12px; font-size: 12pt; line-height: 1.4; }
+h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 2px; }
+.kgtk-doc-info { text-align: center; margin: 2px 0 4px; font-size: 12pt; line-height: 1.25; }
 .kgtk-doc-info div { font-size: 12pt; }
 p.kelas { text-align: center; margin: 0 0 4px; font-size: 12pt; font-weight: bold; }
-table.abs { width: 100%; border-collapse: collapse; margin-top: 14px; margin-bottom: 18px; table-layout: fixed; }
-table.abs th, table.abs td { border: 1px solid #000; padding: 0 8px; height: 33px; font-size: 12pt; }
+table.abs { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 0; table-layout: fixed; }
+table.abs tbody.kgtk-pair { page-break-inside: avoid; }
+table.abs tr { page-break-inside: avoid; }
+table.abs th, table.abs td { border: 1px solid #000; padding: 1px 6px; height: 32px; font-size: 12pt; vertical-align: middle; }
 table.abs th { background: none; color: #000; text-align: center; height: 26px; font-size: 12pt; font-weight: bold; }
-th.no, td.no { text-align: center; width: 7%; font-size: 12pt; padding: 0 2px; }
-th.nama, td.nama { width: 30%; font-size: 12pt; padding: 0 6px; }
-th.inst, td.inst { width: 37%; font-size: 12pt; padding: 0 6px; }
-th.ttd { width: 26%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 13%; padding: 2px 6px; font-size: 11pt; line-height: 1.15; }
+th.no, td.no { text-align: center; width: 6%; font-size: 12pt; padding: 0 2px; }
+th.nama, td.nama { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
+th.inst, td.inst { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
+th.ttd { width: 32%; white-space: nowrap; text-align: center; }
+td.ttd-col { width: 16%; padding: 2px 5px; font-size: 11pt; font-weight: bold; line-height: 1.15; }
 td.ttd-left { text-align: left; vertical-align: top; }
 td.ttd-right { text-align: right; vertical-align: bottom; }
-table.ttd { width: 100%; margin-top: 18px; border-collapse: collapse; }
-table.ttd td { border: 0; vertical-align: top; }
+table.ttd { display: none; }
 td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
-div.space { height: 62px; }
+div.space { height: 40px; }
 </style></head><body>';
 
 		foreach ( $pages as $p_idx => $halaman ) {
@@ -1312,29 +1332,34 @@ div.space { height: 62px; }
 				}
 			}
 			$html .= '<table class="abs">';
-			$html .= '<colgroup><col style="width:7%;"><col style="width:30%;"><col style="width:37%;"><col style="width:13%;"><col style="width:13%;"></colgroup>';
-			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama Peserta</th><th class="inst">Asal Sekolah / Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead><tbody>';
-			for ( $n = 0; $n < $halaman['jumlah']; $n++ ) {
-				$row       = isset( $halaman['rows'][ $n ] ) ? $halaman['rows'][ $n ] : null;
-				$no_urutan = $halaman['mulai'] + $n + 1;
-				$is_first  = ( 0 === $n % 2 );
-				$has_pair  = ( $n + 1 < $halaman['jumlah'] );
-				$nama_cetak = $row ? KGTK_Helpers::format_nama_gelar( $row ) : '&nbsp;';
-				$html     .= '<tr><td class="no">' . $no_urutan . '</td><td class="nama">' . esc_html( $nama_cetak )
-					. '</td><td class="inst">' . ( $row ? esc_html( $row->sekolah ) : '&nbsp;' ) . '</td>';
-				if ( $is_first ) {
-					if ( $has_pair ) {
-						$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no_urutan . '</td><td class="ttd-col ttd-right" rowspan="2">' . ( $no_urutan + 1 ) . '</td>';
-					} else {
-						$html .= '<td class="ttd-col ttd-left">' . $no_urutan . '</td><td class="ttd-col ttd-right">&nbsp;</td>';
-					}
+			$html .= '<colgroup><col style="width:6%;"><col style="width:31%;"><col style="width:31%;"><col style="width:16%;"><col style="width:16%;"></colgroup>';
+			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama Peserta</th><th class="inst">Asal Sekolah / Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead>';
+			for ( $n = 0; $n < $halaman['jumlah']; $n += 2 ) {
+				$row1       = isset( $halaman['rows'][ $n ] ) ? $halaman['rows'][ $n ] : null;
+				$no1        = $halaman['mulai'] + $n + 1;
+				$nama1      = $row1 ? KGTK_Helpers::format_nama_gelar( $row1 ) : '&nbsp;';
+				$inst1      = $row1 ? esc_html( $row1->sekolah ) : '&nbsp;';
+				$has_second = ( $n + 1 < $halaman['jumlah'] );
+
+				$html .= '<tbody class="kgtk-pair">';
+				$html .= '<tr><td class="no">' . $no1 . '</td><td class="nama">' . esc_html( $nama1 ) . '</td><td class="inst">' . $inst1 . '</td>';
+				if ( $has_second ) {
+					$no2   = $no1 + 1;
+					$row2  = isset( $halaman['rows'][ $n + 1 ] ) ? $halaman['rows'][ $n + 1 ] : null;
+					$nama2 = $row2 ? KGTK_Helpers::format_nama_gelar( $row2 ) : '&nbsp;';
+					$inst2 = $row2 ? esc_html( $row2->sekolah ) : '&nbsp;';
+					$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no1 . '.</td><td class="ttd-col ttd-right" rowspan="2">' . $no2 . '.</td></tr>';
+					$html .= '<tr><td class="no">' . $no2 . '</td><td class="nama">' . esc_html( $nama2 ) . '</td><td class="inst">' . $inst2 . '</td></tr>';
+				} else {
+					$html .= '<td class="ttd-col ttd-left">' . $no1 . '.</td><td class="ttd-col ttd-right">&nbsp;</td></tr>';
 				}
-				$html .= '</tr>';
+				$html .= '</tbody>';
 			}
-			$html .= '</tbody></table>';
+			$html .= '</table>';
 
 			if ( $is_last ) {
-				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
+				$titimangsa_tt = KGTK_Helpers::format_titimangsa( $p );
+				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><div>' . esc_html( $titimangsa_tt ) . '</div><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
 			}
 			$html .= '</div>';
 		}
@@ -1415,11 +1440,12 @@ div.space { height: 62px; }
 		$judul = 'DAFTAR TANDA TERIMA ALAT TULIS KANTOR (ATK)';
 
 		$html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' . esc_html( $judul . ' - ' . $p->nama ) . '</title><style>
-@page { margin: 0.51cm 1.0cm 0.51cm 1.0cm; }
+@page { margin: 0.5cm 0.85cm 0.5cm 0.85cm; }
 body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 11.5pt; color: #000; line-height: 1.35; }
-.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 14px; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 10px; }
 .kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
-.kgtk-kop-tbl td.kgtk-kop-line { width: 1px !important; max-width: 1px !important; min-width: 1px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }
 h1 { text-align: center; font-size: 13.5pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 4px; text-transform: uppercase; }
 .subjudul { text-align: center; font-size: 11pt; font-weight: bold; color: #222; margin: 0 0 10px; }
 table.info-tbl { width: 100%; margin: 0 0 12px; border-collapse: collapse; border: 0; font-size: 11pt; }

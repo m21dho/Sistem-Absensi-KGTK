@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KGTK_DB {
 
-	const VERSION         = '20';
+	const VERSION         = '21';
 	const OPTION_VERSION  = 'kgtk_db_version';
 	const OPTION_PAGE_ID  = 'kgtk_page_id';
 	const DEFAULT_TIPE_PJ = 'Penanggung Jawab';
@@ -76,6 +76,7 @@ class KGTK_DB {
 			"CREATE TABLE {$p}kgtk_pelatihan (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   nama varchar(200) NOT NULL,
+  jenis varchar(20) NOT NULL DEFAULT 'pelatihan',
   penyelenggara varchar(200) NOT NULL DEFAULT '',
   tanggal_mulai date NOT NULL,
   tanggal_selesai date NOT NULL,
@@ -266,6 +267,7 @@ class KGTK_DB {
 		$existing_cols = self::get_existing_columns( $table );
 
 		$spec = array(
+			'jenis'                => "varchar(20) NOT NULL DEFAULT 'pelatihan' AFTER nama",
 			'tipe_pj'              => "varchar(50) NOT NULL DEFAULT 'Penanggung Jawab' AFTER penanggung_jawab",
 			'deadline_pendaftaran' => 'datetime DEFAULT NULL AFTER tanggal_selesai',
 			'kabkota'              => "varchar(80) NOT NULL DEFAULT '' AFTER lokasi",

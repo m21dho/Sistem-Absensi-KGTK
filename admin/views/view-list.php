@@ -34,10 +34,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 				$absen = KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'absen', 'id' => (int) $p->id ) );
 				$u_st       = isset( $und_stats[ (int) $p->id ] ) ? $und_stats[ (int) $p->id ] : null;
 				$is_expired = KGTK_Helpers::is_deadline_passed( $p );
+				$is_acara   = ( isset( $p->jenis ) && 'acara' === $p->jenis );
 			?>
 				<article class="kgtk-card kgtk-pcard" data-id="<?php echo (int) $p->id; ?>">
 					<div class="kgtk-pcard-top">
-						<h2><?php echo esc_html( $p->nama ); ?></h2>
+						<div>
+							<div style="margin-bottom:6px;">
+								<?php if ( $is_acara ) : ?>
+									<span class="kgtk-badge" style="background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4;font-size:11px;font-weight:700;padding:2px 8px;">Absen Acara</span>
+								<?php else : ?>
+									<span class="kgtk-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:2px 8px;">Pelatihan</span>
+								<?php endif; ?>
+							</div>
+							<h2><?php echo esc_html( $p->nama ); ?></h2>
+						</div>
 						<?php if ( $is_expired ) : ?>
 							<span class="kgtk-badge is-full">Ditutup (Deadline)</span>
 						<?php elseif ( $tot['penuh'] ) : ?>
@@ -101,6 +111,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						$pel_json = wp_json_encode( array(
 							'id'                   => (int) $p->id,
 							'nama'                 => $p->nama,
+							'jenis'                => isset( $p->jenis ) && ! empty( $p->jenis ) ? $p->jenis : 'pelatihan',
 							'penyelenggara'        => $p->penyelenggara,
 							'tanggal_mulai'        => $p->tanggal_mulai,
 							'tanggal_selesai'      => $p->tanggal_selesai,

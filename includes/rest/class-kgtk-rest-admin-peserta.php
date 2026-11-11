@@ -18,7 +18,7 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		if ( empty( $in['pengalaman_jabatan'] ) ) {
 			$in['pengalaman_jabatan'] = '-';
 		}
-		$d  = KGTK_REST_Public::validasi_peserta( $in );
+		$d  = KGTK_REST_Public::validasi_peserta( $in, true, $p );
 		if ( is_wp_error( $d ) ) {
 			return $d;
 		}
@@ -133,21 +133,27 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		);
 	}
 
-	/** Admin assign kelas masal (banyak peserta sekaligus). */
+	/** Admin assign kelas masal (banyak peserta atau panitia sekaligus). */
 	public static function admin_bulk_assign_kelas( WP_REST_Request $req ) {
 		global $wpdb;
-		$pelatihan_id = absint( $req['id'] );
-		$p = KGTK_Helpers::get_by_id( $pelatihan_id );
-		if ( ! $p ) {
-			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
-		}
-
-		$in          = self::params( $req );
-		$peserta_ids = isset( $in['peserta_ids'] ) && is_array( $in['peserta_ids'] ) ? array_map( 'absint', $in['peserta_ids'] ) : array();
-		$kelas_id    = isset( $in['kelas_id'] ) ? absint( $in['kelas_id'] ) : 0;
+		$in           = self::params( $req );
+		$pelatihan_id = isset( $req['id'] ) ? absint( $req['id'] ) : ( isset( $in['pelatihan_id'] ) ? absint( $in['pelatihan_id'] ) : 0 );
+		$peserta_ids  = isset( $in['peserta_ids'] ) && is_array( $in['peserta_ids'] ) ? array_map( 'absint', $in['peserta_ids'] ) : array();
+		$kelas_id     = isset( $in['kelas_id'] ) ? absint( $in['kelas_id'] ) : 0;
 
 		if ( empty( $peserta_ids ) ) {
-			return self::err( 'peserta_kosong', 'Pilih minimal satu peserta.', 422 );
+			return self::err( 'peserta_kosong', 'Pilih minimal satu peserta atau panitia.', 422 );
+		}
+
+		$tp = KGTK_DB::table( 'peserta' );
+		if ( ! $pelatihan_id && ! empty( $peserta_ids ) ) {
+			$first_id     = (int) $peserta_ids[0];
+			$pelatihan_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT pelatihan_id FROM {$tp} WHERE id = %d", $first_id ) );
+		}
+
+		$p = $pelatihan_id ? KGTK_Helpers::get_by_id( $pelatihan_id ) : null;
+		if ( ! $p ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
 		}
 
 		$tk = KGTK_DB::table( 'kelas' );
@@ -158,7 +164,6 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 			}
 		}
 
-		$tp = KGTK_DB::table( 'peserta' );
 		$placeholders = implode( ',', array_fill( 0, count( $peserta_ids ), '%d' ) );
 		$query = $wpdb->prepare(
 			"UPDATE {$tp} SET kelas_id = %d WHERE pelatihan_id = %d AND id IN ({$placeholders})",
@@ -198,9 +203,6 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		if ( 'Peserta' === $peran ) {
 			if ( empty( $peserta->jenis_gtk ) || ( ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) && ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) {
 				$update['jenis_gtk'] = 'Guru';
-			}
-			if ( empty( $peserta->email_belajar ) || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $peserta->email_belajar ) ) {
-				$update['email_belajar'] = ! empty( $peserta->nik ) ? $peserta->nik . '@guru.belajar.id' : 'guru@belajar.id';
 			}
 		}
 
@@ -328,12 +330,10 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 			if ( empty( $in['jenis_gtk'] ) || ( ! in_array( $in['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $in['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) ) {
 				$in['jenis_gtk'] = ( ! empty( $peserta->jenis_gtk ) && ( in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) || in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) ? $peserta->jenis_gtk : 'Guru';
 			}
-			if ( empty( $in['email_belajar'] ) || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $in['email_belajar'] ) ) {
-				$in['email_belajar'] = ( ! empty( $peserta->email_belajar ) && preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $peserta->email_belajar ) ) ? $peserta->email_belajar : ( ! empty( $in['nik'] ) ? $in['nik'] . '@guru.belajar.id' : 'guru@belajar.id' );
-			}
 		}
 
-		$d  = KGTK_REST_Public::validasi_peserta( $in );
+		$pelatihan_obj = self::find_pelatihan( $peserta->pelatihan_id );
+		$d             = KGTK_REST_Public::validasi_peserta( $in, true, $pelatihan_obj );
 		if ( is_wp_error( $d ) ) {
 			return $d;
 		}
@@ -472,6 +472,139 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 				'peserta'    => $out,
 				'kelas'      => self::kelas_payload( KGTK_Helpers::kelas_stats( $pelatihan_id ) ),
 				'unassigned' => KGTK_Helpers::unassigned_count( $pelatihan_id ),
+			)
+		);
+	}
+
+	/** Admin melihat daftar guru di master data yang belum/tidak terdaftar di pelatihan ini. */
+	public static function admin_list_guru_master( WP_REST_Request $req ) {
+		global $wpdb;
+		$pelatihan_id = absint( $req['id'] );
+		$tg           = KGTK_DB::table( 'guru' );
+		$tp           = KGTK_DB::table( 'peserta' );
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT g.id, g.nik, g.nama, g.gelar_depan, g.gelar_belakang, g.sekolah, g.kabkota, g.hp, g.peran, g.jenis_gtk, g.updated_at
+				 FROM {$tg} g
+				 LEFT JOIN {$tp} p ON p.nik = g.nik AND p.pelatihan_id = %d
+				 WHERE p.id IS NULL
+				 ORDER BY g.updated_at DESC, g.id DESC
+				 LIMIT 100",
+				$pelatihan_id
+			)
+		);
+
+		$list = array();
+		foreach ( (array) $rows as $r ) {
+			$nama_tampil = KGTK_Helpers::format_nama_gelar( $r->nama, $r->gelar_depan, $r->gelar_belakang );
+			$list[] = array(
+				'id'             => (int) $r->id,
+				'nik'            => $r->nik,
+				'nama'           => $r->nama,
+				'nama_tampil'    => $nama_tampil,
+				'gelar_depan'    => $r->gelar_depan,
+				'gelar_belakang' => $r->gelar_belakang,
+				'sekolah'        => $r->sekolah,
+				'kabkota'        => $r->kabkota,
+				'hp'             => $r->hp,
+				'peran'          => ! empty( $r->peran ) ? $r->peran : 'Peserta',
+				'jenis_gtk'      => $r->jenis_gtk,
+				'updated_at'     => $r->updated_at,
+			);
+		}
+
+		return self::respond( array( 'guru' => $list ) );
+	}
+
+	/** Admin memulihkan / mendaftarkan kembali guru dari master data ke pelatihan ini. */
+	public static function admin_pulihkan_guru( WP_REST_Request $req ) {
+		global $wpdb;
+		$pelatihan_id = absint( $req['id'] );
+		$in           = self::params( $req );
+		$nik          = isset( $in['nik'] ) ? sanitize_text_field( $in['nik'] ) : '';
+
+		if ( ! preg_match( '/^\d{16}$/', $nik ) ) {
+			return self::err( 'nik_invalid', 'NIK tidak valid (harus 16 digit).', 422 );
+		}
+
+		$p = KGTK_Helpers::get_by_id( $pelatihan_id );
+		if ( ! $p ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+
+		$tp = KGTK_DB::table( 'peserta' );
+		$tg = KGTK_DB::table( 'guru' );
+
+		// Cek apakah sudah terdaftar
+		$ada = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tp} WHERE pelatihan_id = %d AND nik = %s", $pelatihan_id, $nik ) );
+		if ( $ada ) {
+			return self::err( 'sudah_ada', 'Guru dengan NIK ini sudah terdaftar pada pelatihan ini.', 422 );
+		}
+
+		// Ambil data lengkap dari master data guru
+		$guru = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$tg} WHERE nik = %s LIMIT 1", $nik ), ARRAY_A );
+		if ( ! $guru ) {
+			return self::err( 'guru_tidak_ada', 'Data guru tidak ditemukan di Master Data.', 404 );
+		}
+
+		$now = current_time( 'mysql' );
+		$insert_data = array(
+			'pelatihan_id'       => $pelatihan_id,
+			'kelas_id'           => 0, // Unassigned
+			'nik'                => $guru['nik'],
+			'nama'               => $guru['nama'],
+			'gelar_depan'        => $guru['gelar_depan'],
+			'gelar_belakang'     => $guru['gelar_belakang'],
+			'tempat_lahir'       => $guru['tempat_lahir'],
+			'tanggal_lahir'      => $guru['tanggal_lahir'],
+			'jenis_kelamin'      => $guru['jenis_kelamin'],
+			'alamat'             => $guru['alamat'],
+			'alamat_instansi'    => $guru['alamat_instansi'],
+			'pangkat_golongan'   => $guru['pangkat_golongan'],
+			'agama'              => $guru['agama'],
+			'pendidikan'         => $guru['pendidikan'],
+			'bank'               => $guru['bank'],
+			'rekening'           => $guru['rekening'],
+			'npwp'               => $guru['npwp'],
+			'pengalaman_jabatan' => $guru['pengalaman_jabatan'],
+			'sekolah'            => $guru['sekolah'],
+			'kabkota'            => $guru['kabkota'],
+			'sekolah_id'         => (int) $guru['sekolah_id'],
+			'peran'              => ! empty( $guru['peran'] ) ? $guru['peran'] : 'Peserta',
+			'jenis_gtk'          => $guru['jenis_gtk'],
+			'hp'                 => $guru['hp'],
+			'nisn'               => $guru['nisn'],
+			'nuptk'              => $guru['nuptk'],
+			'nip'                => $guru['nip'],
+			'email'              => $guru['email'],
+			'email_belajar'      => $guru['email_belajar'],
+			'email_guru'         => $guru['email_guru'],
+			'simpkb'             => $guru['simpkb'],
+			'setuju_kirim'       => 1,
+			'terverifikasi'      => 1,
+			'created_at'         => $now,
+		);
+
+		$wpdb->insert( $tp, $insert_data );
+		$new_id = (int) $wpdb->insert_id;
+
+		if ( ! $new_id ) {
+			return self::err( 'gagal_simpan', 'Gagal mendaftarkan kembali peserta ke pelatihan.', 500 );
+		}
+
+		// Hubungkan kembali jika ada di data undangan
+		try {
+			KGTK_Undangan::cocokkan_peserta( $new_id, $pelatihan_id );
+		} catch ( \Throwable $e ) {}
+
+		$nama_tampil = KGTK_Helpers::format_nama_gelar( $guru['nama'], $guru['gelar_depan'], $guru['gelar_belakang'] );
+
+		return self::respond(
+			array(
+				'peserta_id' => $new_id,
+				'nama'       => $nama_tampil,
+				'pesan'      => 'Guru ' . $nama_tampil . ' berhasil didaftarkan kembali ke pelatihan ini!',
 			)
 		);
 	}

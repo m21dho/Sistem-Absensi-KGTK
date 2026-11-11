@@ -23,7 +23,7 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 <div class="wrap kgtk-wrap kgtk-ui">
 	<?php
 	KGTK_Admin::notice_libs();
-	KGTK_Admin::head( 'Data Panitia Pelatihan', 'Kelola daftar panitia pelaksana kegiatan pelatihan yang tersimpan dalam sistem.', $act );
+	KGTK_Admin::head( 'Data Panitia', 'Kelola daftar panitia pelaksana kegiatan yang tersimpan dalam sistem.', $act );
 	?>
 
 	<!-- KPI Summary Banner -->
@@ -38,7 +38,7 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 				<div style="font-size:26px;font-weight:800;color:#0b2d56;margin-top:4px;"><?php echo (int) $with_nik; ?> <span style="font-size:14px;font-weight:600;color:#64748b;">orang</span></div>
 			</div>
 			<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;">
-				<div class="kgtk-muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;">Total Penugasan Pelatihan</div>
+				<div class="kgtk-muted" style="font-size:12.5px;font-weight:600;text-transform:uppercase;">Total Penugasan</div>
 				<div style="font-size:26px;font-weight:800;color:#0b2d56;margin-top:4px;"><?php echo (int) $total_tugas; ?> <span style="font-size:14px;font-weight:600;color:#64748b;">kali bertugas</span></div>
 			</div>
 		</div>
@@ -49,7 +49,7 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 		<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
 			<div>
 				<h2 class="kgtk-h2" style="margin:0 0 4px;">Daftar Panitia Tersimpan</h2>
-				<p class="kgtk-muted" style="margin:0;font-size:13px;">Data panitia ini dapat langsung dipilih saat membuat pelatihan baru tanpa perlu mengetik ulang.</p>
+				<p class="kgtk-muted" style="margin:0;font-size:13px;">Data panitia ini dapat langsung dipilih saat membuat kegiatan baru tanpa perlu mengetik ulang.</p>
 			</div>
 			<div style="min-width:260px;flex:1;max-width:380px;">
 				<input type="text" class="kgtk-input" id="kgtk-search-panitia-master" placeholder="Cari nama, NIK, jabatan, atau instansi..." style="height:38px;font-size:13px;">
@@ -153,8 +153,8 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 									</div>
 								</td>
 								<td style="text-align:center;">
-									<span class="kgtk-badge is-active" title="Jumlah pelatihan yang pernah diikuti sebagai panitia">
-										<?php echo (int) ( $pan->total_pelatihan ?? 0 ); ?> Pelatihan
+									<span class="kgtk-badge is-active" title="Jumlah kegiatan yang pernah diikuti sebagai panitia">
+										<?php echo (int) ( $pan->total_pelatihan ?? 0 ); ?> Kegiatan
 									</span>
 								</td>
 								<td style="text-align:center;">

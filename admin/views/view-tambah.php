@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var string $back  URL kembali ke detail absen.
  */
 
+$is_acara  = ( isset( $p->jenis ) && 'acara' === $p->jenis );
 $req_peran = isset( $_GET['peran'] ) ? sanitize_text_field( wp_unslash( $_GET['peran'] ) ) : 'Peserta';
 if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 	$req_peran = 'Peserta';
@@ -18,22 +19,26 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 <div class="wrap kgtk-wrap kgtk-ui">
 	<?php
 	KGTK_Admin::head(
-		'Tambah Peserta & Tim Kegiatan',
+		$is_acara ? 'Tambah Peserta Absen Acara' : 'Tambah Peserta & Tim Kegiatan',
 		$p->nama,
-		'<a class="kgtk-btn kgtk-btn--ghost" id="kgtk-head-back-btn" href="' . esc_url( $back ) . '">&larr; Kembali ke Detail Pelatihan</a>'
+		'<a class="kgtk-btn kgtk-btn--ghost" id="kgtk-head-back-btn" href="' . esc_url( $back ) . '">&larr; ' . ( $is_acara ? 'Kembali ke Detail Acara' : 'Kembali ke Detail Pelatihan' ) . '</a>'
 	);
 	?>
 
-	<form id="kgtk-form-tambah" class="kgtk-card kgtk-form" data-pelatihan="<?php echo (int) $p->id; ?>" novalidate>
+	<form id="kgtk-form-tambah" class="kgtk-card kgtk-form" data-pelatihan="<?php echo (int) $p->id; ?>" data-jenis="<?php echo esc_attr( $is_acara ? 'acara' : 'pelatihan' ); ?>" novalidate>
 		<p class="kgtk-muted" style="margin-top:0;margin-bottom:18px;font-size:13.5px;line-height:1.5;">
-			Gunakan satu fungsi ini untuk menambahkan <strong>Peserta</strong>, <strong>Panitia</strong>, <strong>Narasumber</strong>, <strong>Pengajar</strong>, <strong>Fasilitator</strong>, <strong>Penceramah</strong>, atau <strong>Pemateri</strong>. Jika NIK pernah tersimpan, data guru/petugas akan terisi otomatis dan dapat diedit. Tanda * wajib diisi.
+			<?php if ( $is_acara ) : ?>
+				Tambahkan data peserta yang hadir pada kegiatan acara ini. Jika NIK pernah tersimpan, data peserta akan terisi otomatis dan dapat diperbarui. Tanda * wajib diisi.
+			<?php else : ?>
+				Gunakan satu fungsi ini untuk menambahkan <strong>Peserta</strong>, <strong>Panitia</strong>, <strong>Narasumber</strong>, <strong>Pengajar</strong>, <strong>Fasilitator</strong>, <strong>Penceramah</strong>, atau <strong>Pemateri</strong>. Jika NIK pernah tersimpan, data guru/petugas akan terisi otomatis dan dapat diedit. Tanda * wajib diisi.
+			<?php endif; ?>
 		</p>
 
 		<div id="kgtk-tambah-ok" class="kgtk-ok" role="status" hidden></div>
 		<div id="kgtk-tambah-error" class="kgtk-alert" role="alert" hidden></div>
 
 		<!-- Pilih Peran Utama (Paling Atas) -->
-		<div class="kgtk-field" style="background:#f0f7ff;padding:16px 18px;border-radius:14px;border:1.5px solid #bfdbfe;margin-bottom:20px;">
+		<div class="kgtk-field" style="<?php echo ( $is_acara && 'Peserta' === $req_peran ) ? 'display:none;' : 'background:#f0f7ff;padding:16px 18px;border-radius:14px;border:1.5px solid #bfdbfe;margin-bottom:20px;'; ?>">
 			<label for="kgtk-tambah-peran" style="font-weight:800;font-size:14px;color:#0b2d56;display:flex;align-items:center;gap:8px;margin-bottom:8px;">
 				<span style="font-size:18px;">&#128100;</span>
 				<span>Pilih Peran Dalam Kegiatan Ini *</span>
@@ -44,8 +49,8 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 						<?php
 						$label_icon = '';
 						switch ( $peran ) {
-							case 'Peserta': $label_icon = 'Peserta (Guru Peserta Pelatihan)'; break;
-							case 'Panitia': $label_icon = 'Panitia (Panitia Pelaksana Kegiatan)'; break;
+							case 'Peserta': $label_icon = 'Peserta'; break;
+							case 'Panitia': $label_icon = 'Panitia'; break;
 							case 'Narasumber': $label_icon = 'Narasumber'; break;
 							case 'Pengajar': $label_icon = 'Pengajar / Instruktur'; break;
 							case 'Fasilitator': $label_icon = 'Fasilitator'; break;
@@ -192,7 +197,7 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</label>
 
 		<!-- Field Jabatan Khusus Peserta -->
-		<label class="kgtk-field" id="kgtk-admin-wrap-jenis-gtk">
+		<label class="kgtk-field" id="kgtk-admin-wrap-jenis-gtk" <?php echo $is_acara ? 'style="display:none;"' : ''; ?>>
 			<span>Jabatan GTK *</span>
 			<select class="kgtk-input" name="jenis_gtk" id="kgtk-tambah-jenis-gtk">
 				<option value="">-- Pilih Jabatan GTK --</option>
@@ -227,13 +232,19 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		?>
 
 		<label class="kgtk-field" id="kgtk-admin-wrap-email-belajar">
-			<span id="kgtk-lbl-email-belajar">Email belajar.id *</span>
-			<input type="email" class="kgtk-input" name="email_belajar" id="kgtk-input-email-belajar" maxlength="100" placeholder="nama@belajar.id" required>
-			<small id="kgtk-hint-email-belajar">Wajib berakhiran belajar.id untuk peran Peserta (opsional untuk tim/panitia luar).</small>
+			<span id="kgtk-lbl-email-belajar">Email belajar.id <small style="color:#64748b;font-weight:normal;"><?php echo $is_acara ? '(opsional / tidak wajib)' : '(opsional jika guru belum memiliki akun)'; ?></small></span>
+			<input type="email" class="kgtk-input" name="email_belajar" id="kgtk-input-email-belajar" maxlength="100" placeholder="nama@guru.belajar.id (opsional)">
+			<?php if ( ! $is_acara ) : ?>
+			<label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;margin-top:5px;cursor:pointer;">
+				<input type="checkbox" id="kgtk-chk-tanpa-belajar-id" name="tanpa_belajar_id">
+				<span>Guru ini belum memiliki email @belajar.id (dapat dikosongkan)</span>
+			</label>
+			<?php endif; ?>
+			<small id="kgtk-hint-email-belajar"><?php echo $is_acara ? 'Opsional untuk peserta kegiatan acara (boleh dikosongkan).' : 'Wajib berakhiran belajar.id jika diisi. Jika guru belum memiliki akun belajar.id, kosongkan atau centang kotak di atas.'; ?></small>
 		</label>
 
 		<label class="kgtk-field" id="kgtk-admin-wrap-kelas">
-			<span>Kelas Pelatihan</span>
+			<span><?php echo $is_acara ? 'Kategori / Ruang Acara' : 'Kelas'; ?></span>
 			<select class="kgtk-input" name="kelas_id" id="kgtk-tambah-kelas">
 				<option value="0">Otomatis (sesuai urutan kelas)</option>
 				<?php foreach ( $kelas as $k ) : ?>

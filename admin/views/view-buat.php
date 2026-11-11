@@ -14,8 +14,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<form id="kgtk-form-buat" class="kgtk-card kgtk-form" method="post" novalidate>
 		<div id="kgtk-form-error" class="kgtk-alert" role="alert" hidden></div>
 
+		<!-- Pemilihan Tipe Kegiatan: Pelatihan vs Absen Acara -->
+		<div class="kgtk-field" style="margin-bottom:20px;">
+			<span style="font-size:14px;font-weight:700;color:#0f172a;">Pilih Jenis / Tipe Kegiatan <b>*</b></span>
+			<div class="kgtk-tipe-kegiatan-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-top:8px;">
+				<label class="kgtk-tipe-card is-active" id="kgtk-tipe-pelatihan-card" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:2px solid #2563eb;background:#eff6ff;border-radius:10px;cursor:pointer;transition:all 0.2s;">
+					<input type="radio" name="jenis" value="pelatihan" checked style="margin-top:3px;accent-color:#2563eb;">
+					<div>
+						<strong style="display:block;color:#1e3a8a;font-size:14.5px;">Pelatihan (Diklat / Workshop)</strong>
+						<small style="color:#475569;font-size:12px;display:block;margin-top:3px;line-height:1.45;">Kegiatan pelatihan dengan pembagian kelas belajar, batas kuota slot peserta, dan presensi per kelas.</small>
+					</div>
+				</label>
+				<label class="kgtk-tipe-card" id="kgtk-tipe-acara-card" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:2px solid #cbd5e1;background:#fff;border-radius:10px;cursor:pointer;transition:all 0.2s;">
+					<input type="radio" name="jenis" value="acara" style="margin-top:3px;accent-color:#0d9488;">
+					<div>
+						<strong style="display:block;color:#0f172a;font-size:14.5px;">Absen Acara (Presensi Kegiatan / Rapat)</strong>
+						<small style="color:#475569;font-size:12px;display:block;margin-top:3px;line-height:1.45;">Daftar hadir acara umum, rapat dinas, atau seminar dengan pembagian kategori/ruang (mis. Tamu Undangan, Tamu Pemenang, dsb).</small>
+					</div>
+				</label>
+			</div>
+		</div>
+
 		<label class="kgtk-field">
-			<span>Nama pelatihan <b>*</b></span>
+			<span id="kgtk-label-nama">Nama pelatihan <b>*</b></span>
 			<input type="text" class="kgtk-input" name="nama" maxlength="200" required>
 		</label>
 
@@ -82,17 +103,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<small>Catatan ini akan otomatis muncul pada pop up kuota kelas dan formulir pendaftaran peserta (misal: jika ada kelas penuh dan peserta dialihkan ke kelas lain).</small>
 		</label>
 
-		<fieldset class="kgtk-field">
-			<legend>Kelas dan slot <b>*</b></legend>
-			<small>Ketik nama kelas (mis. Kelas PAUD, Kelas SD, Kelas SMP, Kelas SMA) dan jumlah slotnya. Jika jadwal tanggal atau batas pendaftaran tiap kelas berbeda-beda, isi kolom <b>Mulai</b>, <b>Selesai</b>, dan <b>Batas Daftar</b> pada masing-masing kelas (kosongkan jika mengikuti jadwal &amp; batas pendaftaran umum di atas).</small>
-			<div class="kgtk-kelas" id="kgtk-kelas-list"><?php echo KGTK_Admin::kelas_row( 'Kelas A', 30 ); ?></div>
-			<template id="kgtk-kelas-tpl"><?php echo KGTK_Admin::kelas_row( '', 30 ); ?></template>
-			<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-kelas-add">+ Tambah kelas</button>
-		</fieldset>
+		<div id="kgtk-wrap-kelas">
+			<fieldset class="kgtk-field">
+				<legend><span id="kgtk-legend-kelas">Kelas dan slot</span> <b>*</b></legend>
+				<small id="kgtk-desc-kelas">Ketik nama kelas (mis. Kelas PAUD, Kelas SD, Kelas SMP, Kelas SMA) atau kategori peserta (mis. Tamu Undangan, Tamu Pemenang) dan jumlah slotnya. Jika jadwal tanggal atau batas pendaftaran tiap kelas berbeda-beda, isi kolom <b>Mulai</b>, <b>Selesai</b>, dan <b>Batas Daftar</b> pada masing-masing kelas (kosongkan jika mengikuti jadwal &amp; batas pendaftaran umum di atas).</small>
+				<div class="kgtk-kelas" id="kgtk-kelas-list"><?php echo KGTK_Admin::kelas_row( 'Kelas A', 30 ); ?></div>
+				<template id="kgtk-kelas-tpl"><?php echo KGTK_Admin::kelas_row( '', 30 ); ?></template>
+				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-kelas-add">+ Tambah kelas / kategori</button>
+			</fieldset>
+		</div>
 
 		<fieldset class="kgtk-field">
-			<legend>Panitia Pelatihan (opsional)</legend>
-			<small>Tambahkan susunan panitia untuk pelatihan ini. Anda dapat memilih dari daftar panitia yang sudah tersimpan atau mengetik panitia baru secara langsung. Panitia tidak memakai kuota slot peserta dan akan otomatis tercatat di lembar hadir panitia.</small>
+			<legend><span id="kgtk-legend-panitia">Panitia</span> (opsional)</legend>
+			<small>Tambahkan susunan panitia untuk kegiatan ini. Anda dapat memilih dari daftar panitia yang sudah tersimpan atau mengetik panitia baru secara langsung. Panitia tidak memakai kuota slot peserta dan akan otomatis tercatat di lembar hadir panitia.</small>
 
 			<div class="kgtk-panitia-table-wrap" id="kgtk-panitia-wrap" style="margin-top:10px;display:none;">
 				<table class="kgtk-table kgtk-table--panitia" id="kgtk-panitia-table">
@@ -114,7 +137,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 			<div id="kgtk-panitia-empty" class="kgtk-muted" style="padding:16px 18px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:12px;margin-top:10px;">
 				<span style="font-size:20px;">&#128100;</span>
-				<span>Belum ada panitia yang ditambahkan untuk pelatihan ini. Klik tombol di bawah untuk memilih dari data tersimpan atau menambahkan baru.</span>
+				<span>Belum ada panitia yang ditambahkan untuk kegiatan ini. Klik tombol di bawah untuk memilih dari data tersimpan atau menambahkan baru.</span>
 			</div>
 
 			<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -135,14 +158,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</fieldset>
 
 		<label class="kgtk-field">
-			<span>Kode pelatihan</span>
+			<span id="kgtk-label-kode">Kode pelatihan</span>
 			<input type="text" class="kgtk-input" name="kode" value="<?php echo esc_attr( $kode ); ?>" maxlength="20" pattern="[A-Za-z0-9-]{3,20}" style="text-transform:uppercase">
 			<small>3-20 karakter: huruf, angka, tanda hubung. Harus unik.</small>
 		</label>
 
 		<div class="kgtk-form-actions">
 			<a class="kgtk-btn kgtk-btn--ghost" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan' ) ); ?>">Batal</a>
-			<button type="submit" class="kgtk-btn">Simpan pelatihan</button>
+			<button type="submit" class="kgtk-btn" id="kgtk-btn-submit-buat">Simpan pelatihan</button>
 		</div>
 	</form>
 
@@ -189,7 +212,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div style="display:flex;justify-content:space-between;align-items:flex-start;">
 						<div>
 							<h3 class="kgtk-modal-title" style="margin:0;font-size:17px;">Pilih Panitia dari Data Tersimpan</h3>
-							<p class="kgtk-muted" style="margin:2px 0 10px;font-size:12.5px;">Centang nama panitia yang ingin dimasukkan ke dalam susunan kepanitiaan pelatihan ini.</p>
+							<p class="kgtk-muted" style="margin:2px 0 10px;font-size:12.5px;">Centang nama panitia yang ingin dimasukkan ke dalam susunan kepanitiaan kegiatan ini.</p>
 						</div>
 						<button type="button" class="kgtk-search-clear" id="kgtk-btn-modal-panitia-close" style="position:static;width:28px;height:28px;font-size:20px;" title="Tutup">&times;</button>
 					</div>

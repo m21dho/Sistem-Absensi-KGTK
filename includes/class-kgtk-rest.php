@@ -155,7 +155,7 @@ class KGTK_REST extends KGTK_REST_Base {
 			self::NS,
 			'/admin/peserta/(?P<id>\d+)/kelas',
 			array(
-				'methods'             => 'PATCH',
+				'methods'             => array( 'PATCH', 'POST' ),
 				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_assign_kelas' ),
 				'permission_callback' => $admin,
 			)
@@ -192,6 +192,15 @@ class KGTK_REST extends KGTK_REST_Base {
 		);
 		register_rest_route(
 			self::NS,
+			'/admin/peserta/bulk-kelas',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_bulk_assign_kelas' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
 			'/admin/pelatihan/(?P<id>\d+)/bulk-kelas',
 			array(
 				'methods'             => 'POST',
@@ -214,6 +223,24 @@ class KGTK_REST extends KGTK_REST_Base {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_peserta_list' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/guru-master',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_list_guru_master' ),
+				'permission_callback' => $admin,
+			)
+		);
+		register_rest_route(
+			self::NS,
+			'/admin/pelatihan/(?P<id>\d+)/pulihkan-guru',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'KGTK_REST_Admin_Peserta', 'admin_pulihkan_guru' ),
 				'permission_callback' => $admin,
 			)
 		);
@@ -283,9 +310,16 @@ class KGTK_REST extends KGTK_REST_Base {
 			self::NS,
 			'/admin/pelatihan/(?P<id>\d+)/panitia/(?P<peserta_id>\d+)',
 			array(
-				'methods'             => 'DELETE',
-				'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_hapus_panitia_dari_pelatihan' ),
-				'permission_callback' => $admin,
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_ubah_panitia_pelatihan' ),
+					'permission_callback' => $admin,
+				),
+				array(
+					'methods'             => 'DELETE',
+					'callback'            => array( 'KGTK_REST_Admin_Panitia', 'admin_hapus_panitia_dari_pelatihan' ),
+					'permission_callback' => $admin,
+				),
 			)
 		);
 
