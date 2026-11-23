@@ -65,8 +65,8 @@
 
 	function formatNamaGelar(nama, gd, gb) {
 		nama = (nama || '').trim();
-		gd = (gd || '').trim();
-		gb = (gb || '').trim();
+		gd = (gd === '-' ? '' : (gd || '').trim());
+		gb = (gb === '-' ? '' : (gb || '').trim());
 		var res = nama;
 		if (gd) {
 			res = gd + ' ' + res;
@@ -75,6 +75,273 @@
 			res = res + (res ? ', ' : '') + gb;
 		}
 		return res;
+	}
+
+	function cleanVal(v) {
+		if (v === null || v === undefined || v === '-') { return ''; }
+		return String(v).trim();
+	}
+
+	function setDropdownVal(selectEl, val) {
+		if (!selectEl) { return; }
+		val = cleanVal(val);
+		if (!val) { selectEl.value = ''; return; }
+		var found = false;
+		for (var i = 0; i < selectEl.options.length; i++) {
+			if (selectEl.options[i].value.toLowerCase() === val.toLowerCase()) {
+				selectEl.selectedIndex = i;
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			var opt = document.createElement('option');
+			opt.value = val;
+			opt.textContent = val;
+			selectEl.appendChild(opt);
+			selectEl.value = val;
+		}
+	}
+
+	var sekolahAdminCache = {};
+	function fetchSekolahAdminList(pubroot, kab) {
+		kab = cleanVal(kab);
+		if (!kab || kab === 'Lainnya') { return Promise.resolve([]); }
+		if (sekolahAdminCache[kab]) { return Promise.resolve(sekolahAdminCache[kab]); }
+		var sep = pubroot.indexOf('?') > -1 ? '&' : '?';
+		return fetch(pubroot + 'public/sekolah' + sep + 'kabkota=' + encodeURIComponent(kab), { credentials: 'same-origin' })
+			.then(function (r) {
+				return r.json().catch(function () { return {}; }).then(function (d) {
+					if (!r.ok) { return []; }
+					var list = d.sekolah || [];
+					sekolahAdminCache[kab] = list;
+					return list;
+				});
+			}).catch(function () { return []; });
+	}
+
+	function bindKabkotaSekolah(cfg) {
+		var kabEl = typeof cfg.kabEl === 'string' ? document.getElementById(cfg.kabEl) : cfg.kabEl;
+		var inputEl = typeof cfg.inputEl === 'string' ? document.getElementById(cfg.inputEl) : cfg.inputEl;
+		var listEl = typeof cfg.listEl === 'string' ? document.getElementById(cfg.listEl) : cfg.listEl;
+		var hiddenInput = typeof cfg.hiddenInput === 'string' ? document.getElementById(cfg.hiddenInput) : cfg.hiddenInput;
+		var pubroot = cfg.pubroot || (typeof C !== 'undefined' && C.pubroot) || (typeof C !== 'undefined' && C.root) || '';
+
+		if (!kabEl || !inputEl || !hiddenInput) {
+			return { setVal: function () {}, reset: function () {} };
+		}
+
+		var currentList = [];
+		var activeIndex = -1;
+
+		function closeList() {
+			if (listEl) {
+				listEl.hidden = true;
+				listEl.style.display = 'none';
+			}
+			activeIndex = -1;
+		}
+
+		function selectSchool(nama) {
+			nama = String(nama || '').trim();
+			inputEl.value = nama;
+			hiddenInput.value = nama;
+			closeList();
+		}
+
+		function renderList(query) {
+			if (!listEl) { return; }
+			var q = String(query || '').toLowerCase().trim();
+			var filtered = currentList.filter(function (s) {
+				if (!q) { return true; }
+				return String(s.nama || '').toLowerCase().indexOf(q) > -1 || (s.npsn && String(s.npsn).indexOf(q) > -1);
+			});
+
+			listEl.innerHTML = '';
+
+			// Header info kecil
+			var infoLi = document.createElement('li');
+			infoLi.className = 'kgtk-combo-empty';
+			infoLi.style.cssText = 'padding:5px 8px;font-size:11px;color:#64748b;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-weight:600;';
+			infoLi.textContent = q ? ('Ditemukan ' + filtered.length + ' sekolah (Ketik untuk filter):') : ('Daftar Sekolah di ' + (kabEl.value || '') + ' (' + currentList.length + ' sekolah):');
+			listEl.appendChild(infoLi);
+
+			if (filtered.length === 0) {
+				var emptyLi = document.createElement('li');
+				emptyLi.className = 'kgtk-combo-empty';
+				emptyLi.style.cssText = 'padding:10px;font-size:12.5px;color:#94a3b8;text-align:center;';
+				emptyLi.textContent = 'Tidak ditemukan sekolah "' + q + '".';
+				listEl.appendChild(emptyLi);
+			} else {
+				var displayList = filtered.slice(0, 60);
+				displayList.forEach(function (s, idx) {
+					var li = document.createElement('li');
+					li.className = 'kgtk-combo-item' + (idx === activeIndex ? ' is-active' : '');
+					li.style.cssText = 'padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1.3;display:flex;flex-direction:column;';
+					if (idx === activeIndex) { li.style.background = '#e0f2fe'; }
+
+					var titleSpan = document.createElement('span');
+					titleSpan.style.fontWeight = '600';
+					titleSpan.style.color = '#0f172a';
+					titleSpan.textContent = s.nama;
+					li.appendChild(titleSpan);
+
+					var subParts = [];
+					if (s.jenjang) { subParts.push(s.jenjang); }
+					if (s.npsn) { subParts.push('NPSN: ' + s.npsn); }
+					if (subParts.length) {
+						var smallSub = document.createElement('small');
+						smallSub.style.color = '#64748b';
+						smallSub.style.fontSize = '11px';
+						smallSub.textContent = subParts.join(' • ');
+						li.appendChild(smallSub);
+					}
+
+					li.addEventListener('mousedown', function (e) {
+						e.preventDefault();
+						selectSchool(s.nama);
+					});
+
+					li.addEventListener('mouseenter', function () {
+						activeIndex = idx;
+						updateActiveItem();
+					});
+
+					listEl.appendChild(li);
+				});
+
+				if (filtered.length > 60) {
+					var moreLi = document.createElement('li');
+					moreLi.className = 'kgtk-combo-empty';
+					moreLi.style.cssText = 'padding:6px;font-size:11px;color:#64748b;text-align:center;border-top:1px solid #f1f5f9;background:#fafafa;';
+					moreLi.textContent = 'Menampilkan 60 dari ' + filtered.length + ' sekolah. Ketik nama untuk mempersempit.';
+					listEl.appendChild(moreLi);
+				}
+			}
+
+			// Pilihan kustom / manual bila diketik instansi bebas
+			if (q) {
+				var manualLi = document.createElement('li');
+				manualLi.style.cssText = 'padding:8px 10px;background:#f0fdf4;border-top:1px solid #bbf7d0;cursor:pointer;font-size:12.5px;color:#166534;font-weight:600;display:flex;align-items:center;gap:6px;';
+				manualLi.innerHTML = '<span>&#9997;&#65039; Gunakan "<strong>' + escHtml(q) + '</strong>" sebagai instansi</span>';
+				manualLi.addEventListener('mousedown', function (e) {
+					e.preventDefault();
+					selectSchool(inputEl.value.trim());
+				});
+				listEl.appendChild(manualLi);
+			}
+		}
+
+		function openList() {
+			if (!listEl) { return; }
+			var kab = cleanVal(kabEl.value);
+			if (!kab || kab === 'Lainnya') {
+				closeList();
+				return;
+			}
+			renderList(inputEl.value);
+			listEl.hidden = false;
+			listEl.style.display = 'block';
+		}
+
+		function updateActiveItem() {
+			if (!listEl) { return; }
+			var items = listEl.querySelectorAll('.kgtk-combo-item');
+			Array.prototype.forEach.call(items, function (it, idx) {
+				it.classList.toggle('is-active', idx === activeIndex);
+				it.style.background = (idx === activeIndex) ? '#e0f2fe' : '';
+			});
+		}
+
+		function loadSchools(kab, targetVal) {
+			kab = cleanVal(kab);
+			targetVal = cleanVal(targetVal);
+
+			if (targetVal) {
+				inputEl.value = targetVal;
+				hiddenInput.value = targetVal;
+			}
+
+			if (!kab || kab === 'Lainnya') {
+				currentList = [];
+				closeList();
+				inputEl.placeholder = 'Ketik nama instansi...';
+				return;
+			}
+
+			inputEl.placeholder = 'Ketik untuk mencari instansi / sekolah...';
+			fetchSekolahAdminList(pubroot, kab).then(function (list) {
+				currentList = list;
+			});
+		}
+
+		kabEl.addEventListener('change', function () {
+			loadSchools(kabEl.value, hiddenInput.value);
+		});
+
+		inputEl.addEventListener('focus', function () {
+			openList();
+		});
+
+		inputEl.addEventListener('click', function () {
+			openList();
+		});
+
+		inputEl.addEventListener('input', function () {
+			hiddenInput.value = inputEl.value.trim();
+			activeIndex = -1;
+			openList();
+		});
+
+		inputEl.addEventListener('blur', function () {
+			setTimeout(closeList, 200);
+		});
+
+		inputEl.addEventListener('keydown', function (e) {
+			if (listEl && !listEl.hidden && listEl.style.display !== 'none') {
+				var items = listEl.querySelectorAll('.kgtk-combo-item');
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					activeIndex = Math.min(items.length - 1, activeIndex + 1);
+					updateActiveItem();
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					activeIndex = Math.max(0, activeIndex - 1);
+					updateActiveItem();
+				} else if (e.key === 'Enter') {
+					if (activeIndex >= 0 && items[activeIndex]) {
+						e.preventDefault();
+						var spanTitle = items[activeIndex].querySelector('span');
+						if (spanTitle) {
+							selectSchool(spanTitle.textContent);
+						}
+					} else {
+						closeList();
+					}
+				} else if (e.key === 'Escape') {
+					closeList();
+				}
+			}
+		});
+
+		return {
+			setVal: function (kab, val) {
+				kab = cleanVal(kab);
+				val = cleanVal(val);
+				setDropdownVal(kabEl, kab);
+				inputEl.value = val;
+				hiddenInput.value = val;
+				closeList();
+				loadSchools(kab, val);
+			},
+			reset: function () {
+				kabEl.value = '';
+				inputEl.value = '';
+				hiddenInput.value = '';
+				currentList = [];
+				closeList();
+			}
+		};
 	}
 
 	/**
@@ -807,16 +1074,17 @@
 		var selKelas = document.getElementById('kgtk-tambah-kelas');
 		var F = ft.elements;
 		var wrapJenisGtk = document.getElementById('kgtk-admin-wrap-jenis-gtk');
-		var sek = window.KGTKSekolah.create({ root: C.pubroot, kabkota: C.kabkota || [] });
+		var isAcaraAdmin = (ft.getAttribute('data-jenis') === 'acara');
+		var sek = window.KGTKSekolah.create({ root: C.pubroot, kabkota: C.kabkota || [], manualOnly: isAcaraAdmin });
 		document.getElementById('kgtk-sekolah-slot').appendChild(sek.node);
 		var FIELDS = ['nama', 'gelar_depan', 'gelar_belakang', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat', 'alamat_instansi', 'pangkat_golongan', 'agama', 'pendidikan', 'bank', 'rekening', 'npwp', 'pengalaman_jabatan', 'nuptk', 'nip', 'hp', 'email', 'email_belajar', 'simpkb'];
 		var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		var isAcaraAdmin = (ft.getAttribute('data-jenis') === 'acara');
 		// Slot dan Jabatan disesuaikan secara dinamis berdasarkan Peran Kegiatan.
 		var applyPeran = function () {
 			var peranVal = F.peran ? F.peran.value : 'Peserta';
 			var pakaiSlot = peranVal === 'Peserta';
 			var wrapJenisGtk = document.getElementById('kgtk-admin-wrap-jenis-gtk');
+			var wrapJabatanAcara = document.getElementById('kgtk-admin-wrap-jabatan-acara');
 			var wrapTugasTim = document.getElementById('kgtk-admin-wrap-tugas-tim');
 			var inpTugas = document.getElementById('kgtk-tambah-tugas-tim');
 			var wrapBankRek = document.getElementById('kgtk-wrap-bank-rek');
@@ -830,9 +1098,30 @@
 			var hintKelas = document.getElementById('kgtk-kelas-hint');
 			var btnSubmit = ft.querySelector('button[type=submit]');
 
+			var wrapJenisGtkManual = document.getElementById('kgtk-admin-wrap-jenis-gtk-manual');
+			var inpJenisGtkManual = document.getElementById('kgtk-tambah-jenis-gtk-manual');
+			if (F.jenis_gtk && !F.jenis_gtk._boundLainnya) {
+				F.jenis_gtk._boundLainnya = true;
+				F.jenis_gtk.addEventListener('change', function () {
+					if (wrapJenisGtkManual) {
+						wrapJenisGtkManual.style.display = (F.jenis_gtk.value === 'Lainnya') ? '' : 'none';
+						if (F.jenis_gtk.value === 'Lainnya' && inpJenisGtkManual) {
+							inpJenisGtkManual.focus();
+						}
+					}
+				});
+			}
+			if (wrapJabatanAcara) {
+				wrapJabatanAcara.style.display = (isAcaraAdmin && pakaiSlot) ? '' : 'none';
+			}
 			if (wrapJenisGtk) {
 				wrapJenisGtk.style.display = (pakaiSlot && !isAcaraAdmin) ? '' : 'none';
-				if ((!pakaiSlot || isAcaraAdmin) && F.jenis_gtk) { F.jenis_gtk.value = ''; }
+				if ((!pakaiSlot || isAcaraAdmin) && F.jenis_gtk) {
+					F.jenis_gtk.value = '';
+					if (wrapJenisGtkManual) { wrapJenisGtkManual.style.display = 'none'; }
+				} else if (wrapJenisGtkManual && F.jenis_gtk) {
+					wrapJenisGtkManual.style.display = (F.jenis_gtk.value === 'Lainnya') ? '' : 'none';
+				}
 			}
 			if (wrapTugasTim) {
 				wrapTugasTim.style.display = pakaiSlot ? 'none' : '';
@@ -992,8 +1281,28 @@
 					}
 				});
 				sek.setValue(d.guru);
-				if (F.peran && F.peran.value === 'Peserta' && d.guru.jenis_gtk && F.jenis_gtk) {
-					F.jenis_gtk.value = d.guru.jenis_gtk;
+				if (F.peran && F.peran.value === 'Peserta' && d.guru.jenis_gtk && d.guru.jenis_gtk !== '-') {
+					var inpJabatanAcara = document.getElementById('kgtk-tambah-jabatan-acara');
+					if (inpJabatanAcara) {
+						inpJabatanAcara.value = d.guru.jenis_gtk;
+					}
+					if (F.jenis_gtk) {
+						var hasOptGtk = false;
+						for (var gi = 0; gi < F.jenis_gtk.options.length; gi++) {
+							if (F.jenis_gtk.options[gi].value === d.guru.jenis_gtk && d.guru.jenis_gtk !== 'Lainnya') {
+								hasOptGtk = true;
+								break;
+							}
+						}
+						var inpManualGtk = document.getElementById('kgtk-tambah-jenis-gtk-manual');
+						if (hasOptGtk) {
+							F.jenis_gtk.value = d.guru.jenis_gtk;
+							if (inpManualGtk) { inpManualGtk.value = ''; }
+						} else {
+							F.jenis_gtk.value = 'Lainnya';
+							if (inpManualGtk) { inpManualGtk.value = d.guru.jenis_gtk; }
+						}
+					}
 				} else if (F.peran && F.peran.value === 'Panitia') {
 					var inpTugas = document.getElementById('kgtk-tambah-tugas-tim');
 					if (inpTugas && (!inpTugas.value || inpTugas.value === 'Panitia Pelaksana') && d.guru.jabatan) {
@@ -1151,13 +1460,26 @@
 				}
 				if (v.peran === 'Peserta') {
 					if (isAcaraAdmin) {
-						v.jenis_gtk = v.jenis_gtk || '-';
+						var inpJabatanAcaraVal = document.getElementById('kgtk-tambah-jabatan-acara');
+						v.jenis_gtk = inpJabatanAcaraVal ? inpJabatanAcaraVal.value.trim() : '';
+						if (!v.jenis_gtk) {
+							errors.push({ label: 'Jabatan', msg: 'Jabatan peserta belum diisi.', el: inpJabatanAcaraVal || F.jenis_gtk });
+						}
 						if (v.email_belajar && !EMAIL.test(v.email_belajar)) {
 							errors.push({ label: 'Email belajar.id', msg: 'Format email belajar.id tidak valid (kosongkan jika tidak ada).', el: F.email_belajar });
 						}
 					} else {
+						var inpManualGtkVal = document.getElementById('kgtk-tambah-jenis-gtk-manual');
+						if (v.jenis_gtk === 'Lainnya') {
+							var manualGtkText = inpManualGtkVal ? inpManualGtkVal.value.trim() : '';
+							if (!manualGtkText) {
+								errors.push({ label: 'Tulis Jabatan', msg: 'Silakan tulis nama jabatan pada kolom yang tersedia.', el: inpManualGtkVal || F.jenis_gtk });
+							} else {
+								v.jenis_gtk = manualGtkText;
+							}
+						}
 						if (!v.jenis_gtk) {
-							errors.push({ label: 'Jabatan GTK', msg: 'Pilih Jabatan GTK untuk peran Peserta.', el: F.jenis_gtk });
+							errors.push({ label: 'Jabatan', msg: 'Pilih atau tulis Jabatan untuk peran Peserta.', el: F.jenis_gtk });
 						}
 						var chkTanpaBelajar = document.getElementById('kgtk-chk-tanpa-belajar-id');
 						var tanpaBelajar = chkTanpaBelajar && chkTanpaBelajar.checked;
@@ -1415,6 +1737,7 @@
 	var akhDesc = document.getElementById('kgtk-akh-desc');
 	var akhBtnAbsen = document.getElementById('kgtk-akh-btn-absen');
 	var akhBtnDeadline = document.getElementById('kgtk-akh-btn-deadline');
+	var akhBtnHapusKelas = document.getElementById('kgtk-akh-btn-hapus-kelas');
 
 	// Hitung dan filter baris tabel peserta & panitia
 	function filterRows() {
@@ -1473,21 +1796,11 @@
 		if (elPes) { elPes.textContent = String(cntPeserta); }
 		var elPan = document.getElementById('kgtk-role-cnt-panitia');
 		if (elPan) { elPan.textContent = String(cntPanitia); }
-		var lblPan = document.getElementById('kgtk-role-lbl-panitia');
-		if (lblPan) {
-			lblPan.textContent = (currentFilter === 'all' || currentFilter === '0') ? 'Panitia' : 'Panitia Kelas';
-		}
 		var elLain = document.getElementById('kgtk-role-cnt-lain');
 		if (elLain) { elLain.textContent = String(cntLain); }
 
-		// Sinkronkan badge panitia pada banner
-		if (akhBadgePanitia) {
-			if (cntPanitia > 0) {
-				akhBadgePanitia.textContent = cntPanitia + ' panitia kelas';
-				akhBadgePanitia.style.display = 'inline-block';
-			} else {
-				akhBadgePanitia.style.display = 'none';
-			}
+		if (akhBadgeSlot && (currentFilter === 'all' || currentFilter === '0')) {
+			akhBadgeSlot.textContent = cntAll + ' orang';
 		}
 
 		updateSelectedCounter();
@@ -1498,31 +1811,43 @@
 
 		// Update banner kelas aktif
 		if (filterVal === 'all') {
-			if (akhIcon) { akhIcon.textContent = '👥'; }
 			if (akhTitle) { akhTitle.textContent = 'Semua Pendaftar & Panitia'; }
 			if (akhBtnAbsen) { akhBtnAbsen.style.display = 'none'; }
 			if (akhBtnDeadline) { akhBtnDeadline.style.display = 'none'; }
+			if (akhBtnHapusKelas) { akhBtnHapusKelas.style.display = 'none'; }
 		} else if (filterVal === '0') {
-			if (akhIcon) { akhIcon.textContent = '⚠️'; }
-			if (akhTitle) { akhTitle.textContent = 'Belum Ada Kelas / Perlu Penempatan'; }
+			if (akhTitle) { akhTitle.textContent = 'Belum Ada Kelas'; }
 			if (akhBtnAbsen) { akhBtnAbsen.style.display = 'none'; }
 			if (akhBtnDeadline) { akhBtnDeadline.style.display = 'none'; }
+			if (akhBtnHapusKelas) { akhBtnHapusKelas.style.display = 'none'; }
 		} else {
 			var cardEl = document.querySelector('.kgtk-scard[data-filter="' + filterVal + '"]');
 			var namaKelas = cardEl ? cardEl.getAttribute('data-nama') : ('Kelas ' + filterVal);
 			var slotInfo = cardEl ? cardEl.getAttribute('data-slot') : '';
 
-			if (akhIcon) { akhIcon.textContent = '🏫'; }
 			if (akhTitle) { akhTitle.textContent = namaKelas; }
-			if (akhBadgeSlot) { akhBadgeSlot.textContent = slotInfo ? ('Slot: ' + slotInfo) : namaKelas; }
+			if (akhBadgeSlot) { akhBadgeSlot.textContent = slotInfo ? ('Kuota: ' + slotInfo + ' slot') : namaKelas; }
 			if (akhBtnAbsen) {
 				akhBtnAbsen.setAttribute('data-open-pane', String(filterVal));
-				akhBtnAbsen.innerHTML = '&#128196; Buka Lembar Absen ' + esc(namaKelas);
+				akhBtnAbsen.innerHTML = '&#128196; Lembar Absen';
 				akhBtnAbsen.style.display = 'inline-flex';
 			}
 			if (akhBtnDeadline) {
 				akhBtnDeadline.setAttribute('data-atur-deadline-kelas', String(filterVal));
 				akhBtnDeadline.style.display = 'inline-flex';
+			}
+			if (akhBtnHapusKelas) {
+				var cardParticipants = 0;
+				if (cardEl) {
+					var sSlot = (cardEl.getAttribute('data-slot') || '0').split('/')[0];
+					var sPan = cardEl.getAttribute('data-panitia') || '0';
+					var sLain = cardEl.getAttribute('data-lain') || '0';
+					cardParticipants = (parseInt(sSlot, 10) || 0) + (parseInt(sPan, 10) || 0) + (parseInt(sLain, 10) || 0);
+				}
+				akhBtnHapusKelas.setAttribute('data-hapus-existing-kelas', String(filterVal));
+				akhBtnHapusKelas.setAttribute('data-kelas-nama', namaKelas);
+				akhBtnHapusKelas.setAttribute('data-kelas-terisi', String(cardParticipants));
+				akhBtnHapusKelas.style.display = 'inline-flex';
 			}
 		}
 
@@ -1609,7 +1934,7 @@
 		var scard = e.target.closest('.kgtk-scard');
 		if (scard) {
 			if (scard.closest('#kgtk-undangan-container')) { return; }
-			if (e.target.closest('[data-atur-deadline-kelas], [data-open-pane]')) { return; }
+			if (e.target.closest('[data-atur-deadline-kelas], [data-open-pane], [data-hapus-existing-kelas]')) { return; }
 			var activePane = document.querySelector('.kgtk-pane.is-active');
 			var activePaneName = activePane ? activePane.getAttribute('data-pane') : '';
 			if (activePaneName !== 'panitia') {
@@ -1666,13 +1991,16 @@
 
 		var badge = document.getElementById('kgtk-selected-badge');
 		var applyBtn = document.getElementById('kgtk-bulk-apply');
-		var bulkToolbar = document.querySelector('.kgtk-bulk-toolbar');
+		var bulkToolbar = document.getElementById('kgtk-peserta-bulk-toolbar') || document.querySelector('.kgtk-bulk-toolbar');
 		if (bulkToolbar) {
 			bulkToolbar.classList.toggle('has-selected', checkedCount > 0);
+			if (bulkToolbar.id === 'kgtk-peserta-bulk-toolbar') {
+				bulkToolbar.style.display = checkedCount > 0 ? 'flex' : 'none';
+			}
 		}
 		if (badge) {
 			if (checkedCount > 0) {
-				badge.textContent = checkedCount + ' guru dipilih';
+				badge.textContent = checkedCount + ' dipilih';
 				badge.style.display = 'inline-block';
 			} else {
 				badge.style.display = 'none';
@@ -2546,6 +2874,8 @@
 
 				var rows = [
 					['Nama Lengkap', '<strong>' + escHtml(namaLengkap) + '</strong>'],
+					['Gelar Depan', escHtml((b.gelar_depan && b.gelar_depan !== '-') ? b.gelar_depan : '-')],
+					['Gelar Belakang', escHtml((b.gelar_belakang && b.gelar_belakang !== '-') ? b.gelar_belakang : '-')],
 					['NIK', '<div class="kgtk-nik-cell"><code class="kgtk-nik-code">' + escHtml(b.nik) + '</code><button type="button" class="kgtk-copy-btn" data-copy-nik="' + escHtml(b.nik) + '" title="Salin NIK">&#128203;</button></div>'],
 					['Tempat, Tanggal Lahir', escHtml((b.tempat_lahir && b.tempat_lahir !== '-' ? b.tempat_lahir + ', ' : '') + (b.tanggal_lahir || '-'))],
 					['Jenis Kelamin', escHtml(b.jenis_kelamin || '-')],
@@ -2614,7 +2944,8 @@
 					}
 
 					var peranUpper = (b.peran || 'PESERTA').toUpperCase();
-					var lokasiTxt = b.pelatihan_lok ? (b.pelatihan_lok.toLowerCase().indexOf('di ') === 0 ? b.pelatihan_lok : 'di ' + b.pelatihan_lok) : '';
+					var rawLok = b.pelatihan_lok || (window.KGTK_PEL && window.KGTK_PEL.lokasi ? window.KGTK_PEL.lokasi : '');
+					var lokasiTxt = rawLok ? rawLok.replace(/^di\s+/i, '').trim() : '';
 					var nipTxt = b.nip || '-';
 					var kabkotaTxt = getKabkotaKegiatan(b);
 					var namaLengkap = formatNamaGelar(b.nama, b.gelar_depan, b.gelar_belakang);
@@ -2662,6 +2993,12 @@
 					}).join('');
 
 					var kop = C.kop_html || '';
+					if (!kop) {
+						var domKop = document.querySelector('.kgtk-kop-wrap');
+						if (domKop) {
+							kop = domKop.outerHTML;
+						}
+					}
 
 					var formatRentangTgl = function (mulai, selesai) {
 						if (!mulai) { return ''; }
@@ -2699,7 +3036,7 @@
 							tglTxt = docTgl.textContent.trim();
 						}
 					}
-					var tglDisplay = tglTxt ? (tglTxt.toLowerCase().indexOf('tanggal') === 0 ? tglTxt : 'Tanggal ' + tglTxt) : '';
+					var tglDisplay = tglTxt ? tglTxt.replace(/^tanggal\s*[:\-]?\s*/i, '').trim() : '';
 
 					var pelNama = b.pelatihan || (window.KGTK_PEL && window.KGTK_PEL.nama ? window.KGTK_PEL.nama : '');
 					if (!pelNama) {
@@ -2714,8 +3051,11 @@
 						'@page{size:A4 portrait;margin:0!important}' +
 						'body{font-family:\'Times New Roman\',Times,Georgia,serif;margin:0!important;padding:1.5cm 2.2cm 1.5cm 2.8cm!important;box-sizing:border-box!important;color:#000;line-height:1.35;background:#fff}' +
 						'.kgtk-kop-wrap{width:100%;text-align:center;margin:0 auto 14px}' +
-						'.kgtk-kop-tbl{margin:0 auto;border-collapse:collapse;border:0;width:100%;max-width:760px}' +
+						'.kgtk-kop-tbl{margin:0 auto!important;border-collapse:collapse;border:0;width:auto!important}' +
 						'.kgtk-kop-tbl td{border:0!important;vertical-align:middle}' +
+						'.kgtk-kop-tbl td.kgtk-kop-line{width:1.5px!important;max-width:1.5px!important;min-width:1.5px!important;background-color:#0083C4!important;padding:0!important;border:0!important;font-size:1px!important;line-height:1px!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+						'.kgtk-kop-tbl td.kgtk-kop-line div{width:1.5px!important;height:62px!important;background-color:#0083C4!important;border:0!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
+						'.kgtk-kop-tbl img{height:78px!important;max-height:78px!important;width:auto!important;display:inline-block!important;vertical-align:middle!important}' +
 						'.title-box{text-align:center;margin:6pt 0 10pt;font-family:\'Times New Roman\',Times,Georgia,serif}' +
 						'.title-main{font-size:15pt;font-weight:bold;text-transform:uppercase;margin-bottom:4px;letter-spacing:0.5px}' +
 						'.title-sub{font-size:13pt;line-height:1.3;margin-bottom:2px;font-weight:bold}' +
@@ -2828,6 +3168,28 @@
 		var btnEditPsSave = document.getElementById('kgtk-btn-edit-peserta-save');
 		var errEditPs = document.getElementById('kgtk-edit-peserta-error');
 
+		var psSekolahHelper = bindKabkotaSekolah({
+			kabEl: 'kgtk-edit-ps-kabkota',
+			inputEl: 'kgtk-edit-ps-sekolah-input',
+			listEl: 'kgtk-edit-ps-sekolah-list',
+			hiddenInput: 'kgtk-edit-ps-sekolah'
+		});
+
+		var selEditPsJabatan = document.getElementById('kgtk-edit-ps-jabatan');
+		var wrapEditPsJabatanManual = document.getElementById('kgtk-edit-ps-jabatan-manual-wrap');
+		var inpEditPsJabatanManual = document.getElementById('kgtk-edit-ps-jabatan-manual');
+		var STD_JABATAN_PS = ['Guru', 'Kepala Sekolah', 'Kepala Sekolah Mentor', 'Pengawas Sekolah', 'Tenaga Administrasi Sekolah', 'Tenaga Didik', 'Dinas Pendidikan'];
+		if (selEditPsJabatan) {
+			selEditPsJabatan.addEventListener('change', function () {
+				if (wrapEditPsJabatanManual) {
+					wrapEditPsJabatanManual.style.display = (selEditPsJabatan.value === 'Lainnya') ? '' : 'none';
+					if (selEditPsJabatan.value === 'Lainnya' && inpEditPsJabatanManual) {
+						inpEditPsJabatanManual.focus();
+					}
+				}
+			});
+		}
+
 		var closeEditPsModal = function () {
 			modalEditPs.classList.remove('is-visible');
 			modalEditPs.style.display = 'none';
@@ -2843,16 +3205,11 @@
 			if (e.target === modalEditPs) { closeEditPsModal(); }
 		});
 
-		var cleanVal = function (v) {
-			if (v === null || v === undefined || v === '-') { return ''; }
-			return String(v).trim();
-		};
-
 		var populateEditForm = function (d) {
 			if (!formEditPs || !d) { return; }
 			var f = formEditPs.elements;
 			if (f.peserta_id) { f.peserta_id.value = d.id || d.peserta_id || '0'; }
-			if (f.peran) { f.peran.value = cleanVal(d.peran) || 'Peserta'; }
+			if (f.peran) { setDropdownVal(f.peran, cleanVal(d.peran) || 'Peserta'); }
 			if (f.kelas_id) { f.kelas_id.value = d.kelas_id !== undefined ? String(d.kelas_id) : '0'; }
 			if (f.nama) { f.nama.value = cleanVal(d.nama); }
 			if (f.gelar_depan) { f.gelar_depan.value = cleanVal(d.gelar_depan); }
@@ -2861,13 +3218,28 @@
 			if (f.nip) { f.nip.value = cleanVal(d.nip); }
 			if (f.tempat_lahir) { f.tempat_lahir.value = cleanVal(d.tempat_lahir); }
 			if (f.tanggal_lahir) { f.tanggal_lahir.value = cleanVal(d.tanggal_lahir); }
-			if (f.jenis_kelamin) { f.jenis_kelamin.value = cleanVal(d.jenis_kelamin); }
-			if (f.agama) { f.agama.value = cleanVal(d.agama); }
-			if (f.sekolah) { f.sekolah.value = cleanVal(d.sekolah); }
-			if (f.kabkota) { f.kabkota.value = cleanVal(d.kabkota); }
-			if (f.jenis_gtk) { f.jenis_gtk.value = cleanVal(d.jenis_gtk) || cleanVal(d.jabatan) || 'Guru'; }
+			if (f.jenis_kelamin) { setDropdownVal(f.jenis_kelamin, cleanVal(d.jenis_kelamin)); }
+			if (f.agama) { setDropdownVal(f.agama, cleanVal(d.agama)); }
+			if (psSekolahHelper) {
+				psSekolahHelper.setVal(cleanVal(d.kabkota), cleanVal(d.sekolah));
+			} else {
+				if (f.sekolah) { f.sekolah.value = cleanVal(d.sekolah); }
+				if (f.kabkota) { setDropdownVal(f.kabkota, cleanVal(d.kabkota)); }
+			}
+			if (f.jenis_gtk) {
+				var rawJbt = cleanVal(d.jenis_gtk) || cleanVal(d.jabatan) || 'Guru';
+				if (STD_JABATAN_PS.indexOf(rawJbt) > -1) {
+					f.jenis_gtk.value = rawJbt;
+					if (inpEditPsJabatanManual) { inpEditPsJabatanManual.value = ''; }
+					if (wrapEditPsJabatanManual) { wrapEditPsJabatanManual.style.display = 'none'; }
+				} else {
+					f.jenis_gtk.value = 'Lainnya';
+					if (inpEditPsJabatanManual) { inpEditPsJabatanManual.value = (rawJbt === 'Lainnya' ? '' : rawJbt); }
+					if (wrapEditPsJabatanManual) { wrapEditPsJabatanManual.style.display = ''; }
+				}
+			}
 			if (f.pangkat_golongan) { f.pangkat_golongan.value = cleanVal(d.pangkat_golongan); }
-			if (f.pendidikan) { f.pendidikan.value = cleanVal(d.pendidikan); }
+			if (f.pendidikan) { setDropdownVal(f.pendidikan, cleanVal(d.pendidikan)); }
 			if (f.nuptk) { f.nuptk.value = cleanVal(d.nuptk) || cleanVal(d.nisn); }
 			if (f.hp) { f.hp.value = cleanVal(d.hp); }
 			if (f.email) { f.email.value = cleanVal(d.email); }
@@ -2965,9 +3337,10 @@
 					return;
 				}
 				if (!sekolah) {
-					errEditPs.textContent = 'Asal sekolah / instansi wajib diisi.';
+					errEditPs.textContent = 'Instansi wajib diisi.';
 					errEditPs.hidden = false;
-					f.sekolah.focus();
+					var targetFocus = document.getElementById('kgtk-edit-ps-sekolah-select') || f.sekolah;
+					if (targetFocus) { targetFocus.focus(); }
 					return;
 				}
 				if (!kabkota) {
@@ -2981,6 +3354,17 @@
 					errEditPs.hidden = false;
 					f.alamat.focus();
 					return;
+				}
+				var finalEditGtk = (f.jenis_gtk.value || '').trim();
+				if (finalEditGtk === 'Lainnya') {
+					var manualEditJbt = inpEditPsJabatanManual ? (inpEditPsJabatanManual.value || '').trim() : '';
+					if (!manualEditJbt) {
+						errEditPs.textContent = 'Silakan tulis nama jabatan pada kolom yang tersedia.';
+						errEditPs.hidden = false;
+						if (inpEditPsJabatanManual) { inpEditPsJabatanManual.focus(); }
+						return;
+					}
+					finalEditGtk = manualEditJbt;
 				}
 
 				btnEditPsSave.disabled = true;
@@ -3001,7 +3385,7 @@
 					agama: f.agama ? f.agama.value : '',
 					sekolah: sekolah,
 					kabkota: kabkota,
-					jenis_gtk: (f.jenis_gtk.value || '').trim(),
+					jenis_gtk: finalEditGtk,
 					pangkat_golongan: (f.pangkat_golongan.value || '').trim(),
 					pendidikan: (f.pendidikan.value || '').trim(),
 					nuptk: (f.nuptk.value || '').trim(),
@@ -3467,6 +3851,77 @@
 		});
 	}
 
+	/* Sinkronisasi Input Nama Kegiatan / Sesi Absen (Muncul di Bawah Nama Kelas) */
+	var kegiatanInputs = document.querySelectorAll('.kgtk-input-kegiatan-absen');
+	var exportKegiatanInput = document.getElementById('kgtk-export-pdf-kegiatan');
+
+	function updateExportLinksKegiatan(val) {
+		var modals = [
+			document.getElementById('kgtk-modal-export-pdf'),
+			document.getElementById('kgtk-modal-export-excel')
+		];
+		modals.forEach(function (m) {
+			if (!m) { return; }
+			var links = m.querySelectorAll('.kgtk-export-item');
+			Array.prototype.forEach.call(links, function (link) {
+				var href = link.getAttribute('href');
+				if (!href || link.hasAttribute('data-skip-date') || href.indexOf('kgtk_semua_biodata_pdf') !== -1) { return; }
+				var re = /([?&])kegiatan_absen=[^&]*(&|$)/;
+				var cleanHref = href.replace(re, function (match, p1, p2) {
+					return p2 === '&' ? p1 : '';
+				}).replace(/(&|\?)$/, '');
+
+				if (val) {
+					var sep = cleanHref.indexOf('?') !== -1 ? '&' : '?';
+					link.setAttribute('href', cleanHref + sep + 'kegiatan_absen=' + encodeURIComponent(val));
+				} else {
+					link.setAttribute('href', cleanHref);
+				}
+			});
+		});
+	}
+
+	function updateAttendanceKegiatan(rawVal, sourceEl) {
+		var rawStr = String(rawVal || '');
+		var trimmed = rawStr.trim();
+
+		Array.prototype.forEach.call(kegiatanInputs, function (inp) {
+			if (inp !== sourceEl && inp.value !== rawStr) {
+				inp.value = rawStr;
+			}
+		});
+		if (exportKegiatanInput && exportKegiatanInput !== sourceEl && exportKegiatanInput.value !== rawStr) {
+			exportKegiatanInput.value = rawStr;
+		}
+
+		var docKegEls = document.querySelectorAll('.kgtk-doc-kegiatan-absen');
+		Array.prototype.forEach.call(docKegEls, function (el) {
+			var hasKelas = el.getAttribute('data-has-kelas') === '1';
+			if (trimmed) {
+				el.textContent = hasKelas ? (' - ' + trimmed) : trimmed;
+				el.style.display = hasKelas ? 'inline' : 'block';
+			} else {
+				el.textContent = '';
+				el.style.display = 'none';
+			}
+		});
+
+		updateExportLinksKegiatan(trimmed);
+	}
+
+	if (kegiatanInputs.length > 0) {
+		Array.prototype.forEach.call(kegiatanInputs, function (inp) {
+			inp.addEventListener('input', function () {
+				updateAttendanceKegiatan(this.value, this);
+			});
+		});
+	}
+	if (exportKegiatanInput) {
+		exportKegiatanInput.addEventListener('input', function () {
+			updateAttendanceKegiatan(this.value, this);
+		});
+	}
+
 	/* ==========================================================================
 	   Modul Manajemen Data Master Panitia (Pelatihan KGTK > Data Panitia)
 	   ========================================================================== */
@@ -3509,6 +3964,13 @@
 		if (rNik) { rNik.addEventListener('change', updateMasterPanitiaIdView); }
 		if (rNip) { rNip.addEventListener('change', updateMasterPanitiaIdView); }
 
+		var panMasterSekolahHelper = bindKabkotaSekolah({
+			kabEl: 'kgtk-pan-field-kabkota',
+			inputEl: 'kgtk-pan-field-instansi-input',
+			listEl: 'kgtk-pan-field-instansi-list',
+			hiddenInput: 'kgtk-pan-field-instansi'
+		});
+
 		var openModal = function (title, data) {
 			if (!formModal) { return; }
 			var titleEl = document.getElementById('kgtk-modal-panitia-title');
@@ -3535,21 +3997,33 @@
 						'kgtk-pan-field-nik': (data.nik && data.nik.indexOf('99') !== 0) ? data.nik : '',
 						'kgtk-pan-field-nip': data.nip || '',
 						'kgtk-pan-field-nip-top': data.nip || '',
-						'kgtk-pan-field-instansi': data.instansi || '',
-						'kgtk-pan-field-kabkota': data.kabkota || '',
 						'kgtk-pan-field-hp': data.hp || '',
 						'kgtk-pan-field-email': data.email || '',
 						'kgtk-pan-field-bank': data.bank || '',
-						'kgtk-pan-field-rekening': data.rekening || ''
+						'kgtk-pan-field-rekening': data.rekening || '',
+						'kgtk-pan-field-npwp': data.npwp || '',
+						'kgtk-pan-field-catatan': data.catatan || ''
 					};
 					for (var fieldId in fMap) {
 						var el = document.getElementById(fieldId);
-						if (el) { el.value = fMap[fieldId]; }
+						if (el) {
+							if (el.tagName === 'SELECT') {
+								setDropdownVal(el, fMap[fieldId]);
+							} else {
+								el.value = fMap[fieldId];
+							}
+						}
+					}
+					if (panMasterSekolahHelper) {
+						panMasterSekolahHelper.setVal(data.kabkota, data.instansi);
 					}
 				} else {
 					if (rNik) { rNik.checked = true; }
 					var jEl = document.getElementById('kgtk-pan-field-jabatan');
-					if (jEl) { jEl.value = 'Panitia Pelaksana'; }
+					if (jEl) { setDropdownVal(jEl, 'Panitia Pelaksana'); }
+					if (panMasterSekolahHelper) {
+						panMasterSekolahHelper.reset();
+					}
 				}
 				updateMasterPanitiaIdView();
 			}
@@ -3710,6 +4184,8 @@
 				var email = (f.email ? f.email.value : '').trim();
 				var bank = (f.bank ? f.bank.value : '').trim();
 				var rekening = (f.rekening ? f.rekening.value : '').trim();
+				var npwp = (f.npwp ? f.npwp.value : '').trim();
+				var catatan = (f.catatan ? f.catatan.value : '').trim();
 
 				var pakaiNip = rNip && rNip.checked;
 				if (pakaiNip && inpNipTop && inpNipTop.value) {
@@ -3767,6 +4243,8 @@
 					email: email,
 					bank: bank,
 					rekening: rekening,
+					npwp: npwp,
+					catatan: catatan,
 					id_type: pakaiNip ? 'nip' : 'nik'
 				};
 
@@ -3957,7 +4435,10 @@
 						'</label>' +
 						'<label class="kgtk-slot" style="font-size:12px;">Mulai <input type="date" class="kgtk-input" data-ek-mulai style="width:130px;padding:4px 6px;min-height:32px;"></label>' +
 						'<label class="kgtk-slot" style="font-size:12px;">Selesai <input type="date" class="kgtk-input" data-ek-selesai style="width:130px;padding:4px 6px;min-height:32px;"></label>' +
-						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ek-deadline style="width:165px;padding:4px 6px;min-height:32px;"></label>';
+						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ek-deadline style="width:165px;padding:4px 6px;min-height:32px;"></label>' +
+						(rawK.length > 1
+							? '<button type="button" class="kgtk-btn kgtk-btn--ghost" data-hapus-existing-kelas="' + kId + '" data-pelatihan-id="' + esc(String(data.id || 0)) + '" data-kelas-nama="' + esc(kNama) + '" data-kelas-terisi="' + (k.terisi ? parseInt(k.terisi, 10) : 0) + '" style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:4px 8px;min-height:32px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;margin-left:auto;" title="Hapus kelas ' + esc(kNama) + '">&#128465;&#65039;</button>'
+							: '');
 					var mIn = itemRow.querySelector('[data-ek-mulai]');
 					var sIn = itemRow.querySelector('[data-ek-selesai]');
 					var dIn = itemRow.querySelector('[data-ek-deadline]');
@@ -4285,7 +4766,10 @@
 						'</div>' +
 						'<label class="kgtk-slot" style="font-size:12px;">Mulai <input type="date" class="kgtk-input" data-ex-mulai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
 						'<label class="kgtk-slot" style="font-size:12px;">Selesai <input type="date" class="kgtk-input" data-ex-selesai style="width:136px;padding:4px 6px;min-height:32px;"></label>' +
-						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ex-deadline style="width:180px;padding:4px 6px;min-height:32px;"></label>';
+						'<label class="kgtk-slot" style="font-size:12px;">Batas Daftar <input type="datetime-local" class="kgtk-input" data-ex-deadline style="width:180px;padding:4px 6px;min-height:32px;"></label>' +
+						(rawKelas.length > 1
+							? '<button type="button" class="kgtk-btn kgtk-btn--ghost" data-hapus-existing-kelas="' + kId + '" data-pelatihan-id="' + esc(String(pelatihanId || 0)) + '" data-kelas-nama="' + esc(kNama) + '" data-kelas-terisi="' + terisi + '" style="color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:4px 10px;min-height:32px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Hapus kelas ' + esc(kNama) + '">&#128465;&#65039; Hapus</button>'
+							: '');
 					var mIn = exRow.querySelector('[data-ex-mulai]');
 					var sIn = exRow.querySelector('[data-ex-selesai]');
 					var dIn = exRow.querySelector('[data-ex-deadline]');
@@ -4334,6 +4818,62 @@
 	}
 
 	document.addEventListener('click', function (e) {
+		var delKelasBtn = e.target.closest('[data-hapus-existing-kelas]');
+		if (delKelasBtn) {
+			e.preventDefault();
+			e.stopPropagation();
+			var kIdDel = parseInt(delKelasBtn.getAttribute('data-hapus-existing-kelas') || '0', 10);
+			if (!kIdDel) { return; }
+			var pelIdDel = parseInt(delKelasBtn.getAttribute('data-pelatihan-id') || '0', 10);
+			if (!pelIdDel) {
+				var kkPelIn = document.getElementById('kgtk-kelola-kelas-pelatihan-id');
+				var epPelIn = document.getElementById('kgtk-edit-pel-id');
+				var mainKelBtn = document.getElementById('kgtk-btn-kelola-kelas');
+				pelIdDel = parseInt(
+					(kkPelIn && kkPelIn.value) ||
+					(epPelIn && epPelIn.value) ||
+					(mainKelBtn && mainKelBtn.getAttribute('data-pelatihan-id')) ||
+					'0',
+					10
+				);
+			}
+			if (!pelIdDel) { return; }
+
+			var kNamaDel = delKelasBtn.getAttribute('data-kelas-nama') || 'kelas ini';
+			var kTerisiDel = parseInt(delKelasBtn.getAttribute('data-kelas-terisi') || '0', 10);
+			var confirmMsg = kTerisiDel > 0
+				? ('Apakah Anda yakin ingin menghapus "' + kNamaDel + '" dari pelatihan ini?\n\nTerdapat ' + kTerisiDel + ' peserta/anggota di kelas ini. Data mereka TIDAK akan dihapus, melainkan dipindahkan ke status "Belum Ada Kelas".')
+				: ('Apakah Anda yakin ingin menghapus "' + kNamaDel + '" dari pelatihan ini?');
+
+			modalConfirm({
+				title: 'Hapus Kelas',
+				message: confirmMsg,
+				confirmText: 'Ya, Hapus Kelas',
+				cancelText: 'Batal',
+				type: 'danger'
+			}).then(function (ok) {
+				if (!ok) { return; }
+				delKelasBtn.disabled = true;
+				var oldHtml = delKelasBtn.innerHTML;
+				delKelasBtn.textContent = '...';
+				api('admin/pelatihan/' + pelIdDel + '/kelas/' + kIdDel, 'DELETE').then(function () {
+					closeKelolaKelasModal();
+					closeEditPelatihanModal();
+					tOk('Kelas "' + kNamaDel + '" berhasil dihapus.');
+					window.location.hash = 'kelola-peserta';
+					window.location.reload();
+				}).catch(function (err) {
+					delKelasBtn.disabled = false;
+					delKelasBtn.innerHTML = oldHtml;
+					modalAlert({
+						title: 'Gagal Menghapus Kelas',
+						message: err.message || 'Gagal menghapus kelas.',
+						type: 'danger'
+					});
+				});
+			});
+			return;
+		}
 		var dlBtn = e.target.closest('[data-atur-deadline-kelas]');
 		if (dlBtn) {
 			e.stopPropagation();
@@ -4721,7 +5261,7 @@
 		document.addEventListener('click', function (e) {
 			var scard = e.target.closest('.kgtk-scard[data-filter]');
 			if (!scard || scard.closest('#kgtk-undangan-container')) { return; }
-			if (e.target.closest('[data-atur-deadline-kelas], [data-open-pane]')) { return; }
+			if (e.target.closest('[data-atur-deadline-kelas], [data-open-pane], [data-hapus-existing-kelas]')) { return; }
 			activePanFilter = scard.getAttribute('data-filter') || 'all';
 			if (panFilterSelect) { panFilterSelect.value = activePanFilter; }
 			applyPanitiaFilter();
@@ -5018,9 +5558,17 @@
 		var boxManual = document.getElementById('kgtk-box-pan-manual');
 		var currentModalTab = 'pick';
 
+		var panQuickSekolahHelper = bindKabkotaSekolah({
+			kabEl: 'kgtk-pan-m-kabkota',
+			inputEl: 'kgtk-pan-m-instansi-input',
+			listEl: 'kgtk-pan-m-instansi-list',
+			hiddenInput: 'kgtk-pan-m-instansi'
+		});
+
 		var openModal = function () {
 			if (!modal) { return; }
 			if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
+			if (panQuickSekolahHelper) { panQuickSekolahHelper.reset(); }
 			modal.style.display = 'flex';
 			modal.classList.add('is-visible');
 		};
@@ -5170,49 +5718,26 @@
 		var btnEditSave = document.getElementById('kgtk-btn-edit-pan-pel-save');
 		var editErrBox = document.getElementById('kgtk-edit-pan-pel-error');
 
-		var rEditNik = document.getElementById('kgtk-edit-pan-radio-nik');
-		var rEditNip = document.getElementById('kgtk-edit-pan-radio-nip');
-		var wrapEditNik = document.getElementById('kgtk-edit-pan-wrap-nik');
-		var wrapEditNipTop = document.getElementById('kgtk-edit-pan-wrap-nip-top');
-		var wrapEditNipBottom = document.getElementById('kgtk-edit-pan-wrap-nip-bottom');
 		var inpEditNik = document.getElementById('kgtk-edit-pan-nik');
-		var inpEditNipTop = document.getElementById('kgtk-edit-pan-nip-top');
-		var inpEditNipBottom = document.getElementById('kgtk-edit-pan-nip');
-
-		var updateEditPanIdView = function () {
-			var pakaiNip = rEditNip && rEditNip.checked;
-			if (pakaiNip) {
-				if (wrapEditNik) { wrapEditNik.style.display = 'none'; }
-				if (wrapEditNipTop) { wrapEditNipTop.style.display = ''; }
-				if (wrapEditNipBottom) { wrapEditNipBottom.style.display = 'none'; }
-				if (inpEditNipTop) { inpEditNipTop.focus(); }
-			} else {
-				if (wrapEditNik) { wrapEditNik.style.display = ''; }
-				if (wrapEditNipTop) { wrapEditNipTop.style.display = 'none'; }
-				if (wrapEditNipBottom) { wrapEditNipBottom.style.display = ''; }
-			}
-		};
-
-		if (rEditNik) { rEditNik.addEventListener('change', updateEditPanIdView); }
-		if (rEditNip) { rEditNip.addEventListener('change', updateEditPanIdView); }
+		var inpEditNip = document.getElementById('kgtk-edit-pan-nip');
 
 		if (inpEditNik) {
 			inpEditNik.addEventListener('input', function (e) {
 				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16);
 			});
 		}
-		if (inpEditNipTop) {
-			inpEditNipTop.addEventListener('input', function (e) {
+		if (inpEditNip) {
+			inpEditNip.addEventListener('input', function (e) {
 				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 18);
-				if (inpEditNipBottom) { inpEditNipBottom.value = e.target.value; }
 			});
 		}
-		if (inpEditNipBottom) {
-			inpEditNipBottom.addEventListener('input', function (e) {
-				e.target.value = e.target.value.replace(/\D/g, '').slice(0, 18);
-				if (inpEditNipTop && inpEditNipTop.value !== e.target.value) { inpEditNipTop.value = e.target.value; }
-			});
-		}
+
+		var panEditSekolahHelper = bindKabkotaSekolah({
+			kabEl: 'kgtk-edit-pan-kabkota',
+			inputEl: 'kgtk-edit-pan-instansi-input',
+			listEl: 'kgtk-edit-pan-instansi-list',
+			hiddenInput: 'kgtk-edit-pan-instansi'
+		});
 
 		var openEditPanModal = function (data) {
 			if (!editModal || !data) { return; }
@@ -5222,33 +5747,41 @@
 				var fId = document.getElementById('kgtk-edit-pan-pel-id');
 				if (fId) { fId.value = data.id || 0; }
 
-				var isNipOnly = (!data.nik || data.nik.indexOf('99') === 0) && !!data.nip;
-				if (isNipOnly) {
-					if (rEditNip) { rEditNip.checked = true; }
-				} else {
-					if (rEditNik) { rEditNik.checked = true; }
-				}
-
 				var fMap = {
 					'kgtk-edit-pan-nama': data.nama || '',
 					'kgtk-edit-pan-gelar-depan': data.gelar_depan || '',
 					'kgtk-edit-pan-gelar-belakang': data.gelar_belakang || '',
-					'kgtk-edit-pan-jabatan': data.jabatan || 'Panitia Pelaksana',
+					'kgtk-edit-pan-jabatan': data.jabatan || data.jenis_gtk || 'Panitia Pelaksana',
+					'kgtk-edit-pan-kelas-id': String(data.kelas_id || 0),
 					'kgtk-edit-pan-nik': (data.nik && data.nik.indexOf('99') !== 0) ? data.nik : '',
 					'kgtk-edit-pan-nip': data.nip || '',
-					'kgtk-edit-pan-nip-top': data.nip || '',
-					'kgtk-edit-pan-instansi': data.instansi || '',
-					'kgtk-edit-pan-kabkota': data.kabkota || '',
+					'kgtk-edit-pan-pangkat': data.pangkat_golongan || '',
+					'kgtk-edit-pan-pendidikan': data.pendidikan || '',
+					'kgtk-edit-pan-tempat-lahir': data.tempat_lahir || '',
+					'kgtk-edit-pan-tanggal-lahir': data.tanggal_lahir || '',
+					'kgtk-edit-pan-jk': data.jenis_kelamin || '',
+					'kgtk-edit-pan-agama': data.agama || '',
+					'kgtk-edit-pan-alamat-instansi': data.alamat_instansi || '',
 					'kgtk-edit-pan-hp': data.hp || '',
 					'kgtk-edit-pan-email': data.email || '',
+					'kgtk-edit-pan-alamat': data.alamat || '',
 					'kgtk-edit-pan-bank': data.bank || '',
-					'kgtk-edit-pan-rekening': data.rekening || ''
+					'kgtk-edit-pan-rekening': data.rekening || '',
+					'kgtk-edit-pan-npwp': data.npwp || ''
 				};
 				for (var fieldId in fMap) {
 					var el = document.getElementById(fieldId);
-					if (el) { el.value = fMap[fieldId]; }
+					if (el) {
+						if (el.tagName === 'SELECT') {
+							setDropdownVal(el, fMap[fieldId]);
+						} else {
+							el.value = fMap[fieldId];
+						}
+					}
 				}
-				updateEditPanIdView();
+				if (panEditSekolahHelper) {
+					panEditSekolahHelper.setVal(data.kabkota, data.instansi || data.sekolah);
+				}
 			}
 			editModal.style.display = 'flex';
 			editModal.classList.add('is-visible');
@@ -5273,8 +5806,11 @@
 			var editBtn = e.target.closest('[data-edit-panitia-pelatihan]');
 			if (!editBtn) { return; }
 			var tr = editBtn.closest('tr[data-json]');
+			if (!tr) {
+				tr = editBtn.closest('tr[data-biodata]');
+			}
 			if (!tr) { return; }
-			var raw = tr.getAttribute('data-json');
+			var raw = tr.getAttribute('data-json') || tr.getAttribute('data-biodata');
 			var d = {};
 			try { d = JSON.parse(raw); } catch (ex) {}
 			openEditPanModal(d);
@@ -5288,56 +5824,55 @@
 
 				var f = formEditPan.elements;
 				var pesertaId = parseInt(document.getElementById('kgtk-edit-pan-pel-id').value || '0', 10);
-				var nama = (f.nama.value || '').trim();
+				var nama = (f.nama ? f.nama.value : '').trim();
 				var gelarDepan = (f.gelar_depan ? f.gelar_depan.value : '').trim();
 				var gelarBelakang = (f.gelar_belakang ? f.gelar_belakang.value : '').trim();
-				var jabatan = (f.jabatan.value || '').trim();
+				var jabatan = (f.jabatan ? f.jabatan.value : '').trim();
+				var kelasId = parseInt(f.kelas_id ? f.kelas_id.value : '0', 10) || 0;
 				var nik = (f.nik ? f.nik.value : '').trim();
 				var nip = (f.nip ? f.nip.value : '').trim();
+				var pangkatGol = (f.pangkat_golongan ? f.pangkat_golongan.value : '').trim();
+				var pendidikan = (f.pendidikan ? f.pendidikan.value : '').trim();
+				var tempatLahir = (f.tempat_lahir ? f.tempat_lahir.value : '').trim();
+				var tanggalLahir = (f.tanggal_lahir ? f.tanggal_lahir.value : '').trim();
+				var jenisKelamin = (f.jenis_kelamin ? f.jenis_kelamin.value : '').trim();
+				var agama = (f.agama ? f.agama.value : '').trim();
 				var instansi = (f.instansi ? f.instansi.value : '').trim();
+				var alamatInstansi = (f.alamat_instansi ? f.alamat_instansi.value : '').trim();
 				var kabkota = (f.kabkota ? f.kabkota.value : '').trim();
 				var hp = (f.hp ? f.hp.value : '').trim();
 				var email = (f.email ? f.email.value : '').trim();
+				var alamat = (f.alamat ? f.alamat.value : '').trim();
 				var bank = (f.bank ? f.bank.value : '').trim();
 				var rekening = (f.rekening ? f.rekening.value : '').trim();
+				var npwp = (f.npwp ? f.npwp.value : '').trim();
+				var catatan = (f.catatan ? f.catatan.value : '').trim();
+				var npwp = (f.npwp ? f.npwp.value : '').trim();
 
-				var pakaiNip = rEditNip && rEditNip.checked;
-				if (pakaiNip && inpEditNipTop && inpEditNipTop.value) {
-					nip = inpEditNipTop.value.trim();
+				if (nik && !/^\d{16}$/.test(nik)) {
+					if (editErrBox) { editErrBox.textContent = 'NIK panitia harus 16 digit angka.'; editErrBox.hidden = false; }
+					if (f.nik) { f.nik.focus(); }
+					return;
 				}
-
-				if (pakaiNip) {
-					if (!/^\d{18}$/.test(nip)) {
-						if (editErrBox) { editErrBox.textContent = 'NIP panitia harus 18 digit angka.'; editErrBox.hidden = false; }
-						if (inpEditNipTop) { inpEditNipTop.focus(); }
-						return;
-					}
-				} else {
-					if (nik && !/^\d{16}$/.test(nik)) {
-						if (editErrBox) { editErrBox.textContent = 'NIK panitia harus 16 digit angka.'; editErrBox.hidden = false; }
-						if (f.nik) { f.nik.focus(); }
-						return;
-					}
-					if (nip && !/^\d{18}$/.test(nip)) {
-						if (editErrBox) { editErrBox.textContent = 'NIP harus 18 digit angka (atau kosongkan).'; editErrBox.hidden = false; }
-						if (f.nip) { f.nip.focus(); }
-						return;
-					}
+				if (nip && !/^\d{18}$/.test(nip)) {
+					if (editErrBox) { editErrBox.textContent = 'NIP panitia harus 18 digit angka.'; editErrBox.hidden = false; }
+					if (f.nip) { f.nip.focus(); }
+					return;
 				}
 
 				if (!nama) {
 					if (editErrBox) { editErrBox.textContent = 'Nama lengkap panitia wajib diisi.'; editErrBox.hidden = false; }
-					f.nama.focus();
+					if (f.nama) { f.nama.focus(); }
 					return;
 				}
 				if (!jabatan) {
 					if (editErrBox) { editErrBox.textContent = 'Tugas / jabatan panitia wajib diisi.'; editErrBox.hidden = false; }
-					f.jabatan.focus();
+					if (f.jabatan) { f.jabatan.focus(); }
 					return;
 				}
 				if (!hp) {
 					if (editErrBox) { editErrBox.textContent = 'Nomor HP / WhatsApp wajib diisi.'; editErrBox.hidden = false; }
-					f.hp.focus();
+					if (f.hp) { f.hp.focus(); }
 					return;
 				}
 
@@ -5348,14 +5883,24 @@
 					gelar_depan: gelarDepan,
 					gelar_belakang: gelarBelakang,
 					jabatan: jabatan,
-					nik: pakaiNip ? '' : nik,
+					kelas_id: kelasId,
+					nik: nik,
 					nip: nip,
+					pangkat_golongan: pangkatGol,
+					pendidikan: pendidikan,
+					tempat_lahir: tempatLahir,
+					tanggal_lahir: tanggalLahir,
+					jenis_kelamin: jenisKelamin,
+					agama: agama,
 					instansi: instansi,
+					alamat_instansi: alamatInstansi,
 					kabkota: kabkota,
 					hp: hp,
 					email: email,
+					alamat: alamat,
 					bank: bank,
-					rekening: rekening
+					rekening: rekening,
+					npwp: npwp
 				};
 
 				api('admin/pelatihan/' + pelId + '/panitia/' + pesertaId, 'PUT', payload).then(function (res) {
@@ -5372,7 +5917,7 @@
 					if (prefix && namaTampil.indexOf(prefix) !== 0) { namaTampil = prefix + ' ' + namaTampil; }
 					if (suffix && namaTampil.indexOf(suffix) === -1) { namaTampil = namaTampil + ', ' + suffix; }
 
-					var tr = container.querySelector('tbody tr[data-id="' + pesertaId + '"]');
+					var tr = container ? container.querySelector('tbody tr[data-id="' + pesertaId + '"]') : null;
 					if (tr) {
 						var namaEl = tr.querySelector('.kgtk-guru-nama');
 						if (namaEl) { namaEl.textContent = namaTampil; }
@@ -5420,11 +5965,18 @@
 							}
 						}
 
+						var selKelas = tr.querySelector('.kgtk-pan-kelas-select');
+						if (selKelas) {
+							selKelas.value = String(item.kelas_id || kelasId);
+							tr.setAttribute('data-kelas', String(item.kelas_id || kelasId));
+						}
+
 						var sText = (namaTampil + ' ' + (item.nik || '') + ' ' + (item.nip || '') + ' ' + (item.jabatan || '') + ' ' + (item.sekolah || item.instansi || '') + ' ' + (item.hp || '')).toLowerCase();
 						tr.setAttribute('data-search', sText);
 
 						var mergedJson = {
 							id: pesertaId,
+							kelas_id: item.kelas_id || kelasId,
 							nama: item.nama,
 							gelar_depan: item.gelar_depan || '',
 							gelar_belakang: item.gelar_belakang || '',
@@ -5433,7 +5985,16 @@
 							nip: item.nip || '',
 							nuptk: item.nuptk || '',
 							instansi: item.sekolah || item.instansi || '',
+							sekolah: item.sekolah || item.instansi || '',
+							alamat_instansi: item.alamat_instansi || '',
 							kabkota: item.kabkota || '',
+							pangkat_golongan: item.pangkat_golongan || '',
+							pendidikan: item.pendidikan || '',
+							tempat_lahir: item.tempat_lahir || '',
+							tanggal_lahir: item.tanggal_lahir || '',
+							jenis_kelamin: item.jenis_kelamin || '',
+							agama: item.agama || '',
+							alamat: item.alamat || '',
 							hp: item.hp || '',
 							email: item.email || '',
 							bank: item.bank || '',
@@ -5441,11 +6002,49 @@
 							npwp: item.npwp || ''
 						};
 						tr.setAttribute('data-json', JSON.stringify(mergedJson));
-						tOk('Biodata panitia ' + namaTampil + ' berhasil diperbarui.');
-					} else {
-						window.location.hash = 'panitia';
-						window.location.reload();
 					}
+
+					var absTr = document.querySelector('tr[data-id="' + pesertaId + '"][data-is-panitia="1"]');
+					if (absTr) {
+						var mJson = {
+							id: pesertaId,
+							kelas_id: item.kelas_id || kelasId,
+							nama: item.nama,
+							gelar_depan: item.gelar_depan || '',
+							gelar_belakang: item.gelar_belakang || '',
+							jabatan: item.jabatan || 'Panitia Pelaksana',
+							nik: item.nik || '',
+							nip: item.nip || '',
+							nuptk: item.nuptk || '',
+							instansi: item.sekolah || item.instansi || '',
+							sekolah: item.sekolah || item.instansi || '',
+							alamat_instansi: item.alamat_instansi || '',
+							kabkota: item.kabkota || '',
+							pangkat_golongan: item.pangkat_golongan || '',
+							pendidikan: item.pendidikan || '',
+							tempat_lahir: item.tempat_lahir || '',
+							tanggal_lahir: item.tanggal_lahir || '',
+							jenis_kelamin: item.jenis_kelamin || '',
+							agama: item.agama || '',
+							alamat: item.alamat || '',
+							hp: item.hp || '',
+							email: item.email || '',
+							bank: item.bank || '',
+							rekening: item.rekening || '',
+							npwp: item.npwp || ''
+						};
+						absTr.setAttribute('data-json', JSON.stringify(mJson));
+						absTr.setAttribute('data-biodata', JSON.stringify(mJson));
+						absTr.setAttribute('data-kelas', String(item.kelas_id || kelasId));
+						var absNama = absTr.querySelector('.kgtk-link-biodata');
+						if (absNama) { absNama.textContent = namaTampil; }
+						var absBadge = absTr.querySelector('.kgtk-badge');
+						if (absBadge) { absBadge.textContent = '👤 Panitia (' + (item.jabatan || 'Pelaksana') + ')'; }
+						var absSelKelas = absTr.querySelector('.kgtk-pan-kelas-select');
+						if (absSelKelas) { absSelKelas.value = String(item.kelas_id || kelasId); }
+					}
+
+					tOk('Biodata panitia ' + namaTampil + ' berhasil diperbarui.');
 				}).catch(function (err) {
 					if (btnEditSave) { btnEditSave.disabled = false; btnEditSave.textContent = 'Simpan Perubahan'; }
 					if (editErrBox) {
@@ -6016,6 +6615,226 @@
 		initBerkasSptSppd();
 	} catch (errSPT) {
 		console.error('KGTK Init Berkas SPT/SPPD Error:', errSPT);
+	}
+
+	/* ==========================================================================
+	   Inisialisasi Formulir Registrasi Kamar
+	   ========================================================================== */
+	function initRegistrasiKamar() {
+		var pane = document.querySelector('.kgtk-pane[data-pane="registrasi-kamar"]');
+		if (!pane) { return; }
+
+		var container = document.getElementById('kgtk-regkamar-sheet-container');
+		if (!container) { return; }
+
+		var pelNama = container.getAttribute('data-pel-nama') || '';
+		var rowsInput = document.getElementById('kgtk-regkamar-rows-input');
+		var tglSelect = document.getElementById('kgtk-regkamar-tanggal-select');
+		var tglInput = document.getElementById('kgtk-regkamar-tanggal-input');
+		var tempatInput = document.getElementById('kgtk-regkamar-tempat-input');
+		var exportPdfBtn = document.getElementById('kgtk-btn-export-pdf-regkamar');
+		var cetakBtn = document.getElementById('kgtk-btn-cetak-regkamar');
+
+		// Ambil template HTML kop surat dari halaman pertama yang ada
+		var firstPage = container.querySelector('.kgtk-page');
+		var kopHtml = '';
+		if (firstPage) {
+			var kopWrap = firstPage.querySelector('.kgtk-kop-wrap');
+			if (kopWrap) {
+				kopHtml = kopWrap.outerHTML;
+			}
+		}
+
+		function getTanggalVal() {
+			return (tglInput ? tglInput.value : '').trim();
+		}
+
+		function getTempatVal() {
+			return (tempatInput ? tempatInput.value : '').trim();
+		}
+
+		function updateExportPdfUrl(totalRows) {
+			if (!exportPdfBtn) { return; }
+			var baseUrl = exportPdfBtn.getAttribute('data-base-url') || exportPdfBtn.href;
+			exportPdfBtn.setAttribute('data-base-url', baseUrl);
+
+			var tgl = getTanggalVal();
+			var tempat = getTempatVal();
+
+			try {
+				var u = new URL(baseUrl, window.location.origin);
+				u.searchParams.set('total_rows', String(totalRows));
+				if (tgl) {
+					u.searchParams.set('tanggal', tgl);
+				} else {
+					u.searchParams.delete('tanggal');
+				}
+				if (tempat) {
+					u.searchParams.set('tempat', tempat);
+				} else {
+					u.searchParams.delete('tempat');
+				}
+				exportPdfBtn.href = u.toString();
+			} catch (e) {
+				var h = baseUrl;
+				h = h.replace(/([?&])total_rows=[^&]*/, '');
+				h = h.replace(/([?&])tanggal=[^&]*/, '');
+				h = h.replace(/([?&])tempat=[^&]*/, '');
+				h += (h.indexOf('?') > -1 ? '&' : '?') + 'total_rows=' + encodeURIComponent(totalRows);
+				if (tgl) { h += '&tanggal=' + encodeURIComponent(tgl); }
+				if (tempat) { h += '&tempat=' + encodeURIComponent(tempat); }
+				exportPdfBtn.href = h;
+			}
+		}
+
+		function rebuildRegistrasiKamar() {
+			var val = rowsInput ? parseInt(rowsInput.value, 10) : 30;
+			if (isNaN(val) || val < 2) {
+				val = 2;
+			}
+			if (val % 2 !== 0) {
+				val++;
+			}
+
+			var tgl = getTanggalVal();
+			var tempat = getTempatVal();
+			var perPageLimit = 30;
+			var totalPages = Math.max(1, Math.ceil(val / perPageLimit));
+			var rowCursor = 0;
+
+			// Buat ulang konten sheet container
+			var pagesHtml = '';
+			for (var pageI = 1; pageI <= totalPages; pageI++) {
+				var isFirst = (pageI === 1);
+				var rowsOnPage = Math.min(perPageLimit, val - rowCursor);
+				if (rowsOnPage % 2 !== 0) {
+					rowsOnPage++;
+				}
+
+				pagesHtml += '<section class="kgtk-page ' + (isFirst ? 'kgtk-page--first' : 'kgtk-page--next') + '" data-page-num="' + pageI + '">';
+				pagesHtml += kopHtml;
+				pagesHtml += '<h2 class="kgtk-doc-title" style="margin:2px 0 3px;font-size:13pt;font-weight:bold;text-align:center;text-transform:uppercase;letter-spacing:0.5px;">REGISTRASI KAMAR</h2>';
+				pagesHtml += '<div class="kgtk-doc-info kgtk-regkamar-info-block" style="text-align:center;margin:1px 0 4px;font-size:12pt;line-height:1.2;">';
+				pagesHtml += '<div class="kgtk-doc-nama kgtk-regkamar-val-nama" style="font-size:12pt;text-align:center;font-weight:normal;">' + safeEsc(pelNama) + '</div>';
+				pagesHtml += '<div class="kgtk-doc-tanggal kgtk-regkamar-val-tanggal" style="font-size:12pt;text-align:center;margin:1px 0;font-weight:normal;">' + safeEsc(tgl) + '</div>';
+				pagesHtml += '<div class="kgtk-doc-lokasi kgtk-regkamar-val-tempat" style="font-size:12pt;text-align:center;margin:1px 0;font-weight:normal;">' + safeEsc(tempat) + '</div>';
+				pagesHtml += '</div>';
+
+				pagesHtml += '<div class="kgtk-scroll">';
+				pagesHtml += '<table class="kgtk-table kgtk-regkamar-table" style="table-layout:fixed;width:100%;box-sizing:border-box;">';
+				pagesHtml += '<colgroup><col style="width:6%;"><col style="width:34%;"><col style="width:20%;"><col style="width:18%;"><col style="width:11%;"><col style="width:11%;"></colgroup>';
+				pagesHtml += '<thead><tr>';
+				pagesHtml += '<th class="c-no" rowspan="2" style="text-align:center;vertical-align:middle;padding:3px 2px;">No.</th>';
+				pagesHtml += '<th class="c-nama" rowspan="2" style="text-align:center;vertical-align:middle;padding:3px 4px;">Nama</th>';
+				pagesHtml += '<th class="c-nohp" rowspan="2" style="text-align:center;vertical-align:middle;padding:3px 4px;">No HP</th>';
+				pagesHtml += '<th class="c-kamar" rowspan="2" style="text-align:center;vertical-align:middle;padding:3px 4px;line-height:1.2;">No Kamar<br><span style="font-weight:normal;font-size:10pt;">(L/P)</span></th>';
+				pagesHtml += '<th class="c-ttd" colspan="2" style="text-align:center;vertical-align:middle;padding:3px 4px;">TTD</th>';
+				pagesHtml += '</tr></thead>';
+
+				pagesHtml += '<tbody class="kgtk-regkamar-tbody">';
+				for (var i = 0; i < rowsOnPage; i += 2) {
+					var no1 = rowCursor + i + 1;
+					var hasPair = (i + 1 < rowsOnPage);
+					var no2 = no1 + 1;
+
+					pagesHtml += '<tr class="kgtk-regkamar-row">';
+					pagesHtml += '<td class="c-no" style="text-align:center;">' + no1 + '</td>';
+					pagesHtml += '<td class="c-nama">&nbsp;</td>';
+					pagesHtml += '<td class="c-nohp">&nbsp;</td>';
+					pagesHtml += '<td class="c-kamar">&nbsp;</td>';
+					if (hasPair) {
+						pagesHtml += '<td class="c-ttd-col c-ttd-left" rowspan="2" style="vertical-align:top;text-align:left;padding:2px 4px;font-weight:bold;">' + no1 + '.</td>';
+						pagesHtml += '<td class="c-ttd-col c-ttd-right" rowspan="2" style="vertical-align:bottom;text-align:right;padding:2px 4px;font-weight:bold;">' + no2 + '.</td>';
+					} else {
+						pagesHtml += '<td class="c-ttd-col c-ttd-left" style="vertical-align:top;text-align:left;padding:2px 4px;font-weight:bold;">' + no1 + '.</td>';
+						pagesHtml += '<td class="c-ttd-col c-ttd-right">&nbsp;</td>';
+					}
+					pagesHtml += '</tr>';
+
+					if (hasPair) {
+						pagesHtml += '<tr class="kgtk-regkamar-row">';
+						pagesHtml += '<td class="c-no" style="text-align:center;">' + no2 + '</td>';
+						pagesHtml += '<td class="c-nama">&nbsp;</td>';
+						pagesHtml += '<td class="c-nohp">&nbsp;</td>';
+						pagesHtml += '<td class="c-kamar">&nbsp;</td>';
+						pagesHtml += '</tr>';
+					}
+				}
+				pagesHtml += '</tbody></table></div>';
+				pagesHtml += '</section>';
+
+				rowCursor += rowsOnPage;
+			}
+
+			container.innerHTML = pagesHtml;
+			updateExportPdfUrl(val);
+		}
+
+		if (rowsInput) {
+			rowsInput.addEventListener('input', rebuildRegistrasiKamar);
+			rowsInput.addEventListener('change', rebuildRegistrasiKamar);
+		}
+
+		var presets = pane.querySelectorAll('.kgtk-regkamar-preset');
+		Array.prototype.forEach.call(presets, function (btn) {
+			btn.addEventListener('click', function (e) {
+				e.preventDefault();
+				var r = parseInt(btn.getAttribute('data-rows'), 10);
+				if (!isNaN(r) && r > 0 && rowsInput) {
+					rowsInput.value = r;
+					rebuildRegistrasiKamar();
+				}
+			});
+		});
+
+		if (tglSelect) {
+			tglSelect.addEventListener('change', function () {
+				if (this.value !== 'custom') {
+					if (tglInput) {
+						tglInput.value = this.value;
+					}
+				}
+				rebuildRegistrasiKamar();
+			});
+		}
+
+		if (tglInput) {
+			tglInput.addEventListener('input', function () {
+				var allTgls = container.querySelectorAll('.kgtk-regkamar-val-tanggal');
+				var val = this.value;
+				Array.prototype.forEach.call(allTgls, function (el) { el.textContent = val; });
+				updateExportPdfUrl(rowsInput ? parseInt(rowsInput.value, 10) || 30 : 30);
+			});
+		}
+
+		if (tempatInput) {
+			tempatInput.addEventListener('input', function () {
+				var allTempat = container.querySelectorAll('.kgtk-regkamar-val-tempat');
+				var val = this.value;
+				Array.prototype.forEach.call(allTempat, function (el) { el.textContent = val; });
+				updateExportPdfUrl(rowsInput ? parseInt(rowsInput.value, 10) || 30 : 30);
+			});
+		}
+
+		if (cetakBtn) {
+			cetakBtn.addEventListener('click', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				clearPrinting();
+				var sub = pane.querySelector('.kgtk-sub[data-sub="registrasi-kamar"]');
+				if (sub) {
+					markPrinting(sub);
+				}
+				window.print();
+			});
+		}
+
+		updateExportPdfUrl(rowsInput ? parseInt(rowsInput.value, 10) || 30 : 30);
+	}
+	try {
+		initRegistrasiKamar();
+	} catch (errRegKamar) {
+		console.error('KGTK Init Registrasi Kamar Error:', errRegKamar);
 	}
 
 	/* Tutup modal jika tombol Escape ditekan */

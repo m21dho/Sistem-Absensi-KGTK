@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $is_acara  = ( isset( $p->jenis ) && 'acara' === $p->jenis );
 $req_peran = isset( $_GET['peran'] ) ? sanitize_text_field( wp_unslash( $_GET['peran'] ) ) : 'Peserta';
-if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
+if ( ! in_array( $req_peran, KGTK_Helpers::peran_list(), true ) ) {
 	$req_peran = 'Peserta';
 }
 ?>
@@ -44,7 +44,7 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 				<span>Pilih Peran Dalam Kegiatan Ini *</span>
 			</label>
 			<select class="kgtk-input" name="peran" id="kgtk-tambah-peran" style="font-size:14.5px;font-weight:700;height:44px;background:#fff;border-color:#3b82f6;">
-				<?php foreach ( KGTK_Helpers::PERAN as $peran ) : ?>
+				<?php foreach ( KGTK_Helpers::peran_list() as $peran ) : ?>
 					<option value="<?php echo esc_attr( $peran ); ?>" <?php selected( $req_peran, $peran ); ?>>
 						<?php
 						$label_icon = '';
@@ -118,6 +118,13 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 			<small>18 digit angka NIP (kosongkan jika non-PNS/belum ada).</small>
 		</label>
 
+		<?php if ( $is_acara ) : ?>
+		<label class="kgtk-field" id="kgtk-admin-wrap-jabatan-acara">
+			<span>Jabatan *</span>
+			<input type="text" class="kgtk-input" id="kgtk-tambah-jabatan-acara" maxlength="100" placeholder="Ketik jabatan Anda (mis. Guru, Kepala Sekolah, Staf, Analis, dll.)">
+		</label>
+		<?php endif; ?>
+
 		<div class="kgtk-row2">
 			<?php echo KGTK_Admin::field( 'Tempat Lahir *', 'tempat_lahir', 'type="text" maxlength="80" required placeholder="Tempat lahir"' ); ?>
 			<?php echo KGTK_Admin::field( 'Tanggal Lahir *', 'tanggal_lahir', 'type="date" required' ); ?>
@@ -145,14 +152,14 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</div>
 
 		<label class="kgtk-field">
-			<span>Pangkat / Golongan</span>
-			<input type="text" class="kgtk-input" name="pangkat_golongan" list="kgtk-pangkat-list" placeholder="mis. Penata Muda (III/a) atau Non ASN">
+			<span>Pangkat / Golongan *</span>
+			<input type="text" class="kgtk-input" name="pangkat_golongan" list="kgtk-pangkat-list" required placeholder="mis. Penata Muda (III/a) atau -">
 			<datalist id="kgtk-pangkat-list">
 				<?php foreach ( KGTK_Helpers::PANGKAT_GOLONGAN as $pg ) : ?>
 					<option value="<?php echo esc_attr( $pg ); ?>"></option>
 				<?php endforeach; ?>
 			</datalist>
-			<small>Pilih dari daftar atau ketik langsung (opsional untuk non-ASN).</small>
+			<small>Pilih dari daftar atau ketik langsung (isi "-" jika tidak ada / Non ASN).</small>
 		</label>
 
 		<label class="kgtk-field">
@@ -197,16 +204,22 @@ if ( ! in_array( $req_peran, KGTK_Helpers::PERAN, true ) ) {
 		</label>
 
 		<!-- Field Jabatan Khusus Peserta -->
-		<label class="kgtk-field" id="kgtk-admin-wrap-jenis-gtk" <?php echo $is_acara ? 'style="display:none;"' : ''; ?>>
-			<span>Jabatan GTK *</span>
-			<select class="kgtk-input" name="jenis_gtk" id="kgtk-tambah-jenis-gtk">
-				<option value="">-- Pilih Jabatan GTK --</option>
-				<?php foreach ( KGTK_Helpers::JABATAN as $jg ) : ?>
-					<option value="<?php echo esc_attr( $jg ); ?>"><?php echo esc_html( $jg ); ?></option>
-				<?php endforeach; ?>
-			</select>
-			<small>Khusus peserta: pilih jabatan guru atau tenaga kependidikan.</small>
-		</label>
+		<div id="kgtk-admin-wrap-jenis-gtk">
+			<label class="kgtk-field">
+				<span>Jabatan *</span>
+				<select class="kgtk-input" name="jenis_gtk" id="kgtk-tambah-jenis-gtk">
+					<option value="">-- Pilih Jabatan --</option>
+					<?php foreach ( KGTK_Helpers::JABATAN as $jg ) : ?>
+						<option value="<?php echo esc_attr( $jg ); ?>"><?php echo esc_html( $jg ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<small>Pilih jabatan peserta (pilih Lainnya untuk mengetik jabatan sendiri).</small>
+			</label>
+			<label class="kgtk-field" id="kgtk-admin-wrap-jenis-gtk-manual" style="display:none;margin-top:8px;">
+				<span>Tulis Jabatan *</span>
+				<input type="text" class="kgtk-input" id="kgtk-tambah-jenis-gtk-manual" maxlength="100" placeholder="Ketik jabatan (mis. Staf, Analis, Dosen, dll.)">
+			</label>
+		</div>
 
 		<!-- Field Tugas / Jabatan Tim untuk Non-Peserta (Panitia/Narasumber/Pengajar/Fasilitator/dll) -->
 		<label class="kgtk-field" id="kgtk-admin-wrap-tugas-tim" style="display:none;">

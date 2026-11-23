@@ -68,9 +68,11 @@
 
 		var node = el('div', { class: 'kgtk-sekolah' });
 
-		/* ---- isian manual (juga satu-satunya isian bila data sekolah belum ada) ---- */
-		var manualInput = el('input', { class: 'kgtk-input', type: 'text', id: id + '-manual', maxlength: 200, placeholder: 'Ketik nama sekolah/instansi atau NPSN', autocomplete: 'off' });
-		var manualWrap = el('label', { class: 'kgtk-field', for: id + '-manual' }, [el('span', { text: hasList ? 'Nama sekolah/instansi (diketik) *' : 'Asal sekolah/instansi *' }), manualInput]);
+		var isManualOnly = !!o.manualOnly;
+
+		/* ---- isian manual (juga satu-satunya isian bila data sekolah belum ada atau mode manualOnly) ---- */
+		var manualInput = el('input', { class: 'kgtk-input', type: 'text', id: id + '-manual', maxlength: 200, placeholder: isManualOnly ? 'Ketik nama instansi / unit kerja Anda' : 'Ketik nama sekolah/instansi atau NPSN', autocomplete: 'off' });
+		var manualWrap = el('label', { class: 'kgtk-field', for: id + '-manual' }, [el('span', { text: isManualOnly ? 'Instansi *' : (hasList ? 'Nama sekolah/instansi (diketik) *' : 'Asal sekolah/instansi *') }), manualInput]);
 
 		if (!hasList) {
 			node.appendChild(manualWrap);
@@ -78,7 +80,7 @@
 				node: node,
 				getValue: function () { return { kabkota: '', sekolah_id: 0, sekolah: manualInput.value.trim() }; },
 				setValue: function (v) { manualInput.value = (v && v.sekolah) || ''; },
-				validate: function () { return manualInput.value.trim() ? '' : 'Asal sekolah/instansi wajib diisi.'; }
+				validate: function () { return manualInput.value.trim() ? '' : (isManualOnly ? 'Instansi wajib diisi.' : 'Asal sekolah/instansi wajib diisi.'); }
 			};
 		}
 
@@ -102,9 +104,15 @@
 		node.appendChild(manualWrap);
 		node.appendChild(toggle);
 
-		function manualMode() { return st.kab === LAIN || st.manual; }
+		function manualMode() { return isManualOnly || st.kab === LAIN || st.manual; }
 
 		function sync() {
+			if (isManualOnly) {
+				comboBox.hidden = true;
+				manualWrap.hidden = false;
+				toggle.hidden = true;
+				return;
+			}
 			var ada = !!st.kab, lain = st.kab === LAIN, man = manualMode();
 			comboBox.hidden = !ada || man;
 			manualWrap.hidden = !ada || !man;
@@ -152,6 +160,10 @@
 
 		function gantiKab(kab) {
 			st.kab = kab; st.sel = null; st.manual = false; st.list = [];
+			if (isManualOnly) {
+				sync();
+				return Promise.resolve([]);
+			}
 			cari.value = ''; manualInput.value = ''; tutup();
 			sync();
 			if (kab && kab !== LAIN) { return muat(kab); }
@@ -196,6 +208,12 @@
 				var kab = v.kabkota || '';
 				if (kab && kab !== LAIN && kabs.indexOf(kab) < 0) { kab = ''; }
 				kabSel.value = kab;
+				if (isManualOnly) {
+					st.kab = kab;
+					manualInput.value = v.sekolah || '';
+					sync();
+					return;
+				}
 				gantiKab(kab).then(function () {
 					if (!kab) { return; }
 					if (kab === LAIN) { manualInput.value = v.sekolah || ''; return; }

@@ -88,6 +88,7 @@ class KGTK_Export {
 		add_action( 'admin_post_kgtk_semua_biodata_pdf', array( __CLASS__, 'handle_semua_biodata_pdf' ) );
 		add_action( 'admin_post_kgtk_tanda_terima_pdf', array( __CLASS__, 'handle_tanda_terima_pdf' ) );
 		add_action( 'admin_post_kgtk_tanda_terima_atk_pdf', array( __CLASS__, 'handle_tanda_terima_atk_pdf' ) );
+		add_action( 'admin_post_kgtk_registrasi_kamar_pdf', array( __CLASS__, 'handle_registrasi_kamar_pdf' ) );
 	}
 
 	public static function libs_ready() {
@@ -192,6 +193,49 @@ class KGTK_Export {
 			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
 			'kgtk_tanda_terima_atk_pdf_' . (int) $id
 		);
+	}
+
+	public static function registrasi_kamar_pdf_url( $id, $total_rows = 30, $tanggal = '', $tempat = '' ) {
+		$args = array(
+			'action'     => 'kgtk_registrasi_kamar_pdf',
+			'id'         => (int) $id,
+			'total_rows' => (int) $total_rows,
+		);
+		$tanggal = trim( (string) $tanggal );
+		if ( '' !== $tanggal ) {
+			$args['tanggal'] = $tanggal;
+		}
+		$tempat = trim( (string) $tempat );
+		if ( '' !== $tempat ) {
+			$args['tempat'] = $tempat;
+		}
+		return wp_nonce_url(
+			add_query_arg( $args, admin_url( 'admin-post.php' ) ),
+			'kgtk_registrasi_kamar_pdf_' . (int) $id
+		);
+	}
+
+	public static function handle_registrasi_kamar_pdf() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Anda tidak memiliki akses.', 'Akses ditolak', array( 'response' => 403 ) );
+		}
+		$id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+		check_admin_referer( 'kgtk_registrasi_kamar_pdf_' . $id );
+
+		$pelatihan = KGTK_Helpers::get_by_id( $id );
+		if ( ! $pelatihan ) {
+			wp_die( 'Pelatihan tidak ditemukan.', 'Tidak ditemukan', array( 'response' => 404 ) );
+		}
+
+		if ( ! self::libs_ready() ) {
+			wp_die( 'Library PDF (Dompdf) belum terpasang.', 'Error Library', array( 'response' => 500 ) );
+		}
+
+		$total_rows = isset( $_GET['total_rows'] ) ? absint( $_GET['total_rows'] ) : 30;
+		$tanggal    = isset( $_GET['tanggal'] ) ? sanitize_text_field( wp_unslash( $_GET['tanggal'] ) ) : '';
+		$tempat     = isset( $_GET['tempat'] ) ? sanitize_text_field( wp_unslash( $_GET['tempat'] ) ) : '';
+
+		self::pdf_registrasi_kamar( $pelatihan, $total_rows, $tanggal, $tempat );
 	}
 
 	public static function handle_tanda_terima_pdf() {
@@ -353,6 +397,9 @@ class KGTK_Export {
 
 		$kelas_id = isset( $_GET['kelas_id'] ) ? intval( wp_unslash( $_GET['kelas_id'] ) ) : 0;
 
+		$kegiatan_absen = isset( $_GET['kegiatan_absen'] ) ? sanitize_text_field( wp_unslash( $_GET['kegiatan_absen'] ) ) : '';
+		$kegiatan_absen = trim( $kegiatan_absen );
+
 		$suffix = '';
 		if ( $is_filtered ) {
 			$suffix .= '-' . sanitize_title( $peran_filter );
@@ -387,10 +434,10 @@ class KGTK_Export {
 
 		if ( 'pdf' === $format ) {
 			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
-			self::pdf( $data, $base . '.pdf', $peran_filter, $tanggal_filter, $kelas_id );
+			self::pdf( $data, $base . '.pdf', $peran_filter, $tanggal_filter, $kelas_id, $kegiatan_absen );
 		} elseif ( 'xlsx_absen' === $format ) {
 			$base = sanitize_file_name( 'absen-' . strtolower( $data['pelatihan']->kode ) . $suffix );
-			self::xlsx( $data, $base . '.xlsx', $peran_filter, $tanggal_filter, $kelas_id );
+			self::xlsx( $data, $base . '.xlsx', $peran_filter, $tanggal_filter, $kelas_id, $kegiatan_absen );
 		} else {
 			$base = sanitize_file_name( 'data-guru-' . strtolower( $data['pelatihan']->kode ) . $suffix );
 			self::xlsx_data_guru( $id, $data, $base . '.xlsx', $peran_filter, $kelas_id );
@@ -434,7 +481,7 @@ class KGTK_Export {
 	 * Satu sheet per kelas per peran. Isi mengikuti formulir daftar hadir: tiap halaman berisi
 	 * judul, kegiatan, tabel 15 baris (No, Nama, Instansi, Tanda Tangan), dan blok penanggung jawab.
 	 */
-	private static function xlsx( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0 ) {
+	private static function xlsx( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0, $kegiatan_absen = '' ) {
 		$p            = $data['pelatihan'];
 		$daftar_hari  = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
 		$is_multi_day = count( $daftar_hari ) > 1;
@@ -549,8 +596,15 @@ class KGTK_Export {
 						$r++;
 					}
 
-					if ( $sh['tampil_kelas'] ) {
-						$ws->setCellValueExplicit( 'A' . $r, (string) $k->label, DataType::TYPE_STRING );
+					if ( $sh['tampil_kelas'] || '' !== $kegiatan_absen ) {
+						if ( $sh['tampil_kelas'] && '' !== $kegiatan_absen ) {
+							$kelas_keg_line = (string) $k->label . ' - ' . (string) $kegiatan_absen;
+						} elseif ( $sh['tampil_kelas'] ) {
+							$kelas_keg_line = (string) $k->label;
+						} else {
+							$kelas_keg_line = (string) $kegiatan_absen;
+						}
+						$ws->setCellValueExplicit( 'A' . $r, $kelas_keg_line, DataType::TYPE_STRING );
 						$ws->mergeCells( 'A' . $r . ':E' . $r );
 						$ws->getStyle( 'A' . $r )->getFont()->setBold( true )->setSize( 12 );
 						$ws->getStyle( 'A' . $r )->getAlignment()->setHorizontal( Alignment::HORIZONTAL_CENTER );
@@ -919,7 +973,7 @@ class KGTK_Export {
 
 	/* ====================== PDF ====================== */
 
-	private static function pdf( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0 ) {
+	private static function pdf( $data, $filename, $peran_filter = '', $tanggal_filter = '', $kelas_id = 0, $kegiatan_absen = '' ) {
 		$p            = $data['pelatihan'];
 		$daftar_hari  = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
 		$is_multi_day = count( $daftar_hari ) > 1;
@@ -935,34 +989,38 @@ class KGTK_Export {
 			$title_suffix .= ' - ' . KGTK_Helpers::format_hari_tanggal( $tanggal_filter );
 		}
 		$html         = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Daftar Hadir' . esc_html( $title_suffix ) . ' - ' . esc_html( $p->nama ) . '</title><style>
-@page { margin: 0.6cm 1.8cm 0.6cm 1.8cm; }
-body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 12pt; color: #000; }
-.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 4px; }
+@page { margin: 0.85cm 1.5cm 0.4cm 1.5cm; }
+body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 11pt; color: #000; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 4px auto 2px; }
+.kgtk-kop-tbl { margin: 0 auto; border-collapse: collapse; border: 0; width: auto; }
 .kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
-.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
-.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 1.5px !important; max-width: 1.5px !important; min-width: 1.5px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 1.5px !important; height: 62px !important; background-color: #0083C4 !important; border: 0 !important; }
 .page { page-break-after: always; }
 .page.last { page-break-after: auto; }
-h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 2px; }
-.kgtk-doc-info { text-align: center; margin: 2px 0 4px; font-size: 12pt; line-height: 1.25; }
+h1 { text-align: center; font-size: 12pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 1px; }
+.kgtk-doc-info { text-align: center; margin: 1px 0 2px; font-size: 12pt; line-height: 1.15; }
 .kgtk-doc-info div { font-size: 12pt; }
-p.info { text-align: center; margin: 0 0 3px; font-size: 12pt; }
-p.kelas { text-align: center; margin: 0 0 4px; font-size: 12pt; font-weight: bold; }
-table.abs { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 0; table-layout: fixed; }
+.kgtk-doc-tanggal { display: block !important; font-size: 12pt; text-align: center; margin: 1px 0 2px; }
+.kgtk-doc-lokasi { display: block !important; font-size: 12pt; text-align: center; margin: 1px 0 2px; }
+p.info { text-align: center; margin: 0 0 2px; font-size: 12pt; }
+p.kelas { text-align: center; margin: 0 0 2px; font-size: 12pt; font-weight: bold; }
+table.abs { width: 100%; border-collapse: collapse; margin-top: 2px; margin-bottom: 0; table-layout: fixed; }
 table.abs tbody.kgtk-pair { page-break-inside: avoid; }
 table.abs tr { page-break-inside: avoid; }
-table.abs th, table.abs td { border: 1px solid #000; padding: 1px 6px; height: 32px; font-size: 12pt; vertical-align: middle; }
-table.abs th { background: none; color: #000; text-align: center; height: 26px; font-size: 12pt; font-weight: bold; }
-th.no, td.no { text-align: center; width: 6%; font-size: 12pt; padding: 0 2px; }
-th.nama, td.nama { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
-th.inst, td.inst { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
-th.ttd { width: 32%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 16%; padding: 2px 5px; font-size: 11pt; font-weight: bold; line-height: 1.15; }
+table.abs th, table.abs td { border: 1px solid #000; padding: 0 4px; height: 20px; font-size: 11pt; vertical-align: middle; }
+table.abs th { background: none; color: #000; text-align: center; height: 18px; font-size: 11pt; font-weight: bold; }
+th.no, td.no { text-align: center; width: 5%; font-size: 11pt; padding: 0 2px; }
+th.nama, td.nama { width: 35%; font-size: 11pt; padding: 0 4px; text-align: left; text-transform: uppercase !important; }
+th.inst, td.inst { width: 35%; font-size: 11pt; padding: 0 4px; text-align: left; }
+th.ttd { width: 25%; white-space: nowrap; text-align: center; font-size: 11pt; }
+td.ttd-col { width: 12.5%; padding: 1px 3px; font-size: 11pt; font-weight: bold; line-height: 1.1; }
 td.ttd-left { text-align: left; vertical-align: top; }
 td.ttd-right { text-align: right; vertical-align: bottom; }
 table.ttd { display: none; }
-td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
-div.space { height: 40px; }
+td.ttd-box { width: 250px; text-align: center; font-size: 11pt; }
+td.ttd-box strong { text-transform: uppercase !important; }
+div.space { height: 50px; }
 </style></head><body>';
 
 		$items  = array();
@@ -1007,20 +1065,24 @@ div.space { height: 40px; }
 			$sh    = $it['sh'];
 			$html .= '<div class="page' . ( $idx === $total - 1 ? ' last' : '' ) . '">';
 			if ( 0 === $it['page_index'] ) {
-				$html .= KGTK_Helpers::kop_html();
+				$html .= KGTK_Helpers::kop_html( true );
 				$html .= '<h1>' . esc_html( KGTK_Helpers::judul_absen( $sh['peran'] ) ) . '</h1>';
 				$html .= KGTK_Helpers::baris_info_html( $p, $it['tanggal'], $sh['kelas'] );
-				if ( $sh['tampil_kelas'] ) {
+				if ( $sh['tampil_kelas'] && '' !== $kegiatan_absen ) {
+					$html .= '<p class="kelas">' . esc_html( $sh['kelas']->label . ' - ' . $kegiatan_absen ) . '</p>';
+				} elseif ( $sh['tampil_kelas'] ) {
 					$html .= '<p class="kelas">' . esc_html( $sh['kelas']->label ) . '</p>';
+				} elseif ( '' !== $kegiatan_absen ) {
+					$html .= '<p class="kelas">' . esc_html( $kegiatan_absen ) . '</p>';
 				}
 			}
 			$html .= '<table class="abs">';
-			$html .= '<colgroup><col style="width:6%;"><col style="width:31%;"><col style="width:31%;"><col style="width:16%;"><col style="width:16%;"></colgroup>';
+			$html .= '<colgroup><col style="width:5%;"><col style="width:35%;"><col style="width:35%;"><col style="width:12.5%;"><col style="width:12.5%;"></colgroup>';
 			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama</th><th class="inst">Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead>';
 			for ( $n = 0; $n < $it['halaman']['jumlah']; $n += 2 ) {
 				$row1       = isset( $it['halaman']['rows'][ $n ] ) ? $it['halaman']['rows'][ $n ] : null;
 				$no1        = $it['halaman']['mulai'] + $n + 1;
-				$nama1      = $row1 ? KGTK_Helpers::format_nama_gelar( $row1 ) : '&nbsp;';
+				$nama1      = $row1 ? mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row1 ), 'UTF-8' ) : '&nbsp;';
 				$inst1      = $row1 ? esc_html( $row1->sekolah ) : '&nbsp;';
 				$has_second = ( $n + 1 < $it['halaman']['jumlah'] );
 
@@ -1029,7 +1091,7 @@ div.space { height: 40px; }
 				if ( $has_second ) {
 					$no2   = $no1 + 1;
 					$row2  = isset( $it['halaman']['rows'][ $n + 1 ] ) ? $it['halaman']['rows'][ $n + 1 ] : null;
-					$nama2 = $row2 ? KGTK_Helpers::format_nama_gelar( $row2 ) : '&nbsp;';
+					$nama2 = $row2 ? mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row2 ), 'UTF-8' ) : '&nbsp;';
 					$inst2 = $row2 ? esc_html( $row2->sekolah ) : '&nbsp;';
 					$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no1 . '.</td><td class="ttd-col ttd-right" rowspan="2">' . $no2 . '.</td></tr>';
 					$html .= '<tr><td class="no">' . $no2 . '</td><td class="nama">' . esc_html( $nama2 ) . '</td><td class="inst">' . $inst2 . '</td></tr>';
@@ -1041,8 +1103,7 @@ div.space { height: 40px; }
 			$html .= '</table>';
 
 			if ( $it['is_last'] ) {
-				$titimangsa_pdf = KGTK_Helpers::format_titimangsa( $p, $it['tanggal'], $s['kelas'] );
-				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><div>' . esc_html( $titimangsa_pdf ) . '</div><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
+				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( mb_strtoupper( KGTK_Helpers::nama_pj( $p ), 'UTF-8' ) ) . '</strong></td></tr></table>';
 			}
 			$html .= '</div>';
 		}
@@ -1071,7 +1132,7 @@ div.space { height: 40px; }
 	 */
 	public static function render_single_biodata_html( $peserta, $pelatihan, $kop_html = '' ) {
 		if ( empty( $kop_html ) ) {
-			$kop_html = KGTK_Helpers::kop_html();
+			$kop_html = KGTK_Helpers::kop_html( true );
 		}
 
 		$peran   = ! empty( $peserta->peran ) ? $peserta->peran : 'PESERTA';
@@ -1079,7 +1140,7 @@ div.space { height: 40px; }
 		$tgl_mulai_bio   = ( ! empty( $peserta->kelas_tanggal_mulai ) && '0000-00-00' !== $peserta->kelas_tanggal_mulai ) ? $peserta->kelas_tanggal_mulai : $pelatihan->tanggal_mulai;
 		$tgl_selesai_bio = ( ! empty( $peserta->kelas_tanggal_selesai ) && '0000-00-00' !== $peserta->kelas_tanggal_selesai ) ? $peserta->kelas_tanggal_selesai : $pelatihan->tanggal_selesai;
 		$tgl_pelatihan   = KGTK_Helpers::rentang_tanggal( $tgl_mulai_bio, $tgl_selesai_bio );
-		$tgl_pel_txt     = $tgl_pelatihan ? ( 0 === stripos( $tgl_pelatihan, 'tanggal' ) ? $tgl_pelatihan : 'Tanggal ' . $tgl_pelatihan ) : '';
+		$tgl_pel_txt     = $tgl_pelatihan ? preg_replace( '/^tanggal\s*[:\-]?\s*/i', '', trim( $tgl_pelatihan ) ) : '';
 		$tgl_ttd         = KGTK_Helpers::format_tanggal( $tgl_mulai_bio );
 		$lokasi          = ! empty( $pelatihan->lokasi ) ? $pelatihan->lokasi : 'Kepulauan Riau';
 
@@ -1092,8 +1153,10 @@ div.space { height: 40px; }
 		if ( ! empty( $tgl_pel_txt ) ) {
 			$h .= '<div class="title-date">' . esc_html( $tgl_pel_txt ) . '</div>';
 		}
-		$lok_txt = 0 === strpos( strtolower( trim( $lokasi ) ), 'di ' ) ? $lokasi : 'di ' . $lokasi;
-		$h .= '<div class="title-loc">' . esc_html( $lok_txt ) . '</div>';
+		$lok_clean = preg_replace( '/^di\s+/i', '', trim( (string) $lokasi ) );
+		if ( ! empty( $lok_clean ) ) {
+			$h .= '<div class="title-loc">' . esc_html( $lok_clean ) . '</div>';
+		}
 		$h .= '</div>';
 
 		$tgl_lahir_fmt = ! empty( $peserta->tanggal_lahir ) && '-' !== $peserta->tanggal_lahir ? KGTK_Helpers::format_tanggal( $peserta->tanggal_lahir ) : '';
@@ -1118,7 +1181,7 @@ div.space { height: 40px; }
 		$bank            = ! empty( $peserta->bank ) ? $peserta->bank : '-';
 		$rekening        = ! empty( $peserta->rekening ) ? $peserta->rekening : '-';
 
-		$nama_lengkap    = KGTK_Helpers::format_nama_gelar( $peserta );
+		$nama_lengkap    = mb_strtoupper( KGTK_Helpers::format_nama_gelar( $peserta ), 'UTF-8' );
 
 		$h .= '<table class="bio-box">';
 		$h .= '<tr><td class="lbl">NAMA</td><td class="sep">:</td><td class="val">' . esc_html( $nama_lengkap ) . '</td></tr>';
@@ -1189,7 +1252,7 @@ div.space { height: 40px; }
 			$doc_title = 'Biodata Semua Peserta - ' . $pelatihan->nama;
 		}
 
-		$kop_html = KGTK_Helpers::kop_html();
+		$kop_html = KGTK_Helpers::kop_html( true );
 
 		$html  = '<!DOCTYPE html><html><head><meta charset="utf-8">';
 		$html .= '<title>' . esc_html( $doc_title ) . '</title>';
@@ -1200,9 +1263,10 @@ div.space { height: 40px; }
 		$html .= '.bio-page { page-break-after: always; clear: both; }';
 		$html .= '.bio-page:last-child { page-break-after: avoid; }';
 		$html .= '.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 10px; }';
+		$html .= '.kgtk-kop-tbl { margin: 0 auto; border-collapse: collapse; border: 0; width: auto; }';
 		$html .= '.kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }';
-		$html .= '.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }';
-		$html .= '.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }';
+		$html .= '.kgtk-kop-tbl td.kgtk-kop-line { width: 1.5px !important; max-width: 1.5px !important; min-width: 1.5px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }';
+		$html .= '.kgtk-kop-tbl td.kgtk-kop-line div { width: 1.5px !important; height: 62px !important; background-color: #0083C4 !important; border: 0 !important; }';
 		$html .= '.title-box { text-align: center; margin: 6pt 0 10pt; }';
 		$html .= '.title-main { font-size: 15pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }';
 		$html .= '.title-sub { font-size: 13pt; font-weight: bold; margin-bottom: 2px; line-height: 1.25; }';
@@ -1298,40 +1362,44 @@ div.space { height: 40px; }
 		$total_pages = count( $pages );
 
 		$html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' . esc_html( $judul . ' - ' . $p->nama ) . '</title><style>
-@page { margin: 0.6cm 1.8cm 0.6cm 1.8cm; }
-body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 12pt; color: #000; }
-.kgtk-kop-wrap { width: 100%; text-align: center; margin: 0 auto 4px; }
+@page { margin: 0.85cm 1.5cm 0.4cm 1.5cm; }
+body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 11pt; color: #000; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 4px auto 2px; }
+.kgtk-kop-tbl { margin: 0 auto; border-collapse: collapse; border: 0; width: auto; }
 .kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
-.kgtk-kop-tbl td.kgtk-kop-line { width: 2px !important; max-width: 2px !important; min-width: 2px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
-.kgtk-kop-tbl td.kgtk-kop-line div { width: 2px !important; background-color: #0083C4 !important; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 1.5px !important; max-width: 1.5px !important; min-width: 1.5px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 1.5px !important; height: 62px !important; background-color: #0083C4 !important; border: 0 !important; }
 .page { page-break-after: always; }
 .page.last { page-break-after: auto; }
-h1 { text-align: center; font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 2px; }
-.kgtk-doc-info { text-align: center; margin: 2px 0 4px; font-size: 12pt; line-height: 1.25; }
+h1 { text-align: center; font-size: 12pt; font-weight: bold; letter-spacing: 0.5px; margin: 0 0 1px; }
+.kgtk-doc-info { text-align: center; margin: 1px 0 2px; font-size: 12pt; line-height: 1.15; }
 .kgtk-doc-info div { font-size: 12pt; }
-p.kelas { text-align: center; margin: 0 0 4px; font-size: 12pt; font-weight: bold; }
-table.abs { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 0; table-layout: fixed; }
+.kgtk-doc-tanggal { display: block !important; font-size: 12pt; text-align: center; margin: 1px 0 2px; }
+.kgtk-doc-lokasi { display: block !important; font-size: 12pt; text-align: center; margin: 1px 0 2px; }
+p.kelas { text-align: center; margin: 0 0 2px; font-size: 12pt; font-weight: bold; }
+table.abs { width: 100%; border-collapse: collapse; margin-top: 2px; margin-bottom: 0; table-layout: fixed; }
 table.abs tbody.kgtk-pair { page-break-inside: avoid; }
 table.abs tr { page-break-inside: avoid; }
-table.abs th, table.abs td { border: 1px solid #000; padding: 1px 6px; height: 32px; font-size: 12pt; vertical-align: middle; }
-table.abs th { background: none; color: #000; text-align: center; height: 26px; font-size: 12pt; font-weight: bold; }
-th.no, td.no { text-align: center; width: 6%; font-size: 12pt; padding: 0 2px; }
-th.nama, td.nama { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
-th.inst, td.inst { width: 31%; font-size: 12pt; padding: 0 6px; text-align: left; }
-th.ttd { width: 32%; white-space: nowrap; text-align: center; }
-td.ttd-col { width: 16%; padding: 2px 5px; font-size: 11pt; font-weight: bold; line-height: 1.15; }
+table.abs th, table.abs td { border: 1px solid #000; padding: 0 4px; height: 20px; font-size: 11pt; vertical-align: middle; }
+table.abs th { background: none; color: #000; text-align: center; height: 18px; font-size: 11pt; font-weight: bold; }
+th.no, td.no { text-align: center; width: 5%; font-size: 11pt; padding: 0 2px; }
+th.nama, td.nama { width: 35%; font-size: 11pt; padding: 0 4px; text-align: left; text-transform: uppercase !important; }
+th.inst, td.inst { width: 35%; font-size: 11pt; padding: 0 4px; text-align: left; }
+th.ttd { width: 25%; white-space: nowrap; text-align: center; font-size: 11pt; }
+td.ttd-col { width: 12.5%; padding: 1px 3px; font-size: 11pt; font-weight: bold; line-height: 1.1; }
 td.ttd-left { text-align: left; vertical-align: top; }
 td.ttd-right { text-align: right; vertical-align: bottom; }
 table.ttd { display: none; }
-td.ttd-box { width: 250px; text-align: center; font-size: 12pt; }
-div.space { height: 40px; }
+td.ttd-box { width: 250px; text-align: center; font-size: 11pt; }
+td.ttd-box strong { text-transform: uppercase !important; }
+div.space { height: 50px; }
 </style></head><body>';
 
 		foreach ( $pages as $p_idx => $halaman ) {
 			$is_last = ( $p_idx === $total_pages - 1 );
 			$html   .= '<div class="page' . ( $is_last ? ' last' : '' ) . '">';
 			if ( 0 === $p_idx ) {
-				$html .= KGTK_Helpers::kop_html();
+				$html .= KGTK_Helpers::kop_html( true );
 				$html .= '<h1>' . esc_html( $judul ) . '</h1>';
 				$html .= KGTK_Helpers::baris_info_html( $p );
 				if ( ! empty( $kelas_label ) ) {
@@ -1339,12 +1407,12 @@ div.space { height: 40px; }
 				}
 			}
 			$html .= '<table class="abs">';
-			$html .= '<colgroup><col style="width:6%;"><col style="width:31%;"><col style="width:31%;"><col style="width:16%;"><col style="width:16%;"></colgroup>';
+			$html .= '<colgroup><col style="width:5%;"><col style="width:35%;"><col style="width:35%;"><col style="width:12.5%;"><col style="width:12.5%;"></colgroup>';
 			$html .= '<thead><tr><th class="no">No</th><th class="nama">Nama Peserta</th><th class="inst">Asal Sekolah / Instansi</th><th class="ttd" colspan="2" style="white-space:nowrap;text-align:center;">Tanda Tangan</th></tr></thead>';
 			for ( $n = 0; $n < $halaman['jumlah']; $n += 2 ) {
 				$row1       = isset( $halaman['rows'][ $n ] ) ? $halaman['rows'][ $n ] : null;
 				$no1        = $halaman['mulai'] + $n + 1;
-				$nama1      = $row1 ? KGTK_Helpers::format_nama_gelar( $row1 ) : '&nbsp;';
+				$nama1      = $row1 ? mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row1 ), 'UTF-8' ) : '&nbsp;';
 				$inst1      = $row1 ? esc_html( $row1->sekolah ) : '&nbsp;';
 				$has_second = ( $n + 1 < $halaman['jumlah'] );
 
@@ -1353,7 +1421,7 @@ div.space { height: 40px; }
 				if ( $has_second ) {
 					$no2   = $no1 + 1;
 					$row2  = isset( $halaman['rows'][ $n + 1 ] ) ? $halaman['rows'][ $n + 1 ] : null;
-					$nama2 = $row2 ? KGTK_Helpers::format_nama_gelar( $row2 ) : '&nbsp;';
+					$nama2 = $row2 ? mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row2 ), 'UTF-8' ) : '&nbsp;';
 					$inst2 = $row2 ? esc_html( $row2->sekolah ) : '&nbsp;';
 					$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no1 . '.</td><td class="ttd-col ttd-right" rowspan="2">' . $no2 . '.</td></tr>';
 					$html .= '<tr><td class="no">' . $no2 . '</td><td class="nama">' . esc_html( $nama2 ) . '</td><td class="inst">' . $inst2 . '</td></tr>';
@@ -1365,8 +1433,7 @@ div.space { height: 40px; }
 			$html .= '</table>';
 
 			if ( $is_last ) {
-				$titimangsa_tt = KGTK_Helpers::format_titimangsa( $p );
-				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><div>' . esc_html( $titimangsa_tt ) . '</div><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( KGTK_Helpers::nama_pj( $p ) ) . '</strong></td></tr></table>';
+				$html .= '<table class="ttd"><tr><td>&nbsp;</td><td class="ttd-box"><em>' . esc_html( KGTK_Helpers::label_pj( $p ) ) . '</em><div class="space">&nbsp;</div><strong>' . esc_html( mb_strtoupper( KGTK_Helpers::nama_pj( $p ), 'UTF-8' ) ) . '</strong></td></tr></table>';
 			}
 			$html .= '</div>';
 		}
@@ -1471,7 +1538,7 @@ td.ttd-box { width: 48%; text-align: center; font-size: 11pt; }
 div.space { height: 60px; }
 </style></head><body>';
 
-		$html .= KGTK_Helpers::kop_html();
+		$html .= KGTK_Helpers::kop_html( true );
 		$html .= '<h1>' . esc_html( $judul ) . '</h1>';
 		$html .= '<div class="subjudul">BAGI PENGAJAR / PEMATERI / FASILITATOR PELATIHAN</div>';
 
@@ -1547,6 +1614,148 @@ div.space { height: 60px; }
 
 		$slug_pel = sanitize_title( $p->nama );
 		$filename = 'Tanda-Terima-ATK-' . $slug_pel . '.pdf';
+
+		self::clean_buffers();
+		nocache_headers();
+		$pdf->stream( $filename, array( 'Attachment' => false ) );
+		exit;
+	}
+
+	public static function pdf_registrasi_kamar( $p, $total_rows = 30, $tanggal = '', $tempat = '' ) {
+		$total_rows = max( 2, (int) $total_rows );
+		if ( 0 !== $total_rows % 2 ) {
+			$total_rows++;
+		}
+
+		$tanggal = trim( (string) $tanggal );
+		if ( empty( $tanggal ) ) {
+			$daftar_hari = KGTK_Helpers::daftar_hari_pelatihan( $p->tanggal_mulai, $p->tanggal_selesai );
+			if ( ! empty( $daftar_hari ) ) {
+				$first_day = reset( $daftar_hari );
+				$tanggal   = $first_day['label_lengkap'] ?? '';
+			} elseif ( ! empty( $p->tanggal_mulai ) && '0000-00-00' !== $p->tanggal_mulai ) {
+				$tanggal = KGTK_Helpers::format_hari_tanggal( $p->tanggal_mulai );
+			} else {
+				$tanggal = KGTK_Helpers::rentang_tanggal( $p->tanggal_mulai, $p->tanggal_selesai );
+			}
+		}
+
+		$tempat = trim( (string) $tempat );
+		if ( empty( $tempat ) ) {
+			$lok_raw = ! empty( $p->lokasi ) ? $p->lokasi : ( ! empty( $p->kabkota ) ? $p->kabkota : '' );
+			$tempat  = preg_replace( '/^di\s+/i', '', trim( (string) $lok_raw ) );
+			if ( empty( $tempat ) ) {
+				$tempat = 'BPMP Provinsi Kepulauan Riau';
+			}
+		}
+
+		$per_page_limit = 30;
+		$total_pages    = max( 1, (int) ceil( $total_rows / $per_page_limit ) );
+		$row_cursor     = 0;
+
+		$html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' . esc_html( 'Registrasi Kamar - ' . $p->nama ) . '</title><style>
+@page { margin: 0.85cm 1.5cm 0.4cm 1.5cm; }
+body { font-family: "Times New Roman", Times, "Times-Roman", serif; font-size: 11pt; color: #000; }
+.kgtk-kop-wrap { width: 100%; text-align: center; margin: 4px auto 2px; }
+.kgtk-kop-tbl { margin: 0 auto; border-collapse: collapse; border: 0; width: auto; }
+.kgtk-kop-tbl td { border: 0 !important; vertical-align: middle; }
+.kgtk-kop-tbl td.kgtk-kop-line { width: 1.5px !important; max-width: 1.5px !important; min-width: 1.5px !important; background-color: #0083C4 !important; padding: 0 !important; border: 0 !important; font-size: 1px !important; line-height: 1px !important; }
+.kgtk-kop-tbl td.kgtk-kop-line div { width: 1.5px !important; height: 62px !important; background-color: #0083C4 !important; border: 0 !important; }
+.page { page-break-after: always; }
+.page.last { page-break-after: auto; }
+h1.title { text-align: center; font-size: 13pt; font-weight: bold; letter-spacing: 0.5px; margin: 4px 0 3px; text-transform: uppercase; }
+.info-block { text-align: center; margin: 1px 0 3px; font-size: 12pt; line-height: 1.2; }
+.info-nama, .info-tanggal, .info-tempat { text-align: center; font-size: 12pt; margin: 1px 0; font-weight: normal; }
+table.reg { width: 100%; border-collapse: collapse; margin-top: 2px; margin-bottom: 0; table-layout: fixed; }
+table.reg tbody.kgtk-pair { page-break-inside: avoid; }
+table.reg tr { page-break-inside: avoid; }
+table.reg th, table.reg td { border: 1px solid #000; padding: 0 4px; height: 22px; font-size: 11pt; vertical-align: middle; }
+table.reg th { background: none; color: #000; text-align: center; height: 20px; font-size: 11pt; font-weight: bold; }
+th.no, td.no { text-align: center; width: 6%; font-size: 11pt; padding: 0 2px; }
+th.nama, td.nama { width: 34%; font-size: 11pt; padding: 0 4px; }
+th.nohp, td.nohp { width: 20%; font-size: 11pt; padding: 0 4px; }
+th.kamar, td.kamar { width: 18%; font-size: 11pt; padding: 0 4px; text-align: center; }
+th.ttd { width: 22%; white-space: nowrap; text-align: center; font-size: 11pt; }
+td.ttd-col { width: 11%; padding: 2px 4px; font-size: 11pt; font-weight: bold; line-height: 1.1; }
+td.ttd-left { text-align: left; vertical-align: top; }
+td.ttd-right { text-align: right; vertical-align: bottom; }
+</style></head><body>';
+
+		for ( $page_i = 1; $page_i <= $total_pages; $page_i++ ) {
+			$is_last      = ( $page_i === $total_pages );
+			$rows_on_page = min( $per_page_limit, $total_rows - $row_cursor );
+			if ( 0 !== $rows_on_page % 2 ) {
+				$rows_on_page++;
+			}
+
+			$html .= '<div class="page' . ( $is_last ? ' last' : '' ) . '">';
+			$html .= KGTK_Helpers::kop_html( true );
+			$html .= '<h1 class="title">REGISTRASI KAMAR</h1>';
+			$html .= '<div class="info-block">';
+			$html .= '<div class="info-nama">' . esc_html( $p->nama ) . '</div>';
+			$html .= '<div class="info-tanggal">' . esc_html( $tanggal ) . '</div>';
+			$html .= '<div class="info-tempat">' . esc_html( $tempat ) . '</div>';
+			$html .= '</div>';
+
+			$html .= '<table class="reg">';
+			$html .= '<colgroup><col style="width:6%;"><col style="width:34%;"><col style="width:20%;"><col style="width:18%;"><col style="width:11%;"><col style="width:11%;"></colgroup>';
+			$html .= '<thead><tr>';
+			$html .= '<th class="no" rowspan="2">No.</th>';
+			$html .= '<th class="nama" rowspan="2">Nama</th>';
+			$html .= '<th class="nohp" rowspan="2">No HP</th>';
+			$html .= '<th class="kamar" rowspan="2">No Kamar<br><span style="font-weight:normal;font-size:10pt;">(L/P)</span></th>';
+			$html .= '<th class="ttd" colspan="2">TTD</th>';
+			$html .= '</tr></thead>';
+
+			for ( $i = 0; $i < $rows_on_page; $i += 2 ) {
+				$no1      = $row_cursor + $i + 1;
+				$has_pair = ( $i + 1 < $rows_on_page );
+				$no2      = $no1 + 1;
+
+				$html .= '<tbody class="kgtk-pair">';
+				$html .= '<tr>';
+				$html .= '<td class="no">' . $no1 . '</td>';
+				$html .= '<td class="nama">&nbsp;</td>';
+				$html .= '<td class="nohp">&nbsp;</td>';
+				$html .= '<td class="kamar">&nbsp;</td>';
+				if ( $has_pair ) {
+					$html .= '<td class="ttd-col ttd-left" rowspan="2">' . $no1 . '.</td>';
+					$html .= '<td class="ttd-col ttd-right" rowspan="2">' . $no2 . '.</td>';
+				} else {
+					$html .= '<td class="ttd-col ttd-left">' . $no1 . '.</td>';
+					$html .= '<td class="ttd-col ttd-right">&nbsp;</td>';
+				}
+				$html .= '</tr>';
+
+				if ( $has_pair ) {
+					$html .= '<tr>';
+					$html .= '<td class="no">' . $no2 . '</td>';
+					$html .= '<td class="nama">&nbsp;</td>';
+					$html .= '<td class="nohp">&nbsp;</td>';
+					$html .= '<td class="kamar">&nbsp;</td>';
+					$html .= '</tr>';
+				}
+				$html .= '</tbody>';
+			}
+
+			$html .= '</table>';
+			$html .= '</div>';
+
+			$row_cursor += $rows_on_page;
+		}
+
+		$html .= '</body></html>';
+
+		$opt = new Options();
+		$opt->set( 'isRemoteEnabled', false );
+		$opt->set( 'defaultFont', 'Times-Roman' );
+		$pdf = new Dompdf( $opt );
+		$pdf->loadHtml( $html, 'UTF-8' );
+		$pdf->setPaper( 'A4', 'portrait' );
+		$pdf->render();
+
+		$slug_pel = sanitize_title( $p->nama );
+		$filename = 'Registrasi-Kamar-' . $slug_pel . '.pdf';
 
 		self::clean_buffers();
 		nocache_headers();

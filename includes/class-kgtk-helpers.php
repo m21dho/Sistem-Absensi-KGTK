@@ -10,16 +10,64 @@ class KGTK_Helpers {
 
 	/** Hanya peran ini yang memakai slot kelas; peran lain tidak dibatasi. */
 	const PERAN_SLOT           = 'Peserta';
-	const BARIS_PER_HALAMAN    = 20;
-	const BARIS_HALAMAN_AWAL   = 20;
-	const BARIS_HALAMAN_LANJUT = 26;
+	const BARIS_PER_HALAMAN    = 30;
+	const BARIS_HALAMAN_AWAL   = 30;
+	const BARIS_HALAMAN_LANJUT = 34;
 	/** Nilai kabupaten/kota untuk guru dari luar daftar sekolah. */
 	const KABKOTA_LAIN      = 'Lainnya';
 	const PERAN = array( 'Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Undangan', 'Peserta' );
-	const JABATAN_PANITIA = array( 'Ketua Panitia', 'Sekretaris', 'Bendahara', 'Seksi Acara', 'Seksi Konsumsi', 'Seksi Perlengkapan', 'Seksi Dokumentasi', 'Anggota Panitia' );
-	const JENIS_GTK = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
-	const JABATAN = array( 'Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah' );
-	const PENDIDIKAN = array( 'SMA/SMK Sederajat', 'D3', 'D4 / S1', 'S2', 'S3' );
+
+	/**
+	 * Ambil daftar peran tambahan (custom) yang ditambahkan oleh Admin di menu Pengaturan.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function custom_peran_list() {
+		$raw = get_option( 'kgtk_custom_peran', array() );
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+		$default_lower = array_map( 'strtolower', self::PERAN );
+		$out           = array();
+		foreach ( $raw as $item ) {
+			$val = trim( sanitize_text_field( (string) $item ) );
+			if ( '' === $val || '-' === $val ) {
+				continue;
+			}
+			$low = strtolower( $val );
+			if ( in_array( $low, $default_lower, true ) ) {
+				continue;
+			}
+			$out[ $low ] = $val;
+		}
+		return array_values( $out );
+	}
+
+	/**
+	 * Ambil seluruh daftar opsi Peran (bawaan sistem + peran tambahan dari Pengaturan).
+	 *
+	 * @return array<int, string>
+	 */
+	public static function peran_list() {
+		$custom = self::custom_peran_list();
+		if ( empty( $custom ) ) {
+			return self::PERAN;
+		}
+		$list = array();
+		foreach ( self::PERAN as $p ) {
+			if ( 'Peserta' === $p ) {
+				foreach ( $custom as $c ) {
+					$list[] = $c;
+				}
+			}
+			$list[] = $p;
+		}
+		return array_values( array_unique( $list ) );
+	}
+	const JABATAN_PANITIA = array( 'Penanggung Jawab', 'Ketua Panitia', 'Sekretaris', 'Bendahara', 'Panitia Pelaksana', 'Koordinator Teknis', 'Seksi Acara', 'Seksi Konsumsi', 'Seksi Perlengkapan', 'Seksi Dokumentasi', 'Seksi Akomodasi', 'Anggota Panitia' );
+	const JENIS_GTK = array( 'Guru', 'Kepala Sekolah', 'Kepala Sekolah Mentor', 'Pengawas Sekolah', 'Tenaga Administrasi Sekolah', 'Tenaga Didik', 'Dinas Pendidikan', 'Lainnya' );
+	const JABATAN = array( 'Guru', 'Kepala Sekolah', 'Kepala Sekolah Mentor', 'Pengawas Sekolah', 'Tenaga Administrasi Sekolah', 'Tenaga Didik', 'Dinas Pendidikan', 'Lainnya' );
+	const PENDIDIKAN = array( 'SMA/SMK Sederajat', 'D1', 'D2', 'D3', 'D4 / S1', 'S2', 'S3' );
 	const JENIS_KELAMIN = array( 'Laki-laki', 'Perempuan' );
 	const AGAMA = array( 'Islam', 'Kristen Protestan', 'Kristen Katolik', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu' );
 	const PANGKAT_GOLONGAN = array(
@@ -72,6 +120,12 @@ class KGTK_Helpers {
 		}
 
 		$out = $nama;
+		if ( '-' === $gd ) {
+			$gd = '';
+		}
+		if ( '-' === $gb ) {
+			$gb = '';
+		}
 		if ( '' !== $gd ) {
 			$out = $gd . ' ' . $out;
 		}
@@ -678,7 +732,7 @@ class KGTK_Helpers {
 			$by[ (string) $r->peran ][] = $r;
 		}
 		$out = array();
-		foreach ( self::PERAN as $p ) {
+		foreach ( self::peran_list() as $p ) {
 			if ( isset( $by[ $p ] ) ) {
 				$out[ $p ] = $by[ $p ];
 				unset( $by[ $p ] );
@@ -709,18 +763,15 @@ class KGTK_Helpers {
 	public static function halaman( $rows, $total = 0 ) {
 		$rows  = array_values( (array) $rows );
 		$total = max( 1, (int) $total, count( $rows ) );
-		if ( 0 !== $total % 2 ) {
-			$total++;
-		}
 		$pages = array();
 		$mulai = 0;
 		$p_idx = 0;
 
 		while ( $mulai < $total ) {
 			if ( 0 === $p_idx ) {
-				$cap = ( $total > self::BARIS_HALAMAN_AWAL ) ? 22 : self::BARIS_HALAMAN_AWAL;
+				$cap = ( $total > self::BARIS_HALAMAN_AWAL ) ? 30 : self::BARIS_HALAMAN_AWAL;
 			} else {
-				$cap = 28;
+				$cap = 34;
 			}
 
 			// Pastikan kapasitas selalu genap agar pembagian halaman tidak memotong pasangan tanda tangan
@@ -767,8 +818,12 @@ class KGTK_Helpers {
 				$arr[] = $tgl;
 			}
 		}
-		if ( ! empty( $p->lokasi ) ) {
-			$arr[] = (string) $p->lokasi;
+		$lok_raw = ! empty( $p->lokasi ) ? $p->lokasi : ( ! empty( $p->kabkota ) ? $p->kabkota : '' );
+		if ( ! empty( $lok_raw ) ) {
+			$lok_clean = preg_replace( '/^di\s+/i', '', trim( (string) $lok_raw ) );
+			if ( ! empty( $lok_clean ) ) {
+				$arr[] = $lok_clean;
+			}
 		}
 		return $arr;
 	}
@@ -785,15 +840,19 @@ class KGTK_Helpers {
 		$is_custom_day  = ( '' !== $tanggal_khusus && 'semua' !== strtolower( $tanggal_khusus ) && 'all' !== strtolower( $tanggal_khusus ) && 'all_days' !== strtolower( $tanggal_khusus ) && 'range' !== strtolower( $tanggal_khusus ) );
 		$tgl_display    = $is_custom_day ? self::format_hari_tanggal( $tanggal_khusus ) : $tgl_default;
 
-		$html = '<div class="kgtk-doc-info" style="text-align:center;margin:6px 0 12px;font-size:12pt;line-height:1.4;">';
+		$html = '<div class="kgtk-doc-info" style="text-align:center;margin:1px 0 2px;font-size:12pt;line-height:1.15;">';
 		if ( ! empty( $p->nama ) ) {
 			$html .= '<div class="kgtk-doc-nama">' . esc_html( $p->nama ) . '</div>';
 		}
 		if ( '' !== $tgl_display ) {
 			$html .= '<div class="kgtk-doc-tanggal" data-tgl-default="' . esc_attr( $tgl_default ) . '">' . esc_html( $tgl_display ) . '</div>';
 		}
-		if ( ! empty( $p->lokasi ) ) {
-			$html .= '<div class="kgtk-doc-lokasi">' . esc_html( $p->lokasi ) . '</div>';
+		$lok_raw = ! empty( $p->lokasi ) ? $p->lokasi : ( ! empty( $p->kabkota ) ? $p->kabkota : '' );
+		if ( ! empty( $lok_raw ) ) {
+			$lok_clean = preg_replace( '/^di\s+/i', '', trim( (string) $lok_raw ) );
+			if ( ! empty( $lok_clean ) ) {
+				$html .= '<div class="kgtk-doc-lokasi">' . esc_html( $lok_clean ) . '</div>';
+			}
 		}
 		$html .= '</div>';
 		return $html;
@@ -847,10 +906,10 @@ class KGTK_Helpers {
 	public static function ttd_blok_html( $p, $tanggal_khusus = '', $k = null ) {
 		$titimangsa = self::format_titimangsa( $p, $tanggal_khusus, $k );
 		$jabatan    = self::label_pj_lengkap( $p );
-		$nama       = self::nama_pj( $p );
+		$nama       = mb_strtoupper( self::nama_pj( $p ), 'UTF-8' );
 
 		$html  = '<div class="kgtk-ttd-blok">';
-		$html .= '<div class="kgtk-ttd-titimangsa">' . esc_html( $titimangsa ) . '</div>';
+		$html .= '<div class="kgtk-ttd-titimangsa" style="display:none;">' . esc_html( $titimangsa ) . '</div>';
 		$html .= '<div class="kgtk-ttd-jabatan"><em>' . esc_html( $jabatan ) . ',</em></div>';
 		$html .= '<div class="kgtk-ttd-space"></div>';
 		$html .= '<div class="kgtk-ttd-nama"><strong>' . esc_html( $nama ) . '</strong></div>';
@@ -869,7 +928,10 @@ class KGTK_Helpers {
 		$out = array( self::PERAN_SLOT => isset( $g[ self::PERAN_SLOT ] ) ? $g[ self::PERAN_SLOT ] : array() );
 		unset( $g[ self::PERAN_SLOT ] );
 		if ( $all_roles ) {
-			$default_roles = array( 'Panitia', 'Pengajar', 'Fasilitator', 'Narasumber', 'Pemateri' );
+			$default_roles = array_merge(
+				array( 'Panitia', 'Pengajar', 'Fasilitator', 'Narasumber', 'Pemateri' ),
+				self::custom_peran_list()
+			);
 			foreach ( $default_roles as $dr ) {
 				$out[ $dr ] = isset( $g[ $dr ] ) ? $g[ $dr ] : array();
 				unset( $g[ $dr ] );
@@ -881,12 +943,9 @@ class KGTK_Helpers {
 		return $out;
 	}
 
-	/** Jumlah baris lembar: Peserta = slot kelas (minimal 1 halaman penuh); peran lain = jumlah terdaftar atau 1 halaman penuh jika kosong. */
+	/** Jumlah baris lembar: mengikuti jumlah aktual peserta/peran yang terdaftar (minimal 1 baris jika kosong). */
 	public static function baris_lembar( $peran, $list, $k ) {
-		if ( self::PERAN_SLOT === $peran ) {
-			return max( self::BARIS_HALAMAN_AWAL, (int) $k->slot, count( $list ) );
-		}
-		return ! empty( $list ) ? max( 1, count( $list ) ) : self::BARIS_HALAMAN_AWAL;
+		return max( 1, count( (array) $list ) );
 	}
 
 	/** Lembar absen untuk export: satu lembar per kelas per peran (lihat kelompok_absen). */
@@ -922,12 +981,7 @@ class KGTK_Helpers {
 					continue;
 				}
 
-				// Untuk peran yang bukan 'Peserta' tapi dipilih khusus dan datanya kosong,
-				// sediakan baris kosong (1 halaman penuh) agar dapat ditandatangani manual di lokasi.
 				$jumlah_baris = self::baris_lembar( (string) $peran, $list, $k );
-				if ( $is_filtered && self::PERAN_SLOT !== $peran && empty( $list ) ) {
-					$jumlah_baris = self::BARIS_HALAMAN_AWAL;
-				}
 
 				$sheets[] = array(
 					'kelas'        => $k,
@@ -961,7 +1015,7 @@ class KGTK_Helpers {
 					'kelas'        => $dummy_k,
 					'peran'        => 'Panitia',
 					'rows'         => $panitia_rows,
-					'jumlah'       => ! empty( $panitia_rows ) ? max( 1, count( $panitia_rows ) ) : self::BARIS_HALAMAN_AWAL,
+					'jumlah'       => max( 1, count( (array) $panitia_rows ) ),
 					'tampil_kelas' => false,
 				);
 			}
@@ -1043,43 +1097,68 @@ class KGTK_Helpers {
 		return $clean;
 	}
 
-	/** Kop surat Kemendikdasmen untuk tampilan web dan PDF export. */
-	public static function kop_html() {
-		$logo_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/kemendikdasmen.png' : '';
-		$logo_src  = '';
-		if ( $logo_path && file_exists( $logo_path ) ) {
-			$logo_src = 'data:image/png;base64,' . base64_encode( (string) file_get_contents( $logo_path ) );
-		} elseif ( defined( 'KGTK_URL' ) ) {
-			$logo_src = KGTK_URL . 'assets/images/kemendikdasmen.png';
+	/**
+	 * Kop surat Kemendikdasmen untuk tampilan web dan PDF export.
+	 *
+	 * @param bool $for_pdf Jika true, gunakan data URI base64 (untuk DomPDF). Jika false (default), gunakan URL gambar agar halaman web ringan & cepat.
+	 */
+	public static function kop_html( $for_pdf = false ) {
+		static $web_kop_html = null;
+		static $pdf_kop_html = null;
+
+		if ( ! $for_pdf && null !== $web_kop_html ) {
+			return $web_kop_html;
+		}
+		if ( $for_pdf && null !== $pdf_kop_html ) {
+			return $pdf_kop_html;
 		}
 
-		$header_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/header-kemendikdasmen.png' : '';
-		$header_src  = '';
-		if ( $header_path && file_exists( $header_path ) ) {
-			$header_src = 'data:image/png;base64,' . base64_encode( (string) file_get_contents( $header_path ) );
-		} elseif ( defined( 'KGTK_URL' ) ) {
-			$header_src = KGTK_URL . 'assets/images/header-kemendikdasmen.png';
+		if ( $for_pdf ) {
+			$logo_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/kemendikdasmen.png' : '';
+			$logo_src  = '';
+			if ( $logo_path && file_exists( $logo_path ) ) {
+				$logo_src = 'data:image/png;base64,' . base64_encode( (string) file_get_contents( $logo_path ) );
+			} elseif ( defined( 'KGTK_URL' ) ) {
+				$logo_src = KGTK_URL . 'assets/images/kemendikdasmen.png';
+			}
+
+			$header_path = defined( 'KGTK_PATH' ) ? KGTK_PATH . 'assets/images/header-kemendikdasmen.png' : '';
+			$header_src  = '';
+			if ( $header_path && file_exists( $header_path ) ) {
+				$header_src = 'data:image/png;base64,' . base64_encode( (string) file_get_contents( $header_path ) );
+			} elseif ( defined( 'KGTK_URL' ) ) {
+				$header_src = KGTK_URL . 'assets/images/header-kemendikdasmen.png';
+			}
+		} else {
+			$logo_src   = defined( 'KGTK_URL' ) ? KGTK_URL . 'assets/images/kemendikdasmen.png' : '';
+			$header_src = defined( 'KGTK_URL' ) ? KGTK_URL . 'assets/images/header-kemendikdasmen.png' : '';
 		}
 
-		$html  = '<div class="kgtk-kop-wrap" style="width:100%;text-align:center;margin:0 auto 6px;">';
-		$html .= '<table class="kgtk-kop-tbl" align="center" style="margin:0 auto;border-collapse:collapse;border:0;">';
+		$html  = '<div class="kgtk-kop-wrap" style="width:100%;text-align:center;margin:8px auto 6px;">';
+		$html .= '<table class="kgtk-kop-tbl" align="center" style="margin:0 auto;border-collapse:collapse;border:0;width:auto;">';
 		$html .= '<tr>';
-		$html .= '<td style="vertical-align:middle;padding:0 14px 0 0;border:0;text-align:right;">';
+		$html .= '<td style="vertical-align:middle;padding:0 10px 0 0;border:0;text-align:right;">';
 		if ( $logo_src ) {
-			$html .= '<img src="' . esc_attr( $logo_src ) . '" height="72" style="height:72px;width:auto;display:inline-block;vertical-align:middle;" alt="Kemendikdasmen" />';
+			$html .= '<img src="' . esc_attr( $logo_src ) . '" height="78" style="height:78px;width:auto;display:inline-block;vertical-align:middle;" alt="Kemendikdasmen" />';
 		}
 		$html .= '</td>';
-		$html .= '<td class="kgtk-kop-line" style="width:2px;min-width:2px;max-width:2px;background-color:#0083C4;padding:0;border:0;vertical-align:middle;">';
-		$html .= '<div style="width:2px;height:70px;background-color:#0083C4;font-size:1px;line-height:1px;">&nbsp;</div>';
+		$html .= '<td class="kgtk-kop-line" style="width:1.5px;min-width:1.5px;max-width:1.5px;background-color:#0083C4;padding:0;border:0;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact;">';
+		$html .= '<div style="width:1.5px;height:62px;background-color:#0083C4;font-size:1px;line-height:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">&nbsp;</div>';
 		$html .= '</td>';
-		$html .= '<td style="vertical-align:middle;padding:0 0 0 14px;border:0;text-align:left;">';
+		$html .= '<td style="vertical-align:middle;padding:0 0 0 10px;border:0;text-align:left;">';
 		if ( $header_src ) {
-			$html .= '<img src="' . esc_attr( $header_src ) . '" height="72" style="height:72px;width:auto;display:inline-block;vertical-align:middle;" alt="Kementerian Pendidikan Dasar dan Menengah" />';
+			$html .= '<img src="' . esc_attr( $header_src ) . '" height="78" style="height:78px;width:auto;display:inline-block;vertical-align:middle;" alt="Kementerian Pendidikan Dasar dan Menengah" />';
 		}
 		$html .= '</td>';
 		$html .= '</tr>';
 		$html .= '</table>';
 		$html .= '</div>';
+
+		if ( $for_pdf ) {
+			$pdf_kop_html = $html;
+		} else {
+			$web_kop_html = $html;
+		}
 
 		return $html;
 	}

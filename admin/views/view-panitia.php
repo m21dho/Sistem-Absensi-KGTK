@@ -261,29 +261,33 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 							<!-- Tugas / Jabatan Panitia -->
 							<label class="kgtk-field">
 								<span>Tugas / Jabatan Panitia *</span>
-								<input type="text" class="kgtk-input" id="kgtk-pan-field-jabatan" name="jabatan" list="kgtk-jabatan-panitia-options-master" required placeholder="Ketua Panitia / Sekretaris / Panitia Pelaksana" value="Panitia Pelaksana">
-								<datalist id="kgtk-jabatan-panitia-options-master">
+								<select class="kgtk-input" id="kgtk-pan-field-jabatan" name="jabatan" required>
 									<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
-										<option value="<?php echo esc_attr( $jp ); ?>"></option>
+										<option value="<?php echo esc_attr( $jp ); ?>" <?php selected( $jp, 'Panitia Pelaksana' ); ?>><?php echo esc_html( $jp ); ?></option>
 									<?php endforeach; ?>
-								</datalist>
+								</select>
 							</label>
 
 							<!-- Asal Instansi & Kabupaten / Kota -->
 							<div class="kgtk-row2">
 								<label class="kgtk-field">
-									<span>Asal Instansi / Unit Kerja *</span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-field-instansi" name="instansi" maxlength="200" placeholder="Contoh: Balai Guru Penggerak Provinsi Kepulauan Riau">
-								</label>
-
-								<label class="kgtk-field">
 									<span>Kabupaten / Kota</span>
 									<select class="kgtk-input" id="kgtk-pan-field-kabkota" name="kabkota">
-										<option value="">-- Pilih Wilayah --</option>
+										<option value="">-- Pilih Wilayah / Kab/Kota --</option>
 										<?php foreach ( KGTK_Helpers::kabkota_list() as $kab ) : ?>
 											<option value="<?php echo esc_attr( $kab ); ?>"><?php echo esc_html( $kab ); ?></option>
 										<?php endforeach; ?>
 									</select>
+								</label>
+
+								<label class="kgtk-field">
+									<span>Instansi *</span>
+									<div class="kgtk-combo" style="position:relative;">
+										<input type="text" class="kgtk-input" id="kgtk-pan-field-instansi-input" placeholder="Ketik untuk mencari instansi / sekolah..." autocomplete="off" style="padding-right:30px;">
+										<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:#64748b;font-size:11px;">&#9660;</span>
+										<ul class="kgtk-combo-list" id="kgtk-pan-field-instansi-list" hidden style="position:absolute;z-index:999;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;max-height:220px;overflow-y:auto;background:#fff;border:1.5px solid #0083C4;border-radius:8px;box-shadow:0 8px 24px rgba(15,42,74,.18);"></ul>
+									</div>
+									<input type="hidden" id="kgtk-pan-field-instansi" name="instansi">
 								</label>
 							</div>
 
@@ -310,6 +314,19 @@ $act = '<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-ta
 								<label class="kgtk-field">
 									<span>Nomor Rekening Bank</span>
 									<input type="text" class="kgtk-input" id="kgtk-pan-field-rekening" name="rekening" maxlength="50" inputmode="numeric" placeholder="Hanya angka rekening">
+								</label>
+							</div>
+
+							<!-- NPWP & Catatan / Keterangan -->
+							<div class="kgtk-row2">
+								<label class="kgtk-field">
+									<span>NPWP</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-npwp" name="npwp" maxlength="35" placeholder="Nomor NPWP panitia">
+								</label>
+
+								<label class="kgtk-field">
+									<span>Catatan / Keterangan</span>
+									<input type="text" class="kgtk-input" id="kgtk-pan-field-catatan" name="catatan" placeholder="Catatan tambahan">
 								</label>
 							</div>
 						</div>

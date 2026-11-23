@@ -345,7 +345,7 @@ class KGTK_Panitia {
 		$tp = KGTK_DB::table( 'peserta' );
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, created_at
+				"SELECT id, kelas_id, nik, nama, gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, pendidikan, alamat, alamat_instansi, pangkat_golongan, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, created_at
 				 FROM {$tp}
 				 WHERE pelatihan_id = %d AND peran = 'Panitia'
 				 ORDER BY id ASC",

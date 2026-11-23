@@ -61,39 +61,38 @@ $pel_json = wp_json_encode( array(
 
 	<!-- Header Detail Pelatihan -->
 	<hr class="wp-header-end">
-	<div class="kgtk-head kgtk-head--detail">
-		<div class="kgtk-head-top">
+	<div class="kgtk-head kgtk-head--detail kgtk-head--clean">
+		<a class="kgtk-head-back" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan' ) ); ?>">&larr; Kembali ke Daftar <?php echo $is_acara ? 'Acara' : 'Pelatihan'; ?></a>
+
+		<div class="kgtk-head-main">
 			<div class="kgtk-head-info">
-				<a class="kgtk-head-back" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan' ) ); ?>">&larr; Kembali ke Daftar <?php echo $is_acara ? 'Acara' : 'Pelatihan'; ?></a>
-				<div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-					<h1 class="kgtk-head-title" style="margin:0;"><?php echo esc_html( $p->nama ); ?></h1>
+				<div class="kgtk-head-badges">
 					<?php if ( $is_acara ) : ?>
-						<span class="kgtk-badge" style="background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4;font-size:11.5px;font-weight:700;">Absen Acara</span>
+						<span class="kgtk-head-type kgtk-head-type--acara">Absen Acara</span>
 					<?php else : ?>
-						<span class="kgtk-badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11.5px;font-weight:700;">Pelatihan</span>
+						<span class="kgtk-head-type">Pelatihan</span>
 					<?php endif; ?>
+					<code class="kgtk-head-code"><?php echo esc_html( $p->kode ); ?></code>
 				</div>
-				<div class="kgtk-head-sub">
-					<span><?php echo $is_acara ? 'Presensi kehadiran peserta acara &amp; tamu undangan' : 'Kelola kelas peserta &amp; daftar hadir'; ?></span>
-					<span class="kgtk-head-divider">&middot;</span>
-					<code class="kgtk-head-code">&#127991; <?php echo esc_html( $p->kode ); ?></code>
-				</div>
+				<h1 class="kgtk-head-title"><?php echo esc_html( $p->nama ); ?></h1>
+				<div class="kgtk-head-sub"><?php echo $is_acara ? 'Presensi kehadiran peserta acara &amp; tamu undangan' : 'Kelola kelas peserta &amp; daftar hadir'; ?></div>
 			</div>
-			<div class="kgtk-head-primary-actions" style="align-items:flex-start;">
-				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-edit-pelatihan-detail" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="<?php echo $is_acara ? 'Edit informasi dan jadwal acara' : 'Edit informasi dan jadwal pelatihan'; ?>">&#9998; <?php echo $is_acara ? 'Edit Acara' : 'Edit Pelatihan'; ?></button>
-				<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-impor-header" title="Impor Data Peserta dari berkas Excel atau CSV">&#128196; Impor Data</button>
-				<div style="display:flex;flex-direction:column;gap:8px;align-items:stretch;">
-					<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
-					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-kelola-kelas" data-pelatihan-id="<?php echo (int) $p->id; ?>" data-kelas="<?php echo esc_attr( wp_json_encode( $kelas_json_list ) ); ?>" title="<?php echo $is_acara ? 'Tambah atau kelola kategori/kelas peserta acara' : 'Tambah atau kelola kelas peserta pelatihan'; ?>" style="justify-content:center;">+ <?php echo $is_acara ? 'Tambah Kategori / Kelas' : 'Tambah Kelas'; ?></button>
+
+			<div class="kgtk-head-primary-actions">
+				<a class="kgtk-btn kgtk-btn--yellow" href="<?php echo esc_url( KGTK_Admin::page_url( 'pelatihan', array( 'view' => 'tambah', 'id' => (int) $p->id ) ) ); ?>" title="Tambah Peserta, Panitia, Narasumber, Pengajar, Fasilitator, atau Penceramah">+ Tambah Peserta / Panitia / Tim</a>
+				<div class="kgtk-head-secondary-actions">
+					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-edit-pelatihan-detail" data-pelatihan="<?php echo esc_attr( $pel_json ); ?>" title="<?php echo $is_acara ? 'Edit informasi dan jadwal acara' : 'Edit informasi dan jadwal pelatihan'; ?>">&#9998; Edit</button>
+					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-impor-header" title="Impor Data Peserta dari berkas Excel atau CSV">Impor Data</button>
+					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-kelola-kelas" data-pelatihan-id="<?php echo (int) $p->id; ?>" data-kelas="<?php echo esc_attr( wp_json_encode( $kelas_json_list ) ); ?>" title="<?php echo $is_acara ? 'Tambah atau kelola kategori/kelas peserta acara' : 'Tambah atau kelola kelas peserta pelatihan'; ?>">+ <?php echo $is_acara ? 'Kategori' : 'Kelas'; ?></button>
 				</div>
 			</div>
 		</div>
 
 		<div class="kgtk-head-toolbar">
-			<div class="kgtk-head-toolbar-label">&#128196; Cetak &amp; Export Dokumen:</div>
+			<div class="kgtk-head-toolbar-label">Cetak &amp; Export Dokumen</div>
 			<div class="kgtk-head-toolbar-group">
-				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-pdf" title="Pilih kategori export PDF">&#128196; Export PDF &#9662;</button>
-				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-excel" title="Pilih kategori export Excel">&#128202; Export Excel &#9662;</button>
+				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-pdf" title="Pilih kategori export PDF">Export PDF &#9662;</button>
+				<button type="button" class="kgtk-btn kgtk-btn--navy-glass" id="kgtk-btn-export-excel" title="Pilih kategori export Excel">Export Excel &#9662;</button>
 			</div>
 		</div>
 	</div>
@@ -171,6 +170,9 @@ $pel_json = wp_json_encode( array(
 		</button>
 		<button type="button" role="tab" class="kgtk-tab" data-tab="berkas-spt-sppd">
 			&#128221; Berkas SPT &amp; SPPD
+		</button>
+		<button type="button" role="tab" class="kgtk-tab" data-tab="registrasi-kamar">
+			&#128716; Registrasi Kamar
 		</button>
 	</div>
 
@@ -254,9 +256,6 @@ $pel_json = wp_json_encode( array(
 						<button type="button" class="kgtk-btn-lembar-kelas" data-open-pane="<?php echo (int) $k->id; ?>" style="flex:1;font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;" title="Lihat lembar daftar hadir <?php echo esc_attr( $k->label ); ?>">
 							&#128196; Lembar Absen
 						</button>
-						<button type="button" class="kgtk-btn-deadline-kelas" data-atur-deadline-kelas="<?php echo (int) $k->id; ?>" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc;color:#0b2d56;font-weight:600;cursor:pointer;" title="Tambah atau ubah batas pendaftaran untuk <?php echo esc_attr( $k->label ); ?>">
-							&#9200;
-						</button>
 					</div>
 					<div class="kgtk-scard-bar"><span style="width:<?php echo (int) $pct; ?>%"></span></div>
 				</div>
@@ -270,66 +269,73 @@ $pel_json = wp_json_encode( array(
 		<div class="kgtk-pane is-active" data-pane="kelola-peserta">
 			<div class="kgtk-card kgtk-kelola-box">
 
-				<!-- Banner Kelas Aktif & Akses Langsung Lembar Absen -->
-				<div class="kgtk-active-kelas-header" id="kgtk-active-kelas-header" style="background:#f0f7ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-					<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-						<span style="font-size:26px;line-height:1;" id="kgtk-akh-icon">&#128101;</span>
-						<div>
-							<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-								<h3 style="margin:0;font-size:16px;font-weight:700;color:#0b2d56;" id="kgtk-akh-title">Semua Pendaftar</h3>
-								<span class="kgtk-badge" id="kgtk-akh-badge-slot" style="background:#dbeafe;color:#1e40af;font-weight:700;font-size:12px;"><?php echo (int) $total_semua_anggota; ?> orang</span>
-								<span class="kgtk-badge" id="kgtk-akh-badge-panitia" style="background:#fef3c7;color:#92400e;font-weight:700;font-size:12px;display:none;">0 panitia</span>
-							</div>
+				<!-- Header Kelas Aktif (Bersih & Ringkas) -->
+				<div class="kgtk-active-kelas-header" id="kgtk-active-kelas-header">
+					<div class="kgtk-akh-left">
+						<h3 class="kgtk-akh-title" id="kgtk-akh-title">Semua Pendaftar &amp; Panitia</h3>
+						<span class="kgtk-akh-pill" id="kgtk-akh-badge-slot"><?php echo (int) $total_semua_anggota; ?> orang</span>
+					</div>
+					<div class="kgtk-akh-actions">
+						<button type="button" class="kgtk-btn kgtk-btn--navy kgtk-akh-btn" id="kgtk-akh-btn-absen" style="display:none;" title="Buka dan cetak lembar presensi resmi untuk kelas ini">
+							&#128196; Lembar Absen
+						</button>
+						<button type="button" class="kgtk-btn kgtk-btn--ghost kgtk-akh-btn" id="kgtk-akh-btn-deadline" style="display:none;" title="Atur jadwal atau batas waktu pendaftaran kelas ini">
+							Jadwal &amp; Deadline
+						</button>
+						<?php if ( count( $kelas ) > 1 ) : ?>
+							<button type="button" class="kgtk-btn kgtk-btn--ghost kgtk-akh-btn kgtk-akh-btn--del" id="kgtk-akh-btn-hapus-kelas" data-pelatihan-id="<?php echo (int) $p->id; ?>" style="display:none;" title="Hapus kelas ini dari pelatihan">
+								Hapus Kelas
+							</button>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<!-- Baris Tunggal: Tab Filter Peran + Pencarian + Pulihkan -->
+				<div class="kgtk-kelola-unified-bar">
+					<div class="kgtk-role-segmented" id="kgtk-role-filters" role="tablist" aria-label="Filter Peran">
+						<button type="button" class="kgtk-seg-btn is-active" data-role-filter="all">
+							Semua <span class="kgtk-seg-cnt" id="kgtk-role-cnt-all">0</span>
+						</button>
+						<button type="button" class="kgtk-seg-btn" data-role-filter="peserta">
+							Peserta <span class="kgtk-seg-cnt" id="kgtk-role-cnt-peserta">0</span>
+						</button>
+						<button type="button" class="kgtk-seg-btn" data-role-filter="panitia">
+							<span id="kgtk-role-lbl-panitia">Panitia</span> <span class="kgtk-seg-cnt" id="kgtk-role-cnt-panitia">0</span>
+						</button>
+						<button type="button" class="kgtk-seg-btn" data-role-filter="lain">
+							Pengajar <span class="kgtk-seg-cnt" id="kgtk-role-cnt-lain">0</span>
+						</button>
+					</div>
+
+					<div class="kgtk-kelola-search-group">
+						<div class="kgtk-search-wrap kgtk-search-wrap--compact">
+							<span class="kgtk-search-icon">&#128269;</span>
+							<input type="search" id="kgtk-peserta-search" class="kgtk-input" placeholder="Cari nama, NIK, sekolah, atau HP...">
+							<button type="button" id="kgtk-search-clear" class="kgtk-search-clear" title="Bersihkan pencarian" style="display:none;">&times;</button>
 						</div>
-					</div>
-					<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-						<button type="button" class="kgtk-btn kgtk-btn--navy" id="kgtk-akh-btn-absen" style="display:none;font-weight:700;padding:7px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.1);" title="Buka dan cetak lembar presensi resmi untuk kelas ini">
-							&#128196; Buka Lembar Absen Kelas
-						</button>
-						<button type="button" class="kgtk-btn kgtk-btn--outline" id="kgtk-akh-btn-deadline" style="display:none;font-size:12px;padding:6px 12px;font-weight:600;" title="Atur batas waktu pendaftaran kelas ini">
-							&#9200; Atur Deadline
+						<button type="button" class="kgtk-btn kgtk-btn--ghost kgtk-btn-pulihkan-compact" id="kgtk-btn-open-pulihkan" title="Cari atau pulihkan guru dari Master Data yang belum masuk pelatihan ini">
+							+ Pulihkan dari Master
 						</button>
 					</div>
 				</div>
 
-				<!-- Filter Cepat Peran di Kelas (Semua / Peserta / Panitia / Lainnya) -->
-				<div class="kgtk-role-filters" id="kgtk-role-filters" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-					<span style="font-size:12px;font-weight:600;color:#64748b;margin-right:4px;">Filter Tampilan:</span>
-					<button type="button" class="kgtk-fbtn is-active" data-role-filter="all">&#9776; Semua Anggota (<span id="kgtk-role-cnt-all">0</span>)</button>
-					<button type="button" class="kgtk-fbtn" data-role-filter="peserta">&#128101; Peserta (<span id="kgtk-role-cnt-peserta">0</span>)</button>
-					<button type="button" class="kgtk-fbtn" data-role-filter="panitia">&#128100; <span id="kgtk-role-lbl-panitia">Panitia Kelas</span> (<span id="kgtk-role-cnt-panitia">0</span>)</button>
-					<button type="button" class="kgtk-fbtn" data-role-filter="lain">&#127891; Pengajar / Lainnya (<span id="kgtk-role-cnt-lain">0</span>)</button>
-				</div>
-
-				<!-- Toolbar Pencarian -->
-				<div class="kgtk-kelola-tools" style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">
-					<div class="kgtk-search-wrap" style="flex:1 1 300px;max-width:100%;">
-						<span class="kgtk-search-icon">&#128269;</span>
-						<input type="search" id="kgtk-peserta-search" class="kgtk-input" placeholder="Cari nama guru, NIK, asal sekolah/instansi, atau nomor HP...">
-						<button type="button" id="kgtk-search-clear" class="kgtk-search-clear" title="Bersihkan pencarian" style="display:none;">&times;</button>
-					</div>
-					<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-open-pulihkan" title="Cari atau pulihkan guru dari Master Data yang tidak sengaja terhapus atau belum masuk pelatihan ini" style="flex-shrink:0;white-space:nowrap;">
-						&#128101; Cari Guru di Master Data / Pulihkan
-					</button>
-				</div>
-
-				<!-- Toolbar Aksi Masal -->
-				<div class="kgtk-bulk-toolbar">
+				<!-- Toolbar Aksi Masal Kontekstual (Hanya muncul saat ada baris yang dicentang) -->
+				<div class="kgtk-bulk-toolbar" id="kgtk-peserta-bulk-toolbar" style="display:none;">
 					<div class="kgtk-bulk-left">
 						<label class="kgtk-bulk-checkall"><input type="checkbox" id="kgtk-check-all"> <span>Pilih Semua</span></label>
-						<span id="kgtk-selected-badge" class="kgtk-selected-badge" style="display:none;">0 dipilih</span>
+						<span id="kgtk-selected-badge" class="kgtk-selected-badge">0 dipilih</span>
 					</div>
 					<div class="kgtk-bulk-actions">
-						<span class="kgtk-bulk-label">Pindahkan terpilih ke:</span>
+						<span class="kgtk-bulk-label">Pindahkan ke:</span>
 						<select id="kgtk-bulk-target" class="kgtk-input kgtk-bulk-select">
 							<option value="">-- Pilih Kelas Tujuan --</option>
-							<option value="0">&#9888;&#65039; Belum Ada Kelas (Reset)</option>
+							<option value="0">Belum Ada Kelas (Reset)</option>
 							<?php foreach ( $kelas as $k ) : ?>
 								<option value="<?php echo (int) $k->id; ?>"><?php echo esc_html( $k->label . ' (' . (int) $k->terisi . '/' . (int) $k->slot . ')' ); ?></option>
 							<?php endforeach; ?>
 						</select>
 						<button type="button" class="kgtk-btn kgtk-btn--navy" id="kgtk-bulk-apply" disabled>Terapkan</button>
-						<button type="button" class="kgtk-btn kgtk-btn--primary" id="kgtk-btn-bulk-biodata" data-bio-url="<?php echo esc_url( KGTK_Export::semua_biodata_pdf_url( $p->id ) ); ?>" disabled title="Cetak atau unduh biodata peserta yang dicentang">&#128100; Cetak Biodata Terpilih (<span id="kgtk-bio-checked-count">0</span>)</button>
+						<button type="button" class="kgtk-btn kgtk-btn--ghost" id="kgtk-btn-bulk-biodata" data-bio-url="<?php echo esc_url( KGTK_Export::semua_biodata_pdf_url( $p->id ) ); ?>" disabled title="Cetak atau unduh biodata peserta yang dicentang" style="background:#fff;border:1px solid #cbd5e1;color:#0b2d56;font-weight:600;">Cetak Biodata (<span id="kgtk-bio-checked-count">0</span>)</button>
 					</div>
 				</div>
 
@@ -370,8 +376,8 @@ $pel_json = wp_json_encode( array(
 											'id'                 => (int) $ps->id,
 											'nama'               => $ps->nama,
 											'nama_lengkap'       => $nama_lengkap_tampil,
-											'gelar_depan'        => ! empty( $ps->gelar_depan ) ? $ps->gelar_depan : '',
-											'gelar_belakang'     => ! empty( $ps->gelar_belakang ) ? $ps->gelar_belakang : '',
+											'gelar_depan'        => ! empty( $ps->gelar_depan ) ? $ps->gelar_depan : '-',
+											'gelar_belakang'     => ! empty( $ps->gelar_belakang ) ? $ps->gelar_belakang : '-',
 											'nik'                => $ps->nik,
 											'tempat_lahir'       => ! empty( $ps->tempat_lahir ) ? $ps->tempat_lahir : '-',
 											'tanggal_lahir'      => ! empty( $ps->tanggal_lahir ) ? $ps->tanggal_lahir : '-',
@@ -419,7 +425,7 @@ $pel_json = wp_json_encode( array(
 														<span class="kgtk-badge kgtk-badge--undangan" title="Peserta Ditetapkan Kementerian">&#10003; Ditetapkan</span>
 													<?php endif; ?>
 													<?php if ( ! empty( $ps->peran ) && 'Peserta' !== $ps->peran ) : ?>
-														<button type="button" class="kgtk-badge kgtk-btn-ubah-peran" data-id="<?php echo (int) $ps->id; ?>" data-nama="<?php echo esc_attr( $nama_lengkap_tampil ); ?>" data-peran="<?php echo esc_attr( $ps->peran ); ?>" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:4px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;vertical-align:middle;text-decoration:none;" title="Guru ini terdaftar sebagai <?php echo esc_attr( $ps->peran ); ?>. Klik untuk mengubah ke peran lain (mis. Peserta).">
+														<button type="button" class="kgtk-badge kgtk-btn-ubah-peran" data-id="<?php echo (int) $ps->id; ?>" data-nama="<?php echo esc_attr( $nama_lengkap_tampil ); ?>" data-peran="<?php echo esc_attr( $ps->peran ); ?>" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:4px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;vertical-align:middle;text-decoration:none;" title="Guru ini terdaftar sebagai <?php echo esc_attr( $ps->peran ); ?>. Klik untuk mengubah peran.">
 															<span>&#128100; <?php echo esc_html( $ps->peran ); ?></span>
 															<span style="font-size:9.5px;text-decoration:underline;opacity:0.85;">(Ubah)</span>
 														</button>
@@ -494,35 +500,36 @@ $pel_json = wp_json_encode( array(
 												'id'                 => (int) $pan->id,
 												'nama'               => $pan->nama,
 												'nama_lengkap'       => $nama_lengkap_tampil,
-												'gelar_depan'        => ! empty( $pan->gelar_depan ) ? $pan->gelar_depan : '',
-												'gelar_belakang'     => ! empty( $pan->gelar_belakang ) ? $pan->gelar_belakang : '',
+												'gelar_depan'        => ! empty( $pan->gelar_depan ) ? $pan->gelar_depan : '-',
+												'gelar_belakang'     => ! empty( $pan->gelar_belakang ) ? $pan->gelar_belakang : '-',
 												'nik'                => $pan->nik,
-												'tempat_lahir'       => '-',
-												'tanggal_lahir'      => '-',
-												'jenis_kelamin'      => '-',
-												'alamat'             => '-',
-												'alamat_instansi'    => '-',
-												'pangkat_golongan'   => '-',
-												'agama'              => '-',
-												'pendidikan'         => '-',
-												'bank'               => ! empty( $pan->bank ) ? $pan->bank : '-',
-												'rekening'           => ! empty( $pan->rekening ) ? $pan->rekening : '-',
-												'npwp'               => ! empty( $pan->npwp ) ? $pan->npwp : '-',
-												'pengalaman_jabatan' => '-',
-												'nuptk'              => ! empty( $pan->nuptk ) ? $pan->nuptk : '-',
-												'nip'                => ! empty( $pan->nip ) ? $pan->nip : '-',
-												'simpkb'             => '-',
+												'tempat_lahir'       => ! empty( $pan->tempat_lahir ) ? $pan->tempat_lahir : '',
+												'tanggal_lahir'      => ! empty( $pan->tanggal_lahir ) ? $pan->tanggal_lahir : '',
+												'jenis_kelamin'      => ! empty( $pan->jenis_kelamin ) ? $pan->jenis_kelamin : '',
+												'alamat'             => ! empty( $pan->alamat ) ? $pan->alamat : '',
+												'alamat_instansi'    => ! empty( $pan->alamat_instansi ) ? $pan->alamat_instansi : '',
+												'pangkat_golongan'   => ! empty( $pan->pangkat_golongan ) ? $pan->pangkat_golongan : '',
+												'agama'              => ! empty( $pan->agama ) ? $pan->agama : '',
+												'pendidikan'         => ! empty( $pan->pendidikan ) ? $pan->pendidikan : '',
+												'bank'               => ! empty( $pan->bank ) ? $pan->bank : '',
+												'rekening'           => ! empty( $pan->rekening ) ? $pan->rekening : '',
+												'npwp'               => ! empty( $pan->npwp ) ? $pan->npwp : '',
+												'pengalaman_jabatan' => ! empty( $pan->pengalaman_jabatan ) ? $pan->pengalaman_jabatan : '',
+												'nuptk'              => ! empty( $pan->nuptk ) ? $pan->nuptk : '',
+												'nip'                => ! empty( $pan->nip ) ? $pan->nip : '',
+												'simpkb'             => ! empty( $pan->simpkb ) ? $pan->simpkb : '',
 												'sekolah'            => $pan->sekolah ?? '',
-												'kabkota'            => ! empty( $pan->kabkota ) ? $pan->kabkota : '-',
+												'instansi'           => $pan->sekolah ?? '',
+												'kabkota'            => ! empty( $pan->kabkota ) ? $pan->kabkota : '',
 												'peran'              => 'Panitia',
-												'jenis_gtk'          => $pan->jabatan ?: 'Panitia Pelaksana',
-												'jabatan'            => $pan->jabatan ?: 'Panitia Pelaksana',
+												'jenis_gtk'          => $pan->jabatan ?: ( ! empty( $pan->jenis_gtk ) ? $pan->jenis_gtk : 'Panitia Pelaksana' ),
+												'jabatan'            => $pan->jabatan ?: ( ! empty( $pan->jenis_gtk ) ? $pan->jenis_gtk : 'Panitia Pelaksana' ),
 												'kelas_id'           => $pan_kelas_id,
 												'kelas_label'        => $label_k,
-												'hp'                 => ! empty( $pan->hp ) ? $pan->hp : '-',
-												'email'              => ! empty( $pan->email ) ? $pan->email : '-',
-												'email_belajar'      => '-',
-												'created_at'         => ! empty( $pan->created_at ) ? $pan->created_at : '-',
+												'hp'                 => ! empty( $pan->hp ) ? $pan->hp : '',
+												'email'              => ! empty( $pan->email ) ? $pan->email : '',
+												'email_belajar'      => '',
+												'created_at'         => ! empty( $pan->created_at ) ? $pan->created_at : '',
 												'pelatihan'          => $p->nama,
 												'pelatihan_kode'     => $p->kode,
 												'pelatihan_tgl'      => $tgl,
@@ -532,7 +539,7 @@ $pel_json = wp_json_encode( array(
 											)
 										);
 								?>
-									<tr data-id="<?php echo (int) $pan->id; ?>" data-kelas="<?php echo (int) $pan_kelas_id; ?>" data-peran="panitia" data-is-panitia="1" data-search="<?php echo esc_attr( $search_text ); ?>" data-biodata="<?php echo esc_attr( $pan_bio_json ); ?>"<?php echo $is_unassigned ? ' class="is-row-unassigned"' : ''; ?>>
+									<tr data-id="<?php echo (int) $pan->id; ?>" data-kelas="<?php echo (int) $pan_kelas_id; ?>" data-peran="panitia" data-is-panitia="1" data-search="<?php echo esc_attr( $search_text ); ?>" data-biodata="<?php echo esc_attr( $pan_bio_json ); ?>" data-json="<?php echo esc_attr( $pan_bio_json ); ?>"<?php echo $is_unassigned ? ' class="is-row-unassigned"' : ''; ?>>
 										<td class="c-no"><input type="checkbox" class="kgtk-ps-check" value="<?php echo (int) $pan->id; ?>" aria-label="Pilih <?php echo esc_attr( $nama_lengkap_tampil ); ?>"></td>
 										<td class="c-no"><span class="kgtk-row-num"><?php echo (int) $no++; ?>.</span></td>
 										<td>
@@ -584,6 +591,7 @@ $pel_json = wp_json_encode( array(
 										<td style="text-align:center;">
 											<div class="kgtk-row-actions" style="display:inline-flex;gap:4px;align-items:center;justify-content:center;">
 												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--view" data-view-bio title="Lihat Biodata Panitia">&#128065;</button>
+												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--edit" data-edit-panitia-pelatihan="<?php echo (int) $pan->id; ?>" title="Edit Data Panitia">&#9998;</button>
 												<button type="button" class="kgtk-iconbtn kgtk-iconbtn--del" data-del-panitia-pelatihan="<?php echo (int) $pan->id; ?>" data-nama="<?php echo esc_attr( $pan->nama ); ?>" title="Hapus dari susunan panitia">&#128465;&#65039;</button>
 											</div>
 										</td>
@@ -607,6 +615,9 @@ $pel_json = wp_json_encode( array(
 
 		<!-- PANE 5: Daftar Tanda Terima Berkas SPT & SPPD Peserta -->
 		<?php require KGTK_PATH . 'admin/views/partials/pane-berkas-spt-sppd.php'; ?>
+
+		<!-- PANE 6: Formulir Registrasi Kamar Penginapan / Wisma / Hotel -->
+		<?php require KGTK_PATH . 'admin/views/partials/pane-registrasi-kamar.php'; ?>
 
 		<!-- PANES KELAS: Lembar Absen Cetak Per Kelas -->
 		<?php

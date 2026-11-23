@@ -694,6 +694,76 @@ class KGTK_REST_Admin_Pelatihan extends KGTK_REST_Base {
 		);
 	}
 
+	public static function admin_delete_kelas( WP_REST_Request $req ) {
+		global $wpdb;
+		$pelatihan_id = absint( $req['id'] );
+		$kelas_id     = absint( $req['kelas_id'] );
+
+		$existing = KGTK_Helpers::get_by_id( $pelatihan_id );
+		if ( ! $existing ) {
+			return self::err( 'tidak_ada', 'Pelatihan tidak ditemukan.', 404 );
+		}
+
+		$tk    = KGTK_DB::table( 'kelas' );
+		$tp    = KGTK_DB::table( 'peserta' );
+		$kelas = $wpdb->get_row(
+			$wpdb->prepare( "SELECT * FROM {$tk} WHERE id = %d AND pelatihan_id = %d", $kelas_id, $pelatihan_id )
+		);
+		if ( ! $kelas ) {
+			return self::err( 'kelas_tidak_ada', 'Kelas tidak ditemukan pada pelatihan ini.', 404 );
+		}
+
+		$total_kelas = (int) $wpdb->get_var(
+			$wpdb->prepare( "SELECT COUNT(*) FROM {$tk} WHERE pelatihan_id = %d", $pelatihan_id )
+		);
+		if ( $total_kelas <= 1 ) {
+			return self::err( 'minimal_satu_kelas', 'Pelatihan harus memiliki minimal satu kelas. Tambahkan kelas pengganti terlebih dahulu sebelum menghapus kelas terakhir ini.', 422 );
+		}
+
+		$wpdb->query( 'START TRANSACTION' );
+		$wpdb->suppress_errors( true );
+
+		// Pindahkan peserta & panitia yang berada di kelas ini ke status Belum Ada Kelas (kelas_id = 0).
+		$moved = $wpdb->update(
+			$tp,
+			array( 'kelas_id' => 0 ),
+			array(
+				'pelatihan_id' => $pelatihan_id,
+				'kelas_id'     => $kelas_id,
+			),
+			array( '%d' ),
+			array( '%d', '%d' )
+		);
+
+		$deleted = $wpdb->delete(
+			$tk,
+			array(
+				'id'           => $kelas_id,
+				'pelatihan_id' => $pelatihan_id,
+			),
+			array( '%d', '%d' )
+		);
+
+		$wpdb->suppress_errors( false );
+
+		if ( false === $moved || false === $deleted ) {
+			$wpdb->query( 'ROLLBACK' );
+			return self::err( 'gagal', 'Gagal menghapus kelas.', 500 );
+		}
+
+		$wpdb->query( 'COMMIT' );
+
+		return self::respond(
+			array(
+				'deleted'       => true,
+				'pelatihan_id'  => $pelatihan_id,
+				'kelas_id'      => $kelas_id,
+				'nama'          => $kelas->nama,
+				'moved_peserta' => (int) $moved,
+			)
+		);
+	}
+
 	public static function admin_delete( WP_REST_Request $req ) {
 		global $wpdb;
 		$id = absint( $req['id'] );

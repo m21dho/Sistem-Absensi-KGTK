@@ -189,8 +189,8 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		$in    = self::params( $req );
 		$peran = isset( $in['peran'] ) ? sanitize_text_field( $in['peran'] ) : '';
 
-		if ( ! in_array( $peran, KGTK_Helpers::PERAN, true ) ) {
-			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::PERAN ), 422 );
+		if ( ! in_array( $peran, KGTK_Helpers::peran_list(), true ) ) {
+			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::peran_list() ), 422 );
 		}
 
 		$tp      = KGTK_DB::table( 'peserta' );
@@ -201,7 +201,7 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 
 		$update = array( 'peran' => $peran );
 		if ( 'Peserta' === $peran ) {
-			if ( empty( $peserta->jenis_gtk ) || ( ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) && ! in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) {
+			if ( empty( $peserta->jenis_gtk ) || '-' === $peserta->jenis_gtk ) {
 				$update['jenis_gtk'] = 'Guru';
 			}
 		}
@@ -234,8 +234,8 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 			return self::err( 'kosong', 'Tidak ada peserta yang dipilih.', 422 );
 		}
 
-		if ( ! in_array( $peran, KGTK_Helpers::PERAN, true ) ) {
-			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::PERAN ), 422 );
+		if ( ! in_array( $peran, KGTK_Helpers::peran_list(), true ) ) {
+			return self::err( 'peran_tidak_valid', 'Peran yang dipilih tidak valid: ' . implode( ', ', KGTK_Helpers::peran_list() ), 422 );
 		}
 
 		$tp           = KGTK_DB::table( 'peserta' );
@@ -251,7 +251,7 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 		if ( 'Peserta' === $peran ) {
 			$wpdb->query(
 				$wpdb->prepare(
-					"UPDATE {$tp} SET jenis_gtk = 'Guru' WHERE pelatihan_id = %d AND id IN ({$placeholders}) AND (jenis_gtk IS NULL OR jenis_gtk = '' OR jenis_gtk NOT IN ('Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'))",
+					"UPDATE {$tp} SET jenis_gtk = 'Guru' WHERE pelatihan_id = %d AND id IN ({$placeholders}) AND (jenis_gtk IS NULL OR jenis_gtk = '' OR jenis_gtk = '-')",
 					array_merge( array( $pelatihan_id ), $peserta_ids )
 				)
 			);
@@ -327,8 +327,8 @@ class KGTK_REST_Admin_Peserta extends KGTK_REST_Base {
 
 		$target_peran = isset( $in['peran'] ) ? sanitize_text_field( $in['peran'] ) : ( ! empty( $peserta->peran ) ? $peserta->peran : 'Peserta' );
 		if ( 'Peserta' === $target_peran ) {
-			if ( empty( $in['jenis_gtk'] ) || ( ! in_array( $in['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $in['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) ) {
-				$in['jenis_gtk'] = ( ! empty( $peserta->jenis_gtk ) && ( in_array( $peserta->jenis_gtk, KGTK_Helpers::JABATAN, true ) || in_array( $peserta->jenis_gtk, KGTK_Helpers::JENIS_GTK, true ) ) ) ? $peserta->jenis_gtk : 'Guru';
+			if ( empty( $in['jenis_gtk'] ) || '-' === $in['jenis_gtk'] ) {
+				$in['jenis_gtk'] = ( ! empty( $peserta->jenis_gtk ) && '-' !== $peserta->jenis_gtk ) ? $peserta->jenis_gtk : 'Guru';
 			}
 		}
 

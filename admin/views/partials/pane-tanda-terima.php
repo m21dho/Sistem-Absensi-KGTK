@@ -154,7 +154,7 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 							?>
 								<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) $i; ?>">
 									<td class="c-no"><?php echo (int) $no1; ?></td>
-									<td class="c-nama"><?php echo $row1 ? esc_html( KGTK_Helpers::format_nama_gelar( $row1 ) ) : '&nbsp;'; ?></td>
+									<td class="c-nama"><?php echo $row1 ? esc_html( mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row1 ), 'UTF-8' ) ) : '&nbsp;'; ?></td>
 									<td class="c-inst"><?php echo $row1 ? esc_html( $row1->sekolah ) : '&nbsp;'; ?></td>
 									<?php if ( $has_pair ) : ?>
 										<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no1; ?>.</td>
@@ -167,7 +167,7 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 								<?php if ( $has_pair ) : ?>
 									<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) ( $i + 1 ); ?>">
 										<td class="c-no"><?php echo (int) $no2; ?></td>
-										<td class="c-nama"><?php echo $row2 ? esc_html( KGTK_Helpers::format_nama_gelar( $row2 ) ) : '&nbsp;'; ?></td>
+										<td class="c-nama"><?php echo $row2 ? esc_html( mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row2 ), 'UTF-8' ) ) : '&nbsp;'; ?></td>
 										<td class="c-inst"><?php echo $row2 ? esc_html( $row2->sekolah ) : '&nbsp;'; ?></td>
 									</tr>
 								<?php endif; ?>
@@ -226,7 +226,7 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 								?>
 									<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) $i; ?>">
 										<td class="c-no"><?php echo (int) $no1; ?></td>
-										<td class="c-nama"><?php echo $row1 ? esc_html( KGTK_Helpers::format_nama_gelar( $row1 ) ) : '&nbsp;'; ?></td>
+										<td class="c-nama"><?php echo $row1 ? esc_html( mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row1 ), 'UTF-8' ) ) : '&nbsp;'; ?></td>
 										<td class="c-inst"><?php echo $row1 ? esc_html( $row1->sekolah ) : '&nbsp;'; ?></td>
 										<?php if ( $has_pair ) : ?>
 											<td class="c-ttd-col c-ttd-left" rowspan="2"><?php echo (int) $no1; ?>.</td>
@@ -239,7 +239,7 @@ $default_atk_pdf_url = KGTK_Export::tanda_terima_atk_pdf_url( $p->id );
 									<?php if ( $has_pair ) : ?>
 										<tr class="<?php echo $is_extra ? 'kgtk-tt-extra-row' : ''; ?>" data-row-idx="<?php echo (int) ( $i + 1 ); ?>">
 											<td class="c-no"><?php echo (int) $no2; ?></td>
-											<td class="c-nama"><?php echo $row2 ? esc_html( KGTK_Helpers::format_nama_gelar( $row2 ) ) : '&nbsp;'; ?></td>
+											<td class="c-nama"><?php echo $row2 ? esc_html( mb_strtoupper( KGTK_Helpers::format_nama_gelar( $row2 ), 'UTF-8' ) ) : '&nbsp;'; ?></td>
 											<td class="c-inst"><?php echo $row2 ? esc_html( $row2->sekolah ) : '&nbsp;'; ?></td>
 										</tr>
 									<?php endif; ?>

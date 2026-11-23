@@ -149,18 +149,27 @@ class KGTK_REST_Admin_Panitia extends KGTK_REST_Base {
 			return self::err( 'nama', 'Nama panitia wajib diisi.', 422 );
 		}
 
-		$gelar_depan    = self::str( $in, 'gelar_depan' );
-		$gelar_belakang = self::str( $in, 'gelar_belakang' );
-		$nik            = preg_replace( '/\D/', '', self::str( $in, 'nik' ) );
-		$nip            = preg_replace( '/\D/', '', self::str( $in, 'nip' ) );
-		$jabatan        = self::str( $in, 'jabatan' ) ?: 'Panitia Pelaksana';
-		$instansi       = self::str( $in, 'instansi' );
-		$kabkota        = self::str( $in, 'kabkota' );
-		$hp             = self::str( $in, 'hp' );
-		$email          = self::mail( $in, 'email' );
-		$bank           = self::str( $in, 'bank' );
-		$rekening       = self::str( $in, 'rekening' );
-		$npwp           = self::str( $in, 'npwp' );
+		$gelar_depan      = self::str( $in, 'gelar_depan' );
+		$gelar_belakang   = self::str( $in, 'gelar_belakang' );
+		$nik              = preg_replace( '/\D/', '', self::str( $in, 'nik' ) );
+		$nip              = preg_replace( '/\D/', '', self::str( $in, 'nip' ) );
+		$jabatan          = self::str( $in, 'jabatan' ) ?: 'Panitia Pelaksana';
+		$kelas_id         = isset( $in['kelas_id'] ) ? absint( $in['kelas_id'] ) : ( isset( $existing->kelas_id ) ? (int) $existing->kelas_id : 0 );
+		$instansi         = self::str( $in, 'instansi' );
+		$kabkota          = self::str( $in, 'kabkota' );
+		$hp               = self::str( $in, 'hp' );
+		$email            = self::mail( $in, 'email' );
+		$bank             = self::str( $in, 'bank' );
+		$rekening         = self::str( $in, 'rekening' );
+		$npwp             = self::str( $in, 'npwp' );
+		$pangkat_golongan = self::str( $in, 'pangkat_golongan' );
+		$tempat_lahir     = self::str( $in, 'tempat_lahir' );
+		$tanggal_lahir    = self::str( $in, 'tanggal_lahir' );
+		$jenis_kelamin    = self::str( $in, 'jenis_kelamin' );
+		$agama            = self::str( $in, 'agama' );
+		$pendidikan       = self::str( $in, 'pendidikan' );
+		$alamat           = self::str( $in, 'alamat' );
+		$alamat_instansi  = self::str( $in, 'alamat_instansi' );
 
 		// Jika NIK bukan 16 digit, pertahankan NIK lama atau buat NIK unik agar UNIQUE KEY aman
 		if ( 16 !== strlen( $nik ) ) {
@@ -181,19 +190,28 @@ class KGTK_REST_Admin_Panitia extends KGTK_REST_Base {
 		}
 
 		$update_payload = array(
-			'nama'           => $nama,
-			'gelar_depan'    => $gelar_depan,
-			'gelar_belakang' => $gelar_belakang,
-			'nik'            => $nik,
-			'nip'            => $nip,
-			'sekolah'        => $instansi ?: 'Panitia Pelaksana',
-			'kabkota'        => $kabkota ?: 'Lainnya',
-			'jenis_gtk'      => $jabatan,
-			'hp'             => $hp,
-			'email'          => $email,
-			'bank'           => $bank,
-			'rekening'       => $rekening,
-			'npwp'           => $npwp,
+			'nama'             => $nama,
+			'gelar_depan'      => $gelar_depan,
+			'gelar_belakang'   => $gelar_belakang,
+			'nik'              => $nik,
+			'nip'              => $nip,
+			'sekolah'          => $instansi ?: 'Panitia Pelaksana',
+			'kabkota'          => $kabkota ?: 'Lainnya',
+			'jenis_gtk'        => $jabatan,
+			'kelas_id'         => $kelas_id,
+			'pangkat_golongan' => $pangkat_golongan,
+			'tempat_lahir'     => $tempat_lahir,
+			'tanggal_lahir'    => $tanggal_lahir,
+			'jenis_kelamin'    => $jenis_kelamin,
+			'agama'            => $agama,
+			'pendidikan'       => $pendidikan,
+			'alamat'           => $alamat,
+			'alamat_instansi'  => $alamat_instansi,
+			'hp'               => $hp,
+			'email'            => $email,
+			'bank'             => $bank,
+			'rekening'         => $rekening,
+			'npwp'             => $npwp,
 		);
 
 		$wpdb->update( $tp, $update_payload, array( 'id' => $peserta_id ) );
@@ -217,7 +235,7 @@ class KGTK_REST_Admin_Panitia extends KGTK_REST_Base {
 		KGTK_Panitia::save( $master_payload );
 
 		$updated_item = $wpdb->get_row(
-			$wpdb->prepare( "SELECT id, nik, nama, gelar_depan, gelar_belakang, sekolah, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, created_at FROM {$tp} WHERE id = %d", $peserta_id )
+			$wpdb->prepare( "SELECT id, kelas_id, nik, nama, gelar_depan, gelar_belakang, sekolah, sekolah AS instansi, kabkota, jenis_gtk AS jabatan, hp, nip, nuptk, email, bank, rekening, npwp, pangkat_golongan, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, pendidikan, alamat, alamat_instansi, created_at FROM {$tp} WHERE id = %d", $peserta_id )
 		);
 
 		return self::respond(

@@ -115,6 +115,7 @@ abstract class KGTK_REST_Base {
 			'kode'                 => $p->kode,
 			'kelas'                => self::kelas_payload( $kelas, $p ),
 			'kabkota'              => KGTK_Helpers::kabkota_list(),
+			'peran_list'           => KGTK_Helpers::peran_list(),
 			'penuh'                => $t['penuh'],
 			'deadline_pendaftaran' => ! empty( $p->deadline_pendaftaran ) ? $p->deadline_pendaftaran : null,
 			'deadline_formatted'   => ! empty( $p->deadline_pendaftaran ) ? KGTK_Helpers::format_deadline( $p->deadline_pendaftaran ) : '',

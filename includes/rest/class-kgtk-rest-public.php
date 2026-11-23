@@ -532,7 +532,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		$manual = $d['sekolah'];
 		$tulis  = function () use ( $manual ) {
 			if ( '' === $manual || self::len( $manual ) > 200 ) {
-				return self::err( 'sekolah', 'Asal sekolah/instansi wajib diisi (maksimal 200 karakter).', 422 );
+				return self::err( 'sekolah', 'Instansi wajib diisi (maksimal 200 karakter).', 422 );
 			}
 			return true;
 		};
@@ -558,7 +558,7 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			$t   = KGTK_DB::table( 'sekolah' );
 			$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, nama FROM {$t} WHERE id = %d AND kabkota = %s", $d['sekolah_id'], $kab ) );
 			if ( ! $row ) {
-				return self::err( 'sekolah', 'Sekolah/instansi tidak ditemukan pada kabupaten/kota yang dipilih.', 422 );
+				return self::err( 'sekolah', 'Instansi tidak ditemukan pada kabupaten/kota yang dipilih.', 422 );
 			}
 			return array( 'kabkota' => $kab, 'sekolah_id' => (int) $row->id, 'sekolah' => $row->nama );
 		}
@@ -654,6 +654,9 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 		if ( '' !== $d['pangkat_golongan'] && self::len( $d['pangkat_golongan'] ) > 80 ) {
 			return self::err( 'pangkat_golongan', 'Pangkat/Golongan maksimal 80 karakter.', 422 );
 		}
+		if ( '' === $d['pangkat_golongan'] ) {
+			return self::err( 'pangkat_golongan', 'Pangkat / Golongan wajib diisi.', 422 );
+		}
 		if ( 'S1' === $d['pendidikan'] || 'D4' === $d['pendidikan'] ) {
 			$d['pendidikan'] = 'D4 / S1';
 		} elseif ( 'SMA' === $d['pendidikan'] || 'SMK' === $d['pendidikan'] ) {
@@ -674,16 +677,26 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			$d['peran'] = 'Peserta';
 		}
 
-		if ( ! in_array( $d['peran'], KGTK_Helpers::PERAN, true ) ) {
-			return self::err( 'peran', 'Pilih peran yang tersedia: ' . implode( ', ', KGTK_Helpers::PERAN ) . '.', 422 );
+		if ( ! in_array( $d['peran'], KGTK_Helpers::peran_list(), true ) ) {
+			return self::err( 'peran', 'Pilih peran yang tersedia: ' . implode( ', ', KGTK_Helpers::peran_list() ) . '.', 422 );
 		}
 
 		if ( $is_acara ) {
-			// Acara: Bank, Rekening, Pengalaman Jabatan, NPWP opsional (default '-' jika kosong)
+			// Acara: Bank, Rekening, Pengalaman Jabatan, NPWP opsional (default '-' jika kosong), Jabatan wajib diisi
 			$d['bank']               = '' !== $d['bank'] ? $d['bank'] : '-';
 			$d['rekening']           = '' !== $d['rekening'] ? $d['rekening'] : '-';
 			$d['pengalaman_jabatan'] = '' !== $d['pengalaman_jabatan'] ? $d['pengalaman_jabatan'] : '-';
-			$d['jenis_gtk']          = '' !== $d['jenis_gtk'] ? $d['jenis_gtk'] : '-';
+			if ( '' === $d['jenis_gtk'] || '-' === $d['jenis_gtk'] ) {
+				if ( $is_admin ) {
+					$d['jenis_gtk'] = '-';
+				} else {
+					return self::err( 'jenis_gtk', 'Jabatan wajib dipilih atau diisi.', 422 );
+				}
+			} elseif ( 'Lainnya' === $d['jenis_gtk'] ) {
+				return self::err( 'jenis_gtk', 'Silakan tulis nama jabatan Anda pada kolom yang tersedia.', 422 );
+			} elseif ( self::len( $d['jenis_gtk'] ) > 100 ) {
+				return self::err( 'jenis_gtk', 'Jabatan maksimal 100 karakter.', 422 );
+			}
 			if ( '' !== $d['npwp'] && self::len( $d['npwp'] ) > 30 ) {
 				return self::err( 'npwp', 'NPWP maksimal 30 karakter (kosongkan jika tidak ada).', 422 );
 			}
@@ -744,16 +757,20 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			}
 
 			if ( 'Peserta' === $d['peran'] ) {
-				if ( ! in_array( $d['jenis_gtk'], KGTK_Helpers::JABATAN, true ) && ! in_array( $d['jenis_gtk'], KGTK_Helpers::JENIS_GTK, true ) ) {
-					return self::err( 'jenis_gtk', 'Pilih Jabatan: ' . implode( ', ', KGTK_Helpers::JABATAN ) . '.', 422 );
+				if ( '' === $d['jenis_gtk'] || '-' === $d['jenis_gtk'] ) {
+					return self::err( 'jenis_gtk', 'Jabatan wajib dipilih atau diisi.', 422 );
+				}
+				if ( 'Lainnya' === $d['jenis_gtk'] ) {
+					return self::err( 'jenis_gtk', 'Silakan tulis nama jabatan Anda pada kolom yang tersedia.', 422 );
+				}
+				if ( self::len( $d['jenis_gtk'] ) > 100 ) {
+					return self::err( 'jenis_gtk', 'Jabatan maksimal 100 karakter.', 422 );
 				}
 				$b = $d['email_belajar'];
-				$allow_empty_belajar = ( $is_admin || current_user_can( 'manage_options' ) );
-				if ( '' === $b && $allow_empty_belajar ) {
-					// Diizinkan kosong khusus admin saat input guru manual tanpa belajar.id
+				if ( '' === $b ) {
 					$d['email_belajar'] = '';
 				} elseif ( ! is_email( $b ) || self::len( $b ) > 100 || ! preg_match( '/@([a-z0-9-]+\.)*belajar\.id$/', $b ) ) {
-					return self::err( 'email_belajar', 'Email belajar.id wajib diisi dan harus berakhiran belajar.id untuk peran Peserta.', 422 );
+					return self::err( 'email_belajar', 'Format email belajar.id tidak valid (harus berakhiran belajar.id, atau kosongkan jika tidak ada).', 422 );
 				}
 			} else {
 				// Non-peserta non-panitia (Narasumber, Pengajar, Fasilitator, dll.)

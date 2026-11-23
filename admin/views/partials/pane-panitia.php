@@ -8,25 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @var object $p       Data pelatihan.
  * @var array  $panitia Daftar panitia untuk pelatihan ini.
  */
-// Sinkronisasi otomatis: masukkan data panitia yang ada pada pelatihan ini ke master data jika belum ada
-if ( ! empty( $panitia ) && class_exists( 'KGTK_Panitia' ) ) {
-	foreach ( $panitia as $p_sync ) {
-		if ( ! empty( $p_sync->nama ) ) {
-			KGTK_Panitia::save( array(
-				'nama'     => $p_sync->nama,
-				'nik'      => $p_sync->nik,
-				'nip'      => $p_sync->nip ?? '',
-				'jabatan'  => ! empty( $p_sync->jabatan ) ? $p_sync->jabatan : 'Panitia Pelaksana',
-				'instansi' => $p_sync->sekolah ?? '',
-				'kabkota'  => $p_sync->kabkota ?? '',
-				'hp'       => $p_sync->hp ?? '',
-				'email'    => $p_sync->email ?? '',
-				'bank'     => $p_sync->bank ?? '',
-				'rekening' => $p_sync->rekening ?? '',
-			) );
-		}
-	}
-}
 $panitia_list_master = KGTK_Panitia::get_all();
 $panitia_count       = ! empty( $panitia ) ? count( $panitia ) : 0;
 
@@ -149,22 +130,31 @@ $dummy_k = (object) array(
 								$search_text = strtolower( $pan->nama . ' ' . $pan->nik . ' ' . ( $pan->nip ?? '' ) . ' ' . ( $pan->jabatan ?? '' ) . ' ' . $pan->sekolah . ' ' . ( $pan->hp ?? '' ) );
 								$wa_num      = preg_replace( '/^0/', '62', preg_replace( '/\D/', '', (string) ( $pan->hp ?? '' ) ) );
 								$pan_json    = wp_json_encode( array(
-									'id'             => (int) $pan->id,
-									'kelas_id'       => $pan_kelas_id,
-									'nama'           => $pan->nama,
-									'gelar_depan'    => $pan->gelar_depan ?? '',
-									'gelar_belakang' => $pan->gelar_belakang ?? '',
-									'jabatan'        => $pan->jabatan ?: 'Panitia Pelaksana',
-									'nik'            => $pan->nik,
-									'nip'            => $pan->nip ?? '',
-									'nuptk'          => $pan->nuptk ?? '',
-									'instansi'       => $pan->sekolah ?? '',
-									'kabkota'        => $pan->kabkota ?? '',
-									'hp'             => $pan->hp ?? '',
-									'email'          => $pan->email ?? '',
-									'bank'           => $pan->bank ?? '',
-									'rekening'       => $pan->rekening ?? '',
-									'npwp'           => $pan->npwp ?? '',
+									'id'               => (int) $pan->id,
+									'kelas_id'         => $pan_kelas_id,
+									'nama'             => $pan->nama,
+									'gelar_depan'      => $pan->gelar_depan ?? '',
+									'gelar_belakang'   => $pan->gelar_belakang ?? '',
+									'jabatan'          => $pan->jabatan ?: ( ! empty( $pan->jenis_gtk ) ? $pan->jenis_gtk : 'Panitia Pelaksana' ),
+									'nik'              => $pan->nik,
+									'nip'              => $pan->nip ?? '',
+									'nuptk'            => $pan->nuptk ?? '',
+									'instansi'         => $pan->sekolah ?? '',
+									'sekolah'          => $pan->sekolah ?? '',
+									'alamat_instansi'  => $pan->alamat_instansi ?? '',
+									'kabkota'          => $pan->kabkota ?? '',
+									'pangkat_golongan' => $pan->pangkat_golongan ?? '',
+									'tempat_lahir'     => $pan->tempat_lahir ?? '',
+									'tanggal_lahir'    => $pan->tanggal_lahir ?? '',
+									'jenis_kelamin'    => $pan->jenis_kelamin ?? '',
+									'agama'            => $pan->agama ?? '',
+									'pendidikan'       => $pan->pendidikan ?? '',
+									'alamat'           => $pan->alamat ?? '',
+									'hp'               => $pan->hp ?? '',
+									'email'            => $pan->email ?? '',
+									'bank'             => $pan->bank ?? '',
+									'rekening'         => $pan->rekening ?? '',
+									'npwp'             => $pan->npwp ?? '',
 								) );
 							?>
 								<tr data-id="<?php echo (int) $pan->id; ?>" data-kelas="<?php echo (int) $pan_kelas_id; ?>" data-search="<?php echo esc_attr( $search_text ); ?>" data-json="<?php echo esc_attr( $pan_json ); ?>">
@@ -252,7 +242,7 @@ $dummy_k = (object) array(
 
 	<!-- SUBTAB 2: LEMBAR HADIR / PRESENSI PANITIA (A4 FORMAL) -->
 	<?php
-	$panitia_sheet_rows = ! empty( $panitia ) ? count( $panitia ) : KGTK_Helpers::BARIS_HALAMAN_AWAL;
+	$panitia_sheet_rows = max( 1, count( (array) $panitia ) );
 	KGTK_Admin::sheet_html( $p, $dummy_k, 'Panitia', $panitia, $panitia_sheet_rows, 'panitia-lembar-absen', false, false );
 	?>
 </div>
@@ -358,12 +348,11 @@ $dummy_k = (object) array(
 							<div class="kgtk-row2">
 								<div class="kgtk-field">
 									<span>Tugas / Jabatan <b>*</b></span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-m-jabatan" required list="kgtk-jabatan-panitia-list-opt" value="Panitia Pelaksana">
-									<datalist id="kgtk-jabatan-panitia-list-opt">
+									<select class="kgtk-input" id="kgtk-pan-m-jabatan" required>
 										<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
-											<option value="<?php echo esc_attr( $jp ); ?>"></option>
+											<option value="<?php echo esc_attr( $jp ); ?>" <?php selected( $jp, 'Panitia Pelaksana' ); ?>><?php echo esc_html( $jp ); ?></option>
 										<?php endforeach; ?>
-									</datalist>
+									</select>
 								</div>
 								<div class="kgtk-field">
 									<span>Nomor HP / WhatsApp <b>*</b></span>
@@ -372,17 +361,22 @@ $dummy_k = (object) array(
 							</div>
 							<div class="kgtk-row2">
 								<div class="kgtk-field">
-									<span>Asal Instansi / Unit Kerja</span>
-									<input type="text" class="kgtk-input" id="kgtk-pan-m-instansi" placeholder="Contoh: BPMP Provinsi Kepulauan Riau">
-								</div>
-								<div class="kgtk-field">
 									<span>Kabupaten / Kota</span>
 									<select class="kgtk-input" id="kgtk-pan-m-kabkota">
-										<option value="">-- Pilih Wilayah --</option>
+										<option value="">-- Pilih Wilayah / Kab/Kota --</option>
 										<?php foreach ( KGTK_Helpers::kabkota_list() as $kab ) : ?>
 											<option value="<?php echo esc_attr( $kab ); ?>"><?php echo esc_html( $kab ); ?></option>
 										<?php endforeach; ?>
 									</select>
+								</div>
+								<div class="kgtk-field">
+									<span>Instansi / Unit Kerja</span>
+									<div class="kgtk-combo" style="position:relative;">
+										<input type="text" class="kgtk-input" id="kgtk-pan-m-instansi-input" placeholder="Ketik untuk mencari instansi / sekolah..." autocomplete="off" style="padding-right:30px;">
+										<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:#64748b;font-size:11px;">&#9660;</span>
+										<ul class="kgtk-combo-list" id="kgtk-pan-m-instansi-list" hidden style="position:absolute;z-index:999;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;max-height:220px;overflow-y:auto;background:#fff;border:1.5px solid #0083C4;border-radius:8px;box-shadow:0 8px 24px rgba(15,42,74,.18);"></ul>
+									</div>
+									<input type="hidden" id="kgtk-pan-m-instansi">
 								</div>
 							</div>
 							<div class="kgtk-row2">
@@ -441,36 +435,15 @@ $dummy_k = (object) array(
 					<div id="kgtk-edit-pan-pel-error" class="kgtk-alert" role="alert" hidden style="margin-bottom:12px;"></div>
 
 					<div class="kgtk-modal-body-scroll" style="max-height:calc(100vh - 250px);max-height:calc(100dvh - 250px);overflow-y:auto;padding-right:6px;">
-						<!-- Pilihan Identitas NIK vs NIP -->
-						<div style="background:#f8fafc;padding:12px 16px;border-radius:10px;border:1px solid #cbd5e1;margin-bottom:16px;">
-							<span style="font-weight:700;font-size:13px;color:#0b2d56;display:block;margin-bottom:6px;">
-								&#127380; Nomor Identitas Utama:
-							</span>
-							<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-								<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#1e293b;cursor:pointer;">
-									<input type="radio" name="edit_panitia_id_type" value="nik" id="kgtk-edit-pan-radio-nik" checked>
-									<span>Gunakan NIK (16 Digit)</span>
-								</label>
-								<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#1e293b;cursor:pointer;">
-									<input type="radio" name="edit_panitia_id_type" value="nip" id="kgtk-edit-pan-radio-nip">
-									<span>Gunakan NIP (18 Digit)</span>
-								</label>
-							</div>
-						</div>
-
-						<!-- Input NIK -->
-						<div id="kgtk-edit-pan-wrap-nik">
+						<!-- Identitas NIK & NIP -->
+						<div class="kgtk-row2">
 							<label class="kgtk-field">
-								<span>NIK (16 Digit) *</span>
+								<span>NIK (16 Digit)</span>
 								<input type="text" class="kgtk-input" id="kgtk-edit-pan-nik" name="nik" inputmode="numeric" maxlength="16" placeholder="16 digit angka NIK">
 							</label>
-						</div>
-
-						<!-- Input NIP Top (saat radio NIP aktif) -->
-						<div id="kgtk-edit-pan-wrap-nip-top" style="display:none;">
 							<label class="kgtk-field">
-								<span>NIP (18 Digit) *</span>
-								<input type="text" class="kgtk-input" id="kgtk-edit-pan-nip-top" inputmode="numeric" maxlength="18" placeholder="18 digit angka NIP">
+								<span>NIP (18 Digit - Bila ASN/PNS)</span>
+								<input type="text" class="kgtk-input" id="kgtk-edit-pan-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka NIP">
 							</label>
 						</div>
 
@@ -492,41 +465,113 @@ $dummy_k = (object) array(
 							</label>
 						</div>
 
-						<!-- NIP Bottom (saat radio NIK aktif) -->
-						<div id="kgtk-edit-pan-wrap-nip-bottom">
+						<!-- Tugas / Jabatan & Penugasan Kelas -->
+						<div class="kgtk-row2">
 							<label class="kgtk-field">
-								<span>NIP (18 Digit)</span>
-								<input type="text" class="kgtk-input" id="kgtk-edit-pan-nip" name="nip" inputmode="numeric" maxlength="18" placeholder="18 digit angka NIP (bila PNS)">
+								<span>Tugas / Jabatan Panitia *</span>
+								<select class="kgtk-input" id="kgtk-edit-pan-jabatan" name="jabatan" required>
+									<option value="">-- Pilih Tugas / Jabatan Panitia --</option>
+									<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
+										<option value="<?php echo esc_attr( $jp ); ?>"><?php echo esc_html( $jp ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+							<label class="kgtk-field">
+								<span>Penugasan Kelas yang Diurus</span>
+								<select class="kgtk-input" id="kgtk-edit-pan-kelas-id" name="kelas_id">
+									<option value="0">&#9888;&#65039; Umum / Belum Ada Kelas</option>
+									<?php if ( ! empty( $kelas ) ) : ?>
+										<?php foreach ( $kelas as $k_sel ) : ?>
+											<option value="<?php echo (int) $k_sel->id; ?>">&#127979; <?php echo esc_html( $k_sel->label ); ?></option>
+										<?php endforeach; ?>
+									<?php endif; ?>
+								</select>
 							</label>
 						</div>
 
-						<!-- Tugas / Jabatan -->
-						<label class="kgtk-field">
-							<span>Tugas / Jabatan Panitia *</span>
-							<input type="text" class="kgtk-input" id="kgtk-edit-pan-jabatan" name="jabatan" list="kgtk-edit-pan-jabatan-list" required placeholder="Ketua Panitia / Sekretaris / Panitia Pelaksana">
-							<datalist id="kgtk-edit-pan-jabatan-list">
-								<?php foreach ( KGTK_Helpers::JABATAN_PANITIA as $jp ) : ?>
-									<option value="<?php echo esc_attr( $jp ); ?>"></option>
-								<?php endforeach; ?>
-							</datalist>
-						</label>
+						<!-- Pangkat / Golongan & Pendidikan Terakhir -->
+						<div class="kgtk-row2">
+							<label class="kgtk-field">
+								<span>Pangkat / Golongan * <small style="color:#64748b;font-weight:normal;">(Isi "-" jika Non ASN)</small></span>
+								<input type="text" class="kgtk-input" id="kgtk-edit-pan-pangkat" name="pangkat_golongan" list="kgtk-edit-pan-pangkat-list" required placeholder="mis. Pembina (IV/a) atau -">
+								<datalist id="kgtk-edit-pan-pangkat-list">
+									<?php foreach ( KGTK_Helpers::PANGKAT_GOLONGAN as $pg ) : ?>
+										<option value="<?php echo esc_attr( $pg ); ?>"></option>
+									<?php endforeach; ?>
+								</datalist>
+							</label>
+							<label class="kgtk-field">
+								<span>Pendidikan Terakhir</span>
+								<select class="kgtk-input" id="kgtk-edit-pan-pendidikan" name="pendidikan">
+									<option value="">-- Pilih Pendidikan Terakhir --</option>
+									<?php foreach ( KGTK_Helpers::PENDIDIKAN as $pend ) : ?>
+										<option value="<?php echo esc_attr( $pend ); ?>"><?php echo esc_html( $pend ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+						</div>
+
+						<!-- Tempat Lahir & Tanggal Lahir -->
+						<div class="kgtk-row2">
+							<label class="kgtk-field">
+								<span>Tempat Lahir</span>
+								<input type="text" class="kgtk-input" id="kgtk-edit-pan-tempat-lahir" name="tempat_lahir" placeholder="Tempat lahir">
+							</label>
+							<label class="kgtk-field">
+								<span>Tanggal Lahir</span>
+								<input type="date" class="kgtk-input" id="kgtk-edit-pan-tanggal-lahir" name="tanggal_lahir">
+							</label>
+						</div>
+
+						<!-- Jenis Kelamin & Agama -->
+						<div class="kgtk-row2">
+							<label class="kgtk-field">
+								<span>Jenis Kelamin</span>
+								<select class="kgtk-input" id="kgtk-edit-pan-jk" name="jenis_kelamin">
+									<option value="">-- Pilih Jenis Kelamin --</option>
+									<?php foreach ( KGTK_Helpers::JENIS_KELAMIN as $jk ) : ?>
+										<option value="<?php echo esc_attr( $jk ); ?>"><?php echo esc_html( $jk ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+							<label class="kgtk-field">
+								<span>Agama</span>
+								<select class="kgtk-input" id="kgtk-edit-pan-agama" name="agama">
+									<option value="">-- Pilih Agama --</option>
+									<?php foreach ( KGTK_Helpers::AGAMA as $ag ) : ?>
+										<option value="<?php echo esc_attr( $ag ); ?>"><?php echo esc_html( $ag ); ?></option>
+									<?php endforeach; ?>
+								</select>
+							</label>
+						</div>
 
 						<!-- Asal Instansi & Kab/Kota -->
 						<div class="kgtk-row2">
 							<label class="kgtk-field">
-								<span>Asal Instansi / Unit Kerja *</span>
-								<input type="text" class="kgtk-input" id="kgtk-edit-pan-instansi" name="instansi" maxlength="200" placeholder="Contoh: BPMP Provinsi Kepulauan Riau">
-							</label>
-							<label class="kgtk-field">
 								<span>Kabupaten / Kota</span>
 								<select class="kgtk-input" id="kgtk-edit-pan-kabkota" name="kabkota">
-									<option value="">-- Pilih Wilayah --</option>
+									<option value="">-- Pilih Wilayah / Kab/Kota --</option>
 									<?php foreach ( KGTK_Helpers::kabkota_list() as $kab ) : ?>
 										<option value="<?php echo esc_attr( $kab ); ?>"><?php echo esc_html( $kab ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</label>
+							<label class="kgtk-field">
+								<span>Instansi *</span>
+								<div class="kgtk-combo" style="position:relative;">
+									<input type="text" class="kgtk-input" id="kgtk-edit-pan-instansi-input" placeholder="Ketik untuk mencari instansi / sekolah..." autocomplete="off" style="padding-right:30px;">
+									<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:#64748b;font-size:11px;">&#9660;</span>
+									<ul class="kgtk-combo-list" id="kgtk-edit-pan-instansi-list" hidden style="position:absolute;z-index:999;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;max-height:220px;overflow-y:auto;background:#fff;border:1.5px solid #0083C4;border-radius:8px;box-shadow:0 8px 24px rgba(15,42,74,.18);"></ul>
+								</div>
+								<input type="hidden" id="kgtk-edit-pan-instansi" name="instansi">
+							</label>
 						</div>
+
+						<!-- Alamat Kantor / Instansi -->
+						<label class="kgtk-field">
+							<span>Alamat Instansi / Kantor</span>
+							<input type="text" class="kgtk-input" id="kgtk-edit-pan-alamat-instansi" name="alamat_instansi" placeholder="Alamat lengkap instansi/kantor">
+						</label>
 
 						<!-- Kontak HP & Email -->
 						<div class="kgtk-row2">
@@ -540,6 +585,12 @@ $dummy_k = (object) array(
 							</label>
 						</div>
 
+						<!-- Alamat Tempat Tinggal / Rumah -->
+						<label class="kgtk-field">
+							<span>Alamat Tempat Tinggal / Domisili</span>
+							<input type="text" class="kgtk-input" id="kgtk-edit-pan-alamat" name="alamat" placeholder="Alamat lengkap domisili panitia">
+						</label>
+
 						<!-- Bank & Rekening -->
 						<div class="kgtk-row2">
 							<label class="kgtk-field">
@@ -551,6 +602,12 @@ $dummy_k = (object) array(
 								<input type="text" class="kgtk-input" id="kgtk-edit-pan-rekening" name="rekening" maxlength="50" inputmode="numeric" placeholder="Nomor rekening">
 							</label>
 						</div>
+
+						<!-- NPWP -->
+						<label class="kgtk-field">
+							<span>Nomor Pokok Wajib Pajak (NPWP)</span>
+							<input type="text" class="kgtk-input" id="kgtk-edit-pan-npwp" name="npwp" maxlength="35" placeholder="Nomor NPWP panitia">
+						</label>
 					</div>
 
 					<div class="kgtk-modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">

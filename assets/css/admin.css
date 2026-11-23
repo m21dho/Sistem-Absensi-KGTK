@@ -650,29 +650,29 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-wrap .kgtk-table .c-no {
-		width: 6% !important;
+		width: 5% !important;
 		text-align: center !important;
-		font-size: 12pt !important;
+		font-size: 11pt !important;
 		padding: 0 2px !important;
 	}
 
 .kgtk-wrap .kgtk-table .c-nama {
-		width: 31% !important;
-		padding: 0 6px !important;
-		font-size: 12pt !important;
+		width: 35% !important;
+		padding: 0 5px !important;
+		font-size: 11pt !important;
 		text-align: left !important;
 	}
 
 .kgtk-wrap .kgtk-table .c-inst {
-		width: 31% !important;
-		padding: 0 6px !important;
-		font-size: 12pt !important;
+		width: 35% !important;
+		padding: 0 5px !important;
+		font-size: 11pt !important;
 		text-align: left !important;
 	}
 
 .kgtk-wrap .kgtk-doc-title {
 		color: #000;
-		font-size: 14pt !important;
+		font-size: 12pt !important;
 		font-weight: bold !important;
 		text-align: center;
 		letter-spacing: 0.5px;
@@ -686,12 +686,54 @@ div.kgtk-modal-overlay.is-visible,
 		margin: 2px 0 4px !important;
 	}
 
+.kgtk-wrap .kgtk-doc-info div {
+		font-size: 12pt !important;
+	}
+
+.kgtk-wrap .kgtk-doc-tanggal {
+		display: block !important;
+		font-size: 12pt !important;
+		text-align: center;
+		margin: 1px 0 2px !important;
+	}
+
+.kgtk-wrap .kgtk-doc-lokasi {
+		display: block !important;
+		font-size: 12pt !important;
+		text-align: center;
+		margin: 1px 0 2px !important;
+	}
+
 .kgtk-wrap .kgtk-doc-kelas {
 		font-size: 12pt !important;
 		text-align: center;
 		font-weight: bold;
 		margin: 0 0 4px !important;
 	}
+
+.kgtk-wrap .kgtk-doc-kegiatan-absen {
+		font-size: 12pt !important;
+		text-align: center;
+		font-weight: bold;
+		margin: 0 0 4px !important;
+	}
+
+.kgtk-wrap .kgtk-page .c-nama,
+.kgtk-wrap .kgtk-page .kgtk-table .c-nama,
+.kgtk-wrap .kgtk-page .kgtk-table td.nama,
+.kgtk-wrap .kgtk-page .kgtk-ttd-nama {
+	text-transform: uppercase !important;
+}
+
+.kgtk-wrap .kgtk-page .kgtk-table th,
+.kgtk-wrap .kgtk-page .kgtk-table td,
+.kgtk-wrap .kgtk-page .kgtk-table .c-no,
+.kgtk-wrap .kgtk-page .kgtk-table .c-nama,
+.kgtk-wrap .kgtk-page .kgtk-table .c-inst,
+.kgtk-wrap .kgtk-page .kgtk-table .c-ttd,
+.kgtk-wrap .kgtk-page .kgtk-table .c-ttd-col {
+	font-size: 11pt !important;
+}
 
 .kgtk-wrap .kgtk-page+.kgtk-page {
 	margin-top: 28px;
@@ -713,9 +755,7 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-wrap .kgtk-ttd-titimangsa {
-	font-size: 11pt;
-	margin-bottom: 2px;
-	color: #111827;
+	display: none !important;
 }
 
 .kgtk-wrap .kgtk-ttd-jabatan {
@@ -725,7 +765,7 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-wrap .kgtk-ttd-space {
-	height: 55px;
+	height: 52px;
 }
 
 .kgtk-wrap .kgtk-ttd-nama {
@@ -733,6 +773,7 @@ div.kgtk-modal-overlay.is-visible,
 	font-weight: bold;
 	text-decoration: none;
 	color: #111827;
+	text-transform: uppercase !important;
 }
 
 .kgtk-wrap .kgtk-cb-square {
@@ -767,9 +808,9 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-wrap .kgtk-table th,
 .kgtk-wrap .kgtk-table td {
 	border: 1px solid #9fb0bd;
-	padding: 0 10px;
-	height: 38px;
-	font-size: 13px
+	padding: 0 6px;
+	height: 30px;
+	font-size: 11pt;
 }
 
 .kgtk-wrap .kgtk-table th {
@@ -791,16 +832,17 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-wrap .kgtk-table th.c-ttd,
 .kgtk-wrap .kgtk-table .c-ttd {
-	width: 32% !important;
+	width: 25% !important;
 	white-space: nowrap !important;
-	text-align: center
+	text-align: center !important;
+	font-size: 11pt !important;
 }
 
 .kgtk-wrap .kgtk-table .c-ttd-col {
-		width: 16% !important;
-		padding: 2px 5px !important;
+		width: 12.5% !important;
+		padding: 1px 3px !important;
 		color: #000;
-		line-height: 1.15;
+		line-height: 1.1;
 		font-size: 11pt !important;
 		font-weight: bold;
 		vertical-align: top !important;
@@ -808,7 +850,7 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 .kgtk-wrap .kgtk-table .c-ttd-left {
-	width: 16% !important;
+	width: 12.5% !important;
 	text-align: left !important;
 	vertical-align: top !important;
 	box-sizing: border-box
@@ -824,31 +866,68 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-wrap .kgtk-kop-wrap {
 	width: 100%;
 	text-align: center;
-	margin: 0 auto 16px
+	margin: 12px auto 16px;
 }
 
 .kgtk-wrap .kgtk-kop-tbl {
-	width: 100%;
-	max-width: 760px;
-	margin: 0 auto;
+	width: auto !important;
+	max-width: 100% !important;
+	margin: 0 auto !important;
 	border-collapse: collapse;
-	border: 0
+	border: 0;
 }
 
 .kgtk-wrap .kgtk-kop-tbl td {
 	border: 0 !important;
-	vertical-align: middle
+	vertical-align: middle;
 }
 
 .kgtk-wrap .kgtk-kop-tbl td.kgtk-kop-line {
-	width: 2px !important;
-	max-width: 2px !important;
-	min-width: 2px !important;
+	width: 1.5px !important;
+	max-width: 1.5px !important;
+	min-width: 1.5px !important;
 	background-color: #0083C4 !important;
 	padding: 0 !important;
 	border: 0 !important;
 	font-size: 1px !important;
-	line-height: 1px !important
+	line-height: 1px !important;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+
+.kgtk-wrap .kgtk-kop-tbl td.kgtk-kop-line div {
+	width: 1.5px !important;
+	height: 62px !important;
+	background-color: #0083C4 !important;
+	border: 0 !important;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+
+.kgtk-wrap .kgtk-kop-tbl img {
+	height: 78px !important;
+	max-height: 78px !important;
+	width: auto !important;
+	display: inline-block !important;
+	vertical-align: middle !important;
+}
+
+/* Formulir Registrasi Kamar */
+.kgtk-wrap .kgtk-regkamar-info-tbl,
+.kgtk-wrap .kgtk-regkamar-info-tbl tr,
+.kgtk-wrap .kgtk-regkamar-info-tbl td {
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.kgtk-wrap .kgtk-regkamar-table td {
+	height: 24px;
+}
+
+.kgtk-wrap .kgtk-regkamar-table th.c-kamar,
+.kgtk-wrap .kgtk-regkamar-table td.c-kamar {
+	text-align: center;
 }
 
 @media(min-width:700px) {
@@ -1038,7 +1117,7 @@ div.kgtk-modal-overlay.is-visible,
 		max-width: 100% !important;
 		box-sizing: border-box !important;
 		margin: 0 auto !important;
-		padding: 0.6cm 1.8cm 0.5cm 1.8cm !important;
+		padding: 0.85cm 1.5cm 0.3cm 1.5cm !important;
 		-webkit-box-decoration-break: clone !important;
 		box-decoration-break: clone !important;
 	}
@@ -1046,7 +1125,7 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-wrap .kgtk-page.kgtk-page--next,
 	.kgtk-wrap .kgtk-page+.kgtk-page {
 		margin-top: 0 !important;
-		padding-top: 0.6cm !important;
+		padding-top: 0.85cm !important;
 		border-top: 0 !important;
 	}
 
@@ -1058,13 +1137,13 @@ div.kgtk-modal-overlay.is-visible,
 	.kgtk-wrap .kgtk-kop-wrap {
 		width: 100%;
 		text-align: center;
-		margin: 0 auto 6px !important;
+		margin: 4px auto 3px !important;
 	}
 
 	.kgtk-wrap .kgtk-kop-tbl {
-		width: 100%;
-		max-width: 760px;
-		margin: 0 auto;
+		width: auto !important;
+		max-width: 100% !important;
+		margin: 0 auto !important;
 		border-collapse: collapse;
 		border: 0;
 	}
@@ -1075,43 +1154,81 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-kop-tbl td.kgtk-kop-line {
-		width: 2px !important;
-		max-width: 2px !important;
-		min-width: 2px !important;
+		width: 1.5px !important;
+		max-width: 1.5px !important;
+		min-width: 1.5px !important;
 		background-color: #0083C4 !important;
 		padding: 0 !important;
 		border: 0 !important;
 		font-size: 1px !important;
 		line-height: 1px !important;
-		-webkit-print-color-adjust: exact;
-		print-color-adjust: exact;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	.kgtk-wrap .kgtk-kop-tbl td.kgtk-kop-line div {
+		width: 1.5px !important;
+		height: 62px !important;
+		background-color: #0083C4 !important;
+		border: 0 !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	.kgtk-wrap .kgtk-kop-tbl img {
+		height: 78px !important;
+		max-height: 78px !important;
+		width: auto !important;
+		display: inline-block !important;
+		vertical-align: middle !important;
 	}
 
 	.kgtk-wrap .kgtk-doc-title {
 		color: #000;
-		font-size: 14pt !important;
+		font-size: 12pt !important;
 		font-weight: bold !important;
 		text-align: center;
 		letter-spacing: 0.5px;
-		margin: 0 0 2px !important;
+		margin: 0 0 1px !important;
 	}
 
 	.kgtk-wrap .kgtk-doc-info {
 		font-size: 12pt !important;
 		text-align: center;
-		line-height: 1.25 !important;
-		margin: 2px 0 4px !important;
+		line-height: 1.2 !important;
+		margin: 1px 0 2px !important;
 	}
 
 	.kgtk-wrap .kgtk-doc-info div {
 		font-size: 12pt !important;
 	}
 
+	.kgtk-wrap .kgtk-doc-tanggal {
+		display: block !important;
+		font-size: 12pt !important;
+		text-align: center;
+		margin: 1px 0 2px !important;
+	}
+
+	.kgtk-wrap .kgtk-doc-lokasi {
+		display: block !important;
+		font-size: 12pt !important;
+		text-align: center;
+		margin: 1px 0 2px !important;
+	}
+
 	.kgtk-wrap .kgtk-doc-kelas {
 		font-size: 12pt !important;
 		text-align: center;
 		font-weight: bold;
-		margin: 0 0 4px !important;
+		margin: 0 0 2px !important;
+	}
+
+	.kgtk-wrap .kgtk-doc-kegiatan-absen {
+		font-size: 12pt !important;
+		text-align: center;
+		font-weight: bold;
+		margin: 0 0 2px !important;
 	}
 
 	.kgtk-wrap .kgtk-scroll {
@@ -1130,7 +1247,7 @@ div.kgtk-modal-overlay.is-visible,
 		border-collapse: collapse !important;
 		border-top: 1px solid #000 !important;
 		color: #000;
-		margin: 4px 0 6px !important;
+		margin: 2px 0 3px !important;
 	}
 
 	.kgtk-wrap .kgtk-table thead {
@@ -1145,58 +1262,60 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-table td {
-		height: 8.6mm !important;
-		min-height: 8.6mm !important;
-		font-size: 12pt !important;
-		padding: 0 6px !important;
-		line-height: 1.15;
+		height: 5.6mm !important;
+		min-height: 5.6mm !important;
+		font-size: 11pt !important;
+		padding: 0 4px !important;
+		line-height: 1.1;
 	}
 
 	.kgtk-wrap .kgtk-table th {
-		height: 8mm !important;
-		font-size: 12pt !important;
+		height: 5.8mm !important;
+		font-size: 11pt !important;
 		font-weight: bold;
 		background: none !important;
 		background-color: transparent !important;
 		color: #000 !important;
-		padding: 2px 4px !important;
+		padding: 1px 4px !important;
 		text-align: center;
 		border-top: 1px solid #000 !important;
 	}
 
 	.kgtk-wrap .kgtk-table .c-no {
-		width: 6% !important;
+		width: 5% !important;
 		text-align: center !important;
-		font-size: 12pt !important;
+		font-size: 11pt !important;
 		padding: 0 2px !important;
 	}
 
 	.kgtk-wrap .kgtk-table .c-nama {
-		width: 31% !important;
-		padding: 0 6px !important;
-		font-size: 12pt !important;
+		width: 35% !important;
+		padding: 0 4px !important;
+		font-size: 11pt !important;
 		text-align: left !important;
+		text-transform: uppercase !important;
 	}
 
 	.kgtk-wrap .kgtk-table .c-inst {
-		width: 31% !important;
-		padding: 0 6px !important;
-		font-size: 12pt !important;
+		width: 35% !important;
+		padding: 0 4px !important;
+		font-size: 11pt !important;
 		text-align: left !important;
 	}
 
 	.kgtk-wrap .kgtk-table th.c-ttd,
 	.kgtk-wrap .kgtk-table .c-ttd {
-		width: 32% !important;
+		width: 25% !important;
 		white-space: nowrap !important;
 		text-align: center !important;
+		font-size: 11pt !important;
 	}
 
 	.kgtk-wrap .kgtk-table .c-ttd-col {
-		width: 16% !important;
-		padding: 2px 5px !important;
+		width: 12.5% !important;
+		padding: 1px 3px !important;
 		color: #000;
-		line-height: 1.15;
+		line-height: 1.1;
 		font-size: 11pt !important;
 		font-weight: bold;
 		vertical-align: top !important;
@@ -1225,10 +1344,10 @@ div.kgtk-modal-overlay.is-visible,
 
 	.kgtk-wrap .kgtk-ttd-blok {
 		display: block !important;
-		margin-top: 14px !important;
+		margin-top: 6px !important;
 		margin-left: auto !important;
 		margin-right: 0 !important;
-		width: 260px !important;
+		width: 250px !important;
 		text-align: center !important;
 		font-family: 'Times New Roman', Times, serif !important;
 		font-size: 11pt !important;
@@ -1237,9 +1356,7 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-ttd-titimangsa {
-		font-size: 11pt !important;
-		margin-bottom: 2px !important;
-		color: #000 !important;
+		display: none !important;
 	}
 
 	.kgtk-wrap .kgtk-ttd-jabatan {
@@ -1249,7 +1366,7 @@ div.kgtk-modal-overlay.is-visible,
 	}
 
 	.kgtk-wrap .kgtk-ttd-space {
-		height: 48px !important;
+		height: 52px !important;
 	}
 
 	.kgtk-wrap .kgtk-ttd-nama {
@@ -1257,6 +1374,7 @@ div.kgtk-modal-overlay.is-visible,
 		font-weight: bold !important;
 		text-decoration: none !important;
 		color: #000 !important;
+		text-transform: uppercase !important;
 	}
 
 	.kgtk-wrap .kgtk-cb-square {
@@ -1269,6 +1387,17 @@ div.kgtk-modal-overlay.is-visible,
 		box-sizing: border-box !important;
 		-webkit-print-color-adjust: exact !important;
 		print-color-adjust: exact !important;
+	}
+
+	.kgtk-wrap .kgtk-regkamar-info-tbl,
+	.kgtk-wrap .kgtk-regkamar-info-tbl tr,
+	.kgtk-wrap .kgtk-regkamar-info-tbl td {
+		border: 0 !important;
+		background: transparent !important;
+	}
+
+	.kgtk-wrap .kgtk-regkamar-table td {
+		height: 24px !important;
 	}
 
 	.kgtk-wrap .kgtk-ttd-dual {
@@ -1481,6 +1610,201 @@ div.kgtk-modal-overlay.is-visible,
 	height: 100%;
 	border-radius: 99px;
 	background: linear-gradient(90deg, var(--sky), var(--blue))
+}
+
+/* Header Kelas Aktif & Unified Filter/Search Bar */
+.kgtk-wrap .kgtk-active-kelas-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding-bottom: 14px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid #e2e8f0
+}
+
+.kgtk-wrap .kgtk-akh-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap
+}
+
+.kgtk-wrap .kgtk-akh-title {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--navy);
+	letter-spacing: -0.2px
+}
+
+.kgtk-wrap .kgtk-akh-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 99px;
+	font-size: 12px;
+	font-weight: 700;
+	background: #f1f5f9;
+	color: #334155
+}
+
+.kgtk-wrap .kgtk-akh-pill--sub {
+	background: #f8fafc;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+	font-weight: 600
+}
+
+.kgtk-wrap .kgtk-akh-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap
+}
+
+.kgtk-wrap .kgtk-akh-btn {
+	min-height: 34px;
+	height: 34px;
+	padding: 0 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px
+}
+
+.kgtk-wrap .kgtk-akh-btn.kgtk-btn--ghost {
+	background: #fff;
+	border: 1px solid #cbd5e1;
+	color: #334155
+}
+
+.kgtk-wrap .kgtk-akh-btn.kgtk-btn--ghost:hover {
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: var(--navy)
+}
+
+.kgtk-wrap .kgtk-akh-btn--del.kgtk-btn--ghost {
+	color: #dc2626;
+	border-color: #fecaca;
+	background: #fff
+}
+
+.kgtk-wrap .kgtk-akh-btn--del.kgtk-btn--ghost:hover {
+	background: #fef2f2;
+	border-color: #f87171;
+	color: #b91c1c
+}
+
+.kgtk-wrap .kgtk-kelola-unified-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 14px
+}
+
+.kgtk-wrap .kgtk-role-segmented {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 2px;
+	padding: 3px;
+	background: #f1f5f9;
+	border-radius: 10px;
+	border: 1px solid #e2e8f0
+}
+
+.kgtk-wrap .kgtk-seg-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: #475569;
+	font-size: 12.5px;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	transition: all .15s ease
+}
+
+.kgtk-wrap .kgtk-seg-btn:hover {
+	color: var(--navy)
+}
+
+.kgtk-wrap .kgtk-seg-btn.is-active {
+	background: #fff;
+	color: var(--navy);
+	font-weight: 700;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, .08)
+}
+
+.kgtk-wrap .kgtk-seg-cnt {
+	display: inline-block;
+	padding: 1px 6px;
+	border-radius: 99px;
+	font-size: 11px;
+	font-weight: 700;
+	background: #e2e8f0;
+	color: #475569
+}
+
+.kgtk-wrap .kgtk-seg-btn.is-active .kgtk-seg-cnt {
+	background: #dbeafe;
+	color: #1e40af
+}
+
+.kgtk-wrap .kgtk-kelola-search-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1 1 320px;
+	justify-content: flex-end
+}
+
+.kgtk-wrap .kgtk-search-wrap--compact {
+	flex: 1 1 220px;
+	max-width: 360px;
+	height: 38px;
+	min-height: 38px
+}
+
+.kgtk-wrap .kgtk-search-wrap--compact .kgtk-input {
+	height: 38px;
+	min-height: 38px;
+	padding: 6px 32px 6px 34px;
+	border-radius: 8px;
+	font-size: 13px;
+	border: 1px solid #cbd5e1
+}
+
+.kgtk-wrap .kgtk-btn-pulihkan-compact {
+	height: 38px;
+	min-height: 38px;
+	padding: 0 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	border-radius: 8px;
+	background: #fff;
+	border: 1px solid #cbd5e1;
+	color: #334155;
+	white-space: nowrap;
+	flex-shrink: 0
+}
+
+.kgtk-wrap .kgtk-btn-pulihkan-compact:hover {
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: var(--navy)
 }
 
 /* Toolbar Pencarian & Filter */
@@ -2544,6 +2868,128 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 /* Modal Export PDF & Excel */
+.kgtk-modal-export-dialog {
+	max-width: 540px !important;
+	width: 95% !important;
+	padding: 20px 22px !important;
+	overflow: hidden !important;
+}
+
+.kgtk-modal-export-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #e2e8f0;
+	flex-shrink: 0;
+}
+
+.kgtk-modal-export-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.kgtk-modal-export-icon {
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	background: #eff6ff;
+	color: #1d4ed8;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	flex-shrink: 0;
+}
+
+.kgtk-modal-close-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #64748b;
+	font-size: 20px;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+.kgtk-modal-close-btn:hover {
+	background: #fee2e2;
+	border-color: #fecaca;
+	color: #dc2626;
+}
+
+.kgtk-export-options-panel {
+	background: #f8fafc;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 10px 12px;
+	margin-bottom: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.kgtk-export-opt-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.kgtk-export-opt-label {
+	font-size: 12.5px;
+	font-weight: 700;
+	color: #0b2d56;
+	margin: 0;
+	white-space: nowrap;
+	min-width: 125px;
+}
+
+.kgtk-ui .kgtk-export-opt-input {
+	flex: 1;
+	min-width: 0;
+	min-height: 36px !important;
+	height: 36px !important;
+	padding: 5px 10px !important;
+	font-size: 12.5px !important;
+	border-radius: 8px !important;
+	background: #ffffff !important;
+	border: 1.5px solid #cbd5e1 !important;
+}
+
+.kgtk-export-section-label {
+	font-size: 11px;
+	font-weight: 800;
+	color: #475569;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 8px 2px 2px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.kgtk-export-item--bio:hover {
+	border-color: #2563eb;
+	background: #eff6ff;
+}
+
+.kgtk-export-badge.is-active-bio {
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
 .kgtk-export-list {
 	display: flex;
 	flex-direction: column;
@@ -2559,8 +3005,8 @@ div.kgtk-modal-overlay.is-visible,
 .kgtk-export-item {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	padding: 9px 12px;
+	gap: 12px;
+	padding: 10px 12px;
 	background: #ffffff;
 	border: 1.5px solid #e2e8f0;
 	border-radius: 10px;
@@ -2571,7 +3017,7 @@ div.kgtk-modal-overlay.is-visible,
 
 .kgtk-export-item--compact {
 	justify-content: space-between;
-	padding: 8px 12px;
+	padding: 9px 12px;
 	background: #f8fafc;
 }
 
@@ -2591,15 +3037,15 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-export-item-icon {
-	width: 32px;
-	height: 32px;
-	border-radius: 8px;
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
 	background: #e0f2fe;
 	color: #0369a1;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 16px;
+	font-size: 17px;
 	flex-shrink: 0;
 }
 
@@ -2614,29 +3060,29 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 .kgtk-export-item-title {
-	font-size: 14px;
+	font-size: 13.5px;
 	font-weight: 700;
 	color: #0b2d56;
 	line-height: 1.3;
-	margin-bottom: 2px;
+	margin-bottom: 1px;
 }
 
 .kgtk-export-item-desc {
-	font-size: 12px;
+	font-size: 11.5px;
 	color: #64748b;
-	line-height: 1.35;
+	line-height: 1.3;
 }
 
 .kgtk-export-item-meta {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	flex-shrink: 0;
 }
 
 .kgtk-export-badge {
 	font-size: 11px;
-	font-weight: 600;
+	font-weight: 700;
 	padding: 4px 8px;
 	border-radius: 6px;
 	white-space: nowrap;
@@ -2666,7 +3112,7 @@ div.kgtk-modal-overlay.is-visible,
 	padding: 6px 12px;
 	border-radius: 8px;
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
 	transition: background 0.15s ease;
 }
 
@@ -2675,15 +3121,22 @@ div.kgtk-modal-overlay.is-visible,
 }
 
 @media (max-width: 580px) {
-	.kgtk-export-item {
+	.kgtk-export-opt-row {
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: stretch;
+		gap: 4px;
+	}
+
+	.kgtk-export-item:not(.kgtk-export-item--compact) {
+		flex-wrap: wrap;
 		gap: 8px;
 	}
 
-	.kgtk-export-item-meta {
+	.kgtk-export-item:not(.kgtk-export-item--compact) .kgtk-export-item-meta {
 		width: 100%;
 		justify-content: space-between;
+		padding-top: 4px;
+		border-top: 1px dashed #e2e8f0;
 	}
 }
 
@@ -3846,4 +4299,212 @@ html:has(.kgtk-portal-body) {
 .kgtk-atk-row .kgtk-btn-del-atk:hover {
 	opacity: 1;
 	transform: scale(1.05);
+}
+
+/* ===== Header Detail Pelatihan (versi rapi) ===== */
+.kgtk-wrap .kgtk-head--clean {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 14px;
+	padding: 18px 24px 16px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-back {
+	margin: 0;
+	align-self: flex-start;
+	font-size: 12.5px;
+	color: #bfdbfe
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-main {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 24px;
+	flex-wrap: wrap
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-info {
+	flex: 1 1 380px;
+	min-width: 0
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-badges {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px
+}
+
+.kgtk-wrap .kgtk-head-type {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 99px;
+	background: rgba(255, 255, 255, .16);
+	border: 1px solid rgba(255, 255, 255, .28);
+	color: #fff;
+	font-size: 11.5px;
+	font-weight: 700;
+	letter-spacing: .02em
+}
+
+.kgtk-wrap .kgtk-head-type--acara {
+	background: rgba(13, 148, 136, .35)
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-code {
+	background: transparent;
+	border: 0;
+	padding: 0;
+	color: #bfdbfe;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: .04em
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-title {
+	font-size: 21px;
+	line-height: 1.3;
+	font-weight: 800;
+	color: #fff;
+	margin: 0 0 6px;
+	letter-spacing: -.2px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-sub {
+	margin: 0;
+	font-size: 13px;
+	color: #dbeafe
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-primary-actions {
+	flex: 0 0 auto;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+	min-width: 250px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-primary-actions > .kgtk-btn--yellow {
+	justify-content: center;
+	text-align: center
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-secondary-actions {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-secondary-actions .kgtk-btn {
+	justify-content: center;
+	min-height: 34px;
+	padding: 6px 8px;
+	font-size: 12.5px;
+	white-space: nowrap
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar {
+	justify-content: flex-start;
+	gap: 14px;
+	padding-top: 12px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar-label {
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .06em;
+	color: #bfdbfe
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar .kgtk-btn {
+	min-height: 34px;
+	padding: 5px 14px;
+	font-size: 12.5px
+}
+
+@media (max-width: 782px) {
+	.kgtk-wrap .kgtk-head--clean .kgtk-head-primary-actions {
+		min-width: 0;
+		width: 100%
+	}
+}
+
+/* ===== Header Detail: rapatkan spasi ===== */
+.kgtk-wrap .kgtk-head--clean {
+	flex-wrap: nowrap;
+	justify-content: flex-start;
+	align-content: flex-start;
+	height: auto;
+	min-height: 0;
+	gap: 8px;
+	padding: 12px 20px 12px;
+	margin-bottom: 12px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-main {
+	flex: 0 0 auto;
+	align-items: flex-start;
+	align-content: flex-start;
+	gap: 16px;
+	height: auto;
+	min-height: 0
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-info {
+	flex: 1 1 360px;
+	height: auto;
+	min-height: 0
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-badges {
+	margin-bottom: 4px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-title {
+	font-size: 19px;
+	margin: 0 0 2px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-sub {
+	margin: 0;
+	font-size: 12.5px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-primary-actions {
+	gap: 6px;
+	min-width: 240px;
+	justify-content: flex-start
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-primary-actions > .kgtk-btn--yellow {
+	min-height: 34px;
+	padding: 5px 12px;
+	font-size: 12.5px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-secondary-actions .kgtk-btn {
+	min-height: 30px;
+	padding: 4px 8px;
+	font-size: 12px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar {
+	flex: 0 0 auto;
+	margin: 0;
+	padding-top: 8px;
+	gap: 10px;
+	align-items: center
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar .kgtk-btn {
+	min-height: 30px;
+	padding: 3px 12px;
+	font-size: 12px
+}
+
+.kgtk-wrap .kgtk-head--clean .kgtk-head-toolbar-label {
+	font-size: 11px
 }

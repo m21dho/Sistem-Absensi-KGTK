@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class KGTK_DB {
 
-	const VERSION         = '21';
+	const VERSION         = '22';
 	const OPTION_VERSION  = 'kgtk_db_version';
 	const OPTION_PAGE_ID  = 'kgtk_page_id';
 	const DEFAULT_TIPE_PJ = 'Penanggung Jawab';
@@ -110,6 +110,8 @@ class KGTK_DB {
   pelatihan_id bigint(20) unsigned NOT NULL,
   kelas_id bigint(20) unsigned NOT NULL,
 {$biodata_cols}
+  setuju_kirim tinyint(1) NOT NULL DEFAULT 0,
+  setuju_pada datetime DEFAULT NULL,
   terverifikasi tinyint(1) NOT NULL DEFAULT 1,
   created_at datetime NOT NULL,
   PRIMARY KEY  (id),
@@ -209,8 +211,8 @@ class KGTK_DB {
   sekolah varchar(200) NOT NULL,
   kabkota varchar(80) NOT NULL DEFAULT '',
   sekolah_id bigint(20) unsigned NOT NULL DEFAULT 0,
-  peran varchar(20) NOT NULL,
-  jenis_gtk varchar(50) NOT NULL DEFAULT '',
+  peran varchar(100) NOT NULL,
+  jenis_gtk varchar(100) NOT NULL DEFAULT '',
   hp varchar(20) NOT NULL,
   nisn varchar(20) NOT NULL DEFAULT '',
   nuptk varchar(20) NOT NULL DEFAULT '',
@@ -301,7 +303,7 @@ class KGTK_DB {
 		global $wpdb;
 
 		$shared_spec = array(
-			'jenis_gtk'          => "varchar(50) NOT NULL DEFAULT '' AFTER peran",
+			'jenis_gtk'          => "varchar(100) NOT NULL DEFAULT '' AFTER peran",
 			'nuptk'              => "varchar(20) NOT NULL DEFAULT '' AFTER nisn",
 			'simpkb'             => "varchar(100) NOT NULL DEFAULT '' AFTER email_guru",
 			'gelar_depan'        => "varchar(30) NOT NULL DEFAULT ''",
@@ -326,10 +328,14 @@ class KGTK_DB {
 			$spec          = $shared_spec;
 
 			if ( 'peserta' === $short_name ) {
+				$spec['setuju_kirim']  = 'tinyint(1) NOT NULL DEFAULT 0 AFTER simpkb';
+				$spec['setuju_pada']   = 'datetime DEFAULT NULL AFTER setuju_kirim';
 				$spec['terverifikasi'] = 'tinyint(1) NOT NULL DEFAULT 1 AFTER simpkb';
 			}
 
 			$added = self::add_missing_columns( $table, $spec, $existing_cols );
+			$wpdb->query( "ALTER TABLE {$table} MODIFY COLUMN peran varchar(100) NOT NULL DEFAULT 'Peserta'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query( "ALTER TABLE {$table} MODIFY COLUMN jenis_gtk varchar(100) NOT NULL DEFAULT ''" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			// Backfill kolom legacy bila kolom baru saja ditambahkan
 			if ( isset( $added['nuptk'] ) ) {

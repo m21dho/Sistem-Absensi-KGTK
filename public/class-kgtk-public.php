@@ -71,6 +71,7 @@ class KGTK_Public {
 				'headerUrl' => esc_url_raw( KGTK_URL . 'assets/images/header-kemendikdasmen.png' ),
 				'waHelp'    => esc_attr( get_option( 'kgtk_wa_help', '08136798163' ) ),
 				'kabkota'   => KGTK_Helpers::kabkota_list(),
+				'peran'     => KGTK_Helpers::peran_list(),
 			)
 		);
 	}

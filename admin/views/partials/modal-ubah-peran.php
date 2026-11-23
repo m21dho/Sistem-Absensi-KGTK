@@ -42,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<label class="kgtk-field">
 				<span style="font-weight:600;color:#0f172a;">Pilih Peran Baru: *</span>
 				<select class="kgtk-input" name="peran" id="kgtk-ubah-peran-select" required style="font-size:13.5px;font-weight:600;">
-					<?php foreach ( KGTK_Helpers::PERAN as $pr ) : ?>
+					<?php foreach ( KGTK_Helpers::peran_list() as $pr ) : ?>
 						<option value="<?php echo esc_attr( $pr ); ?>"><?php echo esc_html( $pr ); ?></option>
 					<?php endforeach; ?>
 				</select>

@@ -27,17 +27,19 @@
 	var C = window.KGTK_PUB || {};
 	var API = C.root || '';
 
-	var PERAN = ['Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Undangan', 'Peserta'];
-	var JENIS_GTK = ['Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'];
-	var JABATAN = ['Guru', 'Tenaga Didik', 'Kepala Sekolah', 'Pengawas Sekolah'];
+	var PERAN = (C.peran && Array.isArray(C.peran) && C.peran.length)
+		? C.peran
+		: ['Fasilitator', 'Pengajar', 'Narasumber', 'Penceramah', 'Pemateri', 'Panitia', 'Undangan', 'Peserta'];
+	var JENIS_GTK = ['Guru', 'Kepala Sekolah', 'Kepala Sekolah Mentor', 'Pengawas Sekolah', 'Tenaga Administrasi Sekolah', 'Tenaga Didik', 'Dinas Pendidikan', 'Lainnya'];
+	var JABATAN = ['Guru', 'Kepala Sekolah', 'Kepala Sekolah Mentor', 'Pengawas Sekolah', 'Tenaga Administrasi Sekolah', 'Tenaga Didik', 'Dinas Pendidikan', 'Lainnya'];
 	var JENIS_KELAMIN = ['Laki-laki', 'Perempuan'];
 	var PENDIDIKAN = ['SMA/SMK Sederajat', 'D3', 'D4 / S1', 'S2', 'S3'];
 	var AGAMA = ['Islam', 'Kristen Protestan', 'Kristen Katolik', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'];
 
 	function formatNamaGelar(nama, gd, gb) {
 		nama = (nama || '').trim();
-		gd = (gd || '').trim();
-		gb = (gb || '').trim();
+		gd = (gd === '-' ? '' : (gd || '').trim());
+		gb = (gb === '-' ? '' : (gb || '').trim());
 		var res = nama;
 		if (gd) {
 			res = gd + ' ' + res;
@@ -405,7 +407,7 @@
 
 		var peranUpper = (pel.peran || b.peran || 'PESERTA').toUpperCase();
 		var hasKelas = (pel.kelas_id && parseInt(pel.kelas_id, 10) > 0) || (pel.kelas && pel.kelas !== 'Belum Ditentukan' && pel.kelas !== 'Belum ada kelas' && pel.kelas_label !== 'Menunggu Penentuan Admin');
-		var lokasiTxt = hasKelas && pel.lokasi && pel.lokasi !== '-' ? (pel.lokasi.toLowerCase().indexOf('di ') === 0 ? pel.lokasi : 'di ' + pel.lokasi) : '';
+		var lokasiTxt = hasKelas && pel.lokasi && pel.lokasi !== '-' ? pel.lokasi.replace(/^di\s+/i, '').trim() : '';
 		var tanggalTxt = hasKelas && pel.tanggal && pel.tanggal !== '-' ? pel.tanggal : '';
 		var nipTxt = b.nip || '-';
 		var kabkotaTxt = hasKelas ? getKabkotaKegiatan(pel) : 'Kepulauan Riau';
@@ -1116,9 +1118,11 @@
 
 		var btnSkip = el('button', {
 			type: 'button',
-			class: 'kgtk-btn kgtk-btn-action-baru',
-			text: isAcara ? 'Isi Data Presensi Baru' : 'Isi Formulir Pendaftaran Baru'
-		});
+			class: 'kgtk-btn kgtk-btn-action-baru'
+		}, [
+			el('span', { text: isAcara ? 'Isi Data Presensi Baru' : 'Isi Formulir Pendaftaran Baru' }),
+			el('span', { class: 'kgtk-btn-arrow', text: '→' })
+		]);
 		btnSkip.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
@@ -1127,21 +1131,51 @@
 		});
 
 		var boxSudah = el('div', { class: 'kgtk-verif-box kgtk-verif-box--sudah' }, [
-			el('div', { class: 'kgtk-verif-title', text: 'Sudah Pernah Mendaftar?' }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Masukkan No. HP atau Email yang pernah didaftarkan agar biodata terisi otomatis.' }),
+			el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--sudah', text: 'PILIHAN 1' }),
+			el('div', { class: 'kgtk-verif-title', text: 'Saya SUDAH pernah ' + (isAcara ? 'mengisi presensi' : 'mendaftar') }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Isi No. HP atau Email yang pernah dipakai. Biodata Anda akan terisi otomatis, tidak perlu mengetik ulang.' }),
 			fVal.wrap,
 			btnVerif
 		]);
 
-		var boxBelum = el('div', { class: 'kgtk-verif-box kgtk-verif-box--belum' }, [
-			el('div', { class: 'kgtk-verif-title', text: 'Belum Pernah Mendaftar?' }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Langsung isi biodata baru tanpa perlu mengisi kontak di atas.' }),
+		var pemisah = el('div', { class: 'kgtk-verif-or' }, [
+			el('span', { text: 'ATAU' })
+		]);
+
+		var boxBelum = el('div', {
+			class: 'kgtk-verif-box kgtk-verif-box--belum',
+			role: 'button',
+			tabindex: '0',
+			title: 'Klik untuk mengisi formulir baru'
+		}, [
+			el('div', { class: 'kgtk-verif-badge-row' }, [
+				el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--belum', text: 'PILIHAN 2' }),
+				el('span', { class: 'kgtk-verif-pill-new', text: 'Formulir Baru' })
+			]),
+			el('div', { class: 'kgtk-verif-title', text: 'Saya BELUM pernah ' + (isAcara ? 'mengisi presensi' : 'mendaftar') }),
+			el('p', { class: 'kgtk-verif-desc', text: 'Mulai mengisi formulir baru dari awal tanpa perlu memasukkan No. HP atau Email sebelumnya.' }),
 			btnSkip
 		]);
 
+		boxBelum.addEventListener('click', function (e) {
+			if (e.target !== btnSkip && !btnSkip.contains(e.target)) {
+				btnSkip.click();
+			}
+		});
+		boxBelum.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				btnSkip.click();
+			}
+		});
+
+		var petunjuk = el('div', { class: 'kgtk-verif-hint', text: 'Pilih salah satu di bawah ini untuk melanjutkan' });
+
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
 			err,
+			petunjuk,
 			boxSudah,
+			pemisah,
 			boxBelum
 		]);
 
@@ -1254,7 +1288,11 @@
 		var fagama = selectField('Agama *', 'f-agama', agOpts, F.agama);
 		var rowJkAgama = el('div', { class: 'kgtk-row2' }, [fjk.wrap, fagama.wrap]);
 
-		var fpangkat = field('Pangkat / Golongan (opsional)', 'f-pangkat', { type: 'text', maxlength: 80, placeholder: 'mis. Penata Muda (III/a) atau Non ASN' }, F.pangkat_golongan);
+		var lblPangkat = el('span', {}, [
+			el('span', { text: 'Pangkat / Golongan *' }),
+			el('small', { style: 'color:#64748b;font-weight:normal;font-size:12px;margin-left:6px;', text: '(beri tanda "-" jika tidak ada / Non ASN)' })
+		]);
+		var fpangkat = field(lblPangkat, 'f-pangkat', { type: 'text', maxlength: 80, required: true, placeholder: 'mis. Penata Muda (III/a) atau -' }, F.pangkat_golongan);
 
 		var falamat = textareaField('Alamat Rumah / Tempat Tinggal *', 'f-alamat', { rows: 2, maxlength: 500, required: true, placeholder: 'Alamat tempat tinggal / domisili' }, F.alamat);
 		var falamatInstansi = textareaField('Alamat Sekolah / Instansi *', 'f-alamat-instansi', { rows: 2, maxlength: 500, required: true, placeholder: 'Alamat lengkap instansi / tempat bertugas' }, F.alamat_instansi);
@@ -1272,23 +1310,67 @@
 		var fnpwp = field('NPWP (opsional)', 'f-npwp', { type: 'text', maxlength: 30, autocomplete: 'off' }, F.npwp);
 		var fpengalaman = textareaField('Pengalaman Jabatan *', 'f-pengalaman-jabatan', { rows: 2, maxlength: 255, required: true, placeholder: 'Contoh: Guru Kelas (5 Tahun), Wakasek (2 Tahun)' }, F.pengalaman_jabatan);
 
-		// Kabupaten/kota lalu sekolah (dari data sekolah yang diimpor admin). Tanpa data: isian teks biasa.
-		var sek = window.KGTKSekolah.create({ root: API, kabkota: S.info.kabkota || [] });
+		// Kabupaten/kota lalu sekolah (dari data sekolah yang diimpor admin). Pada Acara: instansi selalu diketik manual.
+		var sek = window.KGTKSekolah.create({ root: API, kabkota: S.info.kabkota || [], manualOnly: isAcara });
 		sek.setValue({ kabkota: F.kabkota, sekolah_id: F.sekolah_id, sekolah: F.sekolah });
 
 		// Peran: Guru mendaftar pelatihan tanpa dibatasi slot per kelas. Penempatan kelas dipilihkan admin.
-		var opts = PERAN.map(function (p) { return el('option', { value: p, text: p }); });
+		var activePeranList = (S.info && Array.isArray(S.info.peran_list) && S.info.peran_list.length) ? S.info.peran_list : PERAN;
+		var opts = activePeranList.map(function (p) { return el('option', { value: p, text: p }); });
 		var sel = el('select', { class: 'kgtk-input', id: 'f-peran' }, opts);
-		sel.value = PERAN.indexOf(F.peran) > -1 ? F.peran : 'Peserta';
+		sel.value = activePeranList.indexOf(F.peran) > -1 ? F.peran : 'Peserta';
 		var peran = el('label', { class: 'kgtk-field', for: 'f-peran' }, [el('span', { text: 'Peran *' }), sel]);
 
-		// Jabatan: hanya muncul jika peran adalah Peserta (menggantikan label Jenis GTK)
+		// Jabatan: pada Pelatihan (jika peran adalah Peserta) berupa dropdown + Lainnya; pada Acara berupa input manual di bawah NIP
 		var gtkOpts = [el('option', { value: '', text: '-- Pilih Jabatan --' })].concat(
 			JABATAN.map(function (g) { return el('option', { value: g, text: g }); })
 		);
 		var selGtk = el('select', { class: 'kgtk-input', id: 'f-jenis-gtk' }, gtkOpts);
-		selGtk.value = JABATAN.indexOf(F.jabatan || F.jenis_gtk) > -1 ? (F.jabatan || F.jenis_gtk) : '';
-		var wrapGtk = el('label', { class: 'kgtk-field', for: 'f-jenis-gtk', id: 'wrap-jenis-gtk' }, [el('span', { text: 'Jabatan *' }), selGtk]);
+		var rawJabatan = String(F.jabatan || F.jenis_gtk || '').trim();
+		if (rawJabatan === '-') { rawJabatan = ''; }
+		var fjabatanAcara = field('Jabatan *', 'f-jabatan-acara', {
+			type: 'text',
+			maxlength: 100,
+			required: isAcara,
+			placeholder: 'Ketik jabatan Anda (mis. Guru, Kepala Sekolah, Staf, Analis, dll.)',
+			autocomplete: 'off'
+		}, rawJabatan);
+		var initGtkManual = '';
+		if (F.jabatan_pilihan === 'Lainnya') {
+			selGtk.value = 'Lainnya';
+			initGtkManual = String(F.jabatan_manual || rawJabatan || '').trim();
+			if (initGtkManual === 'Lainnya') { initGtkManual = ''; }
+		} else if (rawJabatan && JABATAN.indexOf(rawJabatan) === -1) {
+			selGtk.value = 'Lainnya';
+			initGtkManual = rawJabatan;
+		} else {
+			selGtk.value = JABATAN.indexOf(rawJabatan) > -1 ? rawJabatan : '';
+		}
+		var inpGtkManual = el('input', {
+			type: 'text',
+			class: 'kgtk-input',
+			id: 'f-jenis-gtk-manual',
+			maxlength: 100,
+			placeholder: 'Ketik jabatan Anda (mis. Staf, Analis, Dosen, dll.)',
+			value: initGtkManual,
+			autocomplete: 'off'
+		});
+		var lblGtkSelect = el('label', { class: 'kgtk-field', for: 'f-jenis-gtk' }, [el('span', { text: 'Jabatan *' }), selGtk]);
+		var lblGtkManual = el('label', {
+			class: 'kgtk-field',
+			for: 'f-jenis-gtk-manual',
+			id: 'wrap-jenis-gtk-manual',
+			style: selGtk.value === 'Lainnya' ? '' : 'display:none;'
+		}, [el('span', { text: 'Tulis Jabatan *' }), inpGtkManual]);
+		selGtk.addEventListener('change', function () {
+			if (selGtk.value === 'Lainnya') {
+				lblGtkManual.style.display = '';
+				setTimeout(function () { inpGtkManual.focus(); }, 20);
+			} else {
+				lblGtkManual.style.display = 'none';
+			}
+		});
+		var wrapGtk = el('div', { id: 'wrap-jenis-gtk' }, [lblGtkSelect, lblGtkManual]);
 
 		var fnuptk = field('NUPTK (isi jika ada)', 'f-nuptk', { type: 'text', inputmode: 'numeric', maxlength: 16, autocomplete: 'off' }, F.nuptk || F.nisn);
 		var fsimpkb = field('SIMPKB (isi jika ada)', 'f-simpkb', { type: 'text', maxlength: 100, autocomplete: 'off' }, F.simpkb || F.email_guru);
@@ -1297,17 +1379,14 @@
 
 		var fhp = field('No. HP/WhatsApp *', 'f-hp', { type: 'tel', maxlength: 20, required: true, autocomplete: 'tel', inputmode: 'tel' }, F.hp);
 		var fmail = field('Email *', 'f-email', { type: 'email', maxlength: 100, required: true, autocomplete: 'email' }, F.email);
-		var lblBelajar = isAcara
-			? el('span', {}, [el('span', { text: 'Email belajar.id ' }), el('small', { style: 'color:#64748b;font-weight:normal;', text: '(opsional / tidak wajib)' })])
-			: 'Email belajar.id *';
-		var fbel = field(lblBelajar, 'f-belajar', { type: 'email', maxlength: 100, required: !isAcara, placeholder: isAcara ? 'nama@belajar.id (kosongkan bila tidak ada)' : 'nama@belajar.id', autocomplete: 'off' }, F.email_belajar);
+		var lblBelajar = el('span', {}, [el('span', { text: 'Email belajar.id ' }), el('small', { style: 'color:#64748b;font-weight:normal;', text: '(opsional / tidak wajib)' })]);
+		var fbel = field(lblBelajar, 'f-belajar', { type: 'email', maxlength: 100, required: false, placeholder: 'nama@belajar.id (kosongkan bila tidak ada)', autocomplete: 'off' }, F.email_belajar);
 
 		function updatePeranVisibility() {
 			if (isAcara) {
 				if (peran) { peran.style.display = 'none'; }
 				if (wrapGtk) { wrapGtk.style.display = 'none'; }
 				sel.value = 'Peserta';
-				selGtk.value = '';
 				if (fbel && fbel.input) {
 					fbel.input.required = false;
 					fbel.input.placeholder = 'nama@belajar.id (kosongkan bila tidak ada)';
@@ -1327,6 +1406,7 @@
 				wrapGtk.style.display = isPeserta ? '' : 'none';
 				if (!isPeserta) {
 					selGtk.value = '';
+					lblGtkManual.style.display = 'none';
 				}
 			}
 			// Khusus Panitia: sembunyikan nama bank, nomor bank, email belajar.id, nuptk, simpkb, pengalaman jabatan, npwp
@@ -1348,13 +1428,11 @@
 					: 'Contoh: Dosen / Widyaprada / Praktisi IT / Konsultan (5 Tahun)';
 			}
 			if (fbel && fbel.input) {
-				fbel.input.required = isPeserta;
+				fbel.input.required = false;
 				if (fbel.wrap && fbel.wrap.querySelector('span')) {
-					fbel.wrap.querySelector('span').innerHTML = isPeserta
-						? 'Email belajar.id *'
-						: 'Email belajar.id <small style="color:#64748b;font-weight:normal;">(opsional jika bukan guru/tidak ada)</small>';
+					fbel.wrap.querySelector('span').innerHTML = 'Email belajar.id <small style="color:#64748b;font-weight:normal;">(opsional / tidak wajib)</small>';
 				}
-				fbel.input.placeholder = isPeserta ? 'nama@belajar.id' : 'nama@belajar.id (kosongkan bila tidak ada)';
+				fbel.input.placeholder = 'nama@belajar.id (kosongkan bila tidak ada)';
 			}
 
 			// Label NIK & NIP
@@ -1403,6 +1481,7 @@
 			fnama.wrap,
 			rowGelar,
 			fnip.wrap,
+			isAcara ? fjabatanAcara.wrap : null,
 			rowTtl,
 			rowJkAgama,
 			fpangkat.wrap,
@@ -1442,6 +1521,9 @@
 		form.addEventListener('submit', function (e) {
 			e.preventDefault();
 			err.hidden = true;
+			var resolvedGtk = isAcara
+				? fjabatanAcara.input.value.trim()
+				: (sel.value === 'Peserta' ? (selGtk.value === 'Lainnya' ? inpGtkManual.value.trim() : selGtk.value) : '');
 			var v = {
 				nama: fnama.input.value.trim(),
 				gelar_depan: fgelarDepan.input.value.trim(),
@@ -1458,9 +1540,11 @@
 				rekening: frek.input.value.trim(),
 				npwp: fnpwp.input.value.trim(),
 				pengalaman_jabatan: fpengalaman.input.value.trim(),
-				peran: sel.value,
-				jenis_gtk: sel.value === 'Peserta' ? selGtk.value : '',
-				jabatan: sel.value === 'Peserta' ? selGtk.value : '',
+				peran: isAcara ? 'Peserta' : sel.value,
+				jabatan_pilihan: isAcara ? '' : selGtk.value,
+				jabatan_manual: isAcara ? fjabatanAcara.input.value.trim() : inpGtkManual.value.trim(),
+				jenis_gtk: resolvedGtk,
+				jabatan: resolvedGtk,
 				nuptk: fnuptk.input.value.trim(),
 				nisn: fnuptk.input.value.trim(),
 				nip: fnip.input.value.trim(),
@@ -1478,7 +1562,7 @@
 			S.form = v;
 
 			// Reset tanda invalid sebelumnya
-			[fnama.input, fgelarDepan.input, fgelarBelakang.input, ftempat.input, ftgl.input, fjk.input, fagama.input, fpangkat.input, falamat.input, falamatInstansi.input, fpendidikan.input, fbank.input, frek.input, fpengalaman.input, sel, selGtk, fhp.input, fmail.input, fbel.input, fnuptk.input, fnip.input, fsimpkb.input].forEach(function (inp) {
+			[fnama.input, fgelarDepan.input, fgelarBelakang.input, fjabatanAcara.input, ftempat.input, ftgl.input, fjk.input, fagama.input, fpangkat.input, falamat.input, falamatInstansi.input, fpendidikan.input, fbank.input, frek.input, fpengalaman.input, sel, selGtk, inpGtkManual, fhp.input, fmail.input, fbel.input, fnuptk.input, fnip.input, fsimpkb.input].forEach(function (inp) {
 				if (inp) { inp.classList.remove('is-invalid'); }
 			});
 			if (sek.node) {
@@ -1492,6 +1576,11 @@
 			// 1. Nama lengkap
 			if (!v.nama) {
 				errors.push({ label: 'Nama Lengkap', msg: 'Nama lengkap belum diisi.', el: fnama.input });
+			}
+
+			// Jabatan (khusus Acara, letaknya di bawah NIP)
+			if (isAcara && !v.jenis_gtk) {
+				errors.push({ label: 'Jabatan', msg: 'Jabatan belum diisi.', el: fjabatanAcara.input });
 			}
 
 			// 2. Tempat & Tanggal Lahir (TTL)
@@ -1520,6 +1609,11 @@
 				errors.push({ label: 'Pendidikan Terakhir', msg: 'Pilih pendidikan terakhir Anda.', el: fpendidikan.input });
 			}
 
+			// Pangkat / Golongan
+			if (!v.pangkat_golongan) {
+				errors.push({ label: 'Pangkat / Golongan', msg: 'Pangkat / Golongan wajib diisi (beri tanda strip - jika tidak ada / Non ASN).', el: fpangkat.input });
+			}
+
 			// 6. Asal Sekolah/Instansi & Kabupaten/Kota
 			var se = sek.validate();
 			if (se) {
@@ -1538,10 +1632,8 @@
 			}
 
 			if (isAcara) {
-				// Acara: peran selalu Peserta, Jabatan/GTK, Bank, Rekening, Pengalaman opsional
+				// Acara: peran selalu Peserta, Bank, Rekening, Pengalaman opsional, Jabatan sudah divalidasi di atas
 				v.peran = 'Peserta';
-				v.jenis_gtk = '-';
-				v.jabatan = '-';
 				if (!v.bank) { v.bank = '-'; }
 				if (!v.rekening) { v.rekening = '-'; }
 				if (!v.pengalaman_jabatan) { v.pengalaman_jabatan = '-'; }
@@ -1582,14 +1674,14 @@
 
 				// 11. Jabatan (khusus peran Peserta)
 				if (v.peran === 'Peserta') {
-					if (!v.jenis_gtk) {
-						errors.push({ label: 'Jabatan', msg: 'Jabatan belum dipilih (Guru, Kepala Sekolah, dll).', el: selGtk });
+					if (!selGtk.value) {
+						errors.push({ label: 'Jabatan', msg: 'Jabatan belum dipilih (Guru, Kepala Sekolah, Dinas Pendidikan, Lainnya, dll).', el: selGtk });
+					} else if (selGtk.value === 'Lainnya' && !inpGtkManual.value.trim()) {
+						errors.push({ label: 'Tulis Jabatan', msg: 'Silakan tulis nama jabatan Anda.', el: inpGtkManual });
 					}
-					// 14. Email belajar.id (wajib untuk Peserta)
-					if (!v.email_belajar) {
-						errors.push({ label: 'Email belajar.id', msg: 'Email belajar.id belum diisi.', el: fbel.input });
-					} else if (!EMAIL.test(v.email_belajar) || !/@([a-z0-9-]+\.)*belajar\.id$/.test(v.email_belajar)) {
-						errors.push({ label: 'Email belajar.id', msg: 'Email belajar.id tidak valid (harus berakhiran @belajar.id).', el: fbel.input });
+					// 14. Email belajar.id (opsional)
+					if (v.email_belajar && (!EMAIL.test(v.email_belajar) || !/@([a-z0-9-]+\.)*belajar\.id$/.test(v.email_belajar))) {
+						errors.push({ label: 'Email belajar.id', msg: 'Email belajar.id tidak valid (harus berakhiran @belajar.id, atau kosongkan jika tidak ada).', el: fbel.input });
 					}
 				} else {
 					if (v.email_belajar && !EMAIL.test(v.email_belajar)) {
@@ -1606,6 +1698,20 @@
 			// 16. NIP
 			if (v.nip && !/^\d{18}$/.test(v.nip)) {
 				errors.push({ label: 'NIP', msg: 'NIP harus 18 digit angka (kosongkan jika tidak ada).', el: fnip.input });
+			}
+
+			// 17. No. HP / WhatsApp
+			if (!v.hp) {
+				errors.push({ label: 'No. HP/WhatsApp', msg: 'Nomor HP/WhatsApp belum diisi.', el: fhp.input });
+			} else if (!/^[0-9+ ]{8,20}$/.test(v.hp)) {
+				errors.push({ label: 'No. HP/WhatsApp', msg: 'Format nomor HP/WhatsApp tidak valid (hanya angka, 8-20 digit).', el: fhp.input });
+			}
+
+			// 18. Email
+			if (!v.email) {
+				errors.push({ label: 'Email', msg: 'Alamat email aktif belum diisi.', el: fmail.input });
+			} else if (!EMAIL.test(v.email)) {
+				errors.push({ label: 'Email', msg: 'Format email tidak valid.', el: fmail.input });
 			}
 
 			if (errors.length > 0) {
@@ -1822,7 +1928,11 @@
 			var rowJkAgama = el('div', { class: 'kgtk-row2' }, [fjk.wrap, fagama.wrap]);
 
 			// 7. Pangkat / Golongan
-			var fpangkat = field('Pangkat / Golongan (opsional)', 'f-edit-pangkat', { type: 'text', maxlength: 80, placeholder: 'mis. Penata Muda (III/a) atau Non ASN' }, b.pangkat_golongan);
+			var lblEditPangkat = el('span', {}, [
+				el('span', { text: 'Pangkat / Golongan *' }),
+				el('small', { style: 'color:#64748b;font-weight:normal;font-size:12px;margin-left:6px;', text: '(beri tanda "-" jika tidak ada / Non ASN)' })
+			]);
+			var fpangkat = field(lblEditPangkat, 'f-edit-pangkat', { type: 'text', maxlength: 80, required: true, placeholder: 'mis. Penata Muda (III/a) atau -' }, b.pangkat_golongan);
 
 			// 8. Alamat Rumah & Alamat Sekolah
 			var falamat = textareaField('Alamat Rumah / Tempat Tinggal *', 'f-edit-alamat', { rows: 2, maxlength: 500, required: true, placeholder: 'Alamat tempat tinggal / domisili' }, b.alamat);
@@ -1844,8 +1954,39 @@
 				JABATAN.map(function (g) { return el('option', { value: g, text: g }); })
 			);
 			var selGtk = el('select', { class: 'kgtk-input', id: 'f-edit-jenis-gtk' }, gtkOpts);
-			selGtk.value = JABATAN.indexOf(b.jabatan || b.jenis_gtk) > -1 ? (b.jabatan || b.jenis_gtk) : '';
-			var wrapGtk = el('label', { class: 'kgtk-field', for: 'f-edit-jenis-gtk' }, [el('span', { text: 'Jabatan *' }), selGtk]);
+			var rawEditGtk = String(b.jabatan || b.jenis_gtk || '').trim();
+			if (rawEditGtk === '-') { rawEditGtk = ''; }
+			var initEditGtkManual = '';
+			if (rawEditGtk && JABATAN.indexOf(rawEditGtk) === -1) {
+				selGtk.value = 'Lainnya';
+				initEditGtkManual = rawEditGtk;
+			} else {
+				selGtk.value = JABATAN.indexOf(rawEditGtk) > -1 ? rawEditGtk : '';
+			}
+			var inpEditGtkManual = el('input', {
+				type: 'text',
+				class: 'kgtk-input',
+				id: 'f-edit-jenis-gtk-manual',
+				maxlength: 100,
+				placeholder: 'Ketik jabatan Anda (mis. Staf, Analis, Dosen, dll.)',
+				value: initEditGtkManual,
+				autocomplete: 'off'
+			});
+			var lblEditGtkSel = el('label', { class: 'kgtk-field', for: 'f-edit-jenis-gtk' }, [el('span', { text: 'Jabatan *' }), selGtk]);
+			var lblEditGtkManual = el('label', {
+				class: 'kgtk-field',
+				for: 'f-edit-jenis-gtk-manual',
+				style: selGtk.value === 'Lainnya' ? '' : 'display:none;'
+			}, [el('span', { text: 'Tulis Jabatan *' }), inpEditGtkManual]);
+			selGtk.addEventListener('change', function () {
+				if (selGtk.value === 'Lainnya') {
+					lblEditGtkManual.style.display = '';
+					setTimeout(function () { inpEditGtkManual.focus(); }, 20);
+				} else {
+					lblEditGtkManual.style.display = 'none';
+				}
+			});
+			var wrapGtk = el('div', {}, [lblEditGtkSel, lblEditGtkManual]);
 
 			// 12. Bank & Rekening
 			var fbank = field('Nama Bank *', 'f-edit-bank', { type: 'text', maxlength: 60, placeholder: 'mis. Bank Riau Kepri Syariah / BRI / Mandiri', required: true }, b.bank);
@@ -1866,7 +2007,8 @@
 			// 15. Kontak
 			var fhp = field('No. HP/WhatsApp *', 'f-edit-hp', { type: 'tel', maxlength: 20, required: true, autocomplete: 'tel', inputmode: 'tel' }, b.hp);
 			var fmail = field('Email *', 'f-edit-email', { type: 'email', maxlength: 100, required: true, autocomplete: 'email' }, b.email);
-			var fbel = field('Email belajar.id *', 'f-edit-belajar', { type: 'email', maxlength: 100, required: true, placeholder: 'nama@belajar.id', autocomplete: 'off' }, b.email_belajar);
+			var lblEditBelajar = el('span', {}, [el('span', { text: 'Email belajar.id ' }), el('small', { style: 'color:#64748b;font-weight:normal;', text: '(opsional / tidak wajib)' })]);
+			var fbel = field(lblEditBelajar, 'f-edit-belajar', { type: 'email', maxlength: 100, required: false, placeholder: 'nama@belajar.id (kosongkan bila tidak ada)', autocomplete: 'off' }, b.email_belajar);
 
 			var btnSave = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: 'Simpan Perubahan Biodata' });
 			var btnCancel = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: 'Batal' });
@@ -1935,8 +2077,8 @@
 					kabkota: sv.kabkota,
 					sekolah_id: sv.sekolah_id,
 					sekolah: sv.sekolah,
-					jenis_gtk: selGtk.value,
-					jabatan: selGtk.value,
+					jenis_gtk: selGtk.value === 'Lainnya' ? inpEditGtkManual.value.trim() : selGtk.value,
+					jabatan: selGtk.value === 'Lainnya' ? inpEditGtkManual.value.trim() : selGtk.value,
 					bank: fbank.input.value.trim(),
 					rekening: frek.input.value.trim(),
 					npwp: fnpwp.input.value.trim(),
@@ -1953,18 +2095,20 @@
 				if (!postPayload.tempat_lahir) { return showErr(err, 'Tempat lahir belum diisi.'); }
 				if (!postPayload.tanggal_lahir) { return showErr(err, 'Tanggal lahir belum diisi.'); }
 				if (!postPayload.jenis_kelamin) { return showErr(err, 'Pilih jenis kelamin.'); }
+				if (!postPayload.pangkat_golongan) { return showErr(err, 'Pangkat / Golongan wajib diisi (beri tanda strip - jika tidak ada / Non ASN).'); }
 				if (!postPayload.alamat) { return showErr(err, 'Alamat rumah belum diisi.'); }
 				if (!postPayload.pendidikan) { return showErr(err, 'Pilih pendidikan terakhir.'); }
 				if (!postPayload.sekolah) { return showErr(err, 'Sekolah / Instansi belum diisi.'); }
 				if (!postPayload.alamat_instansi) { return showErr(err, 'Alamat instansi belum diisi.'); }
-				if (!postPayload.jenis_gtk) { return showErr(err, 'Jabatan belum dipilih.'); }
+				if (!selGtk.value) { return showErr(err, 'Jabatan belum dipilih.'); }
+				if (selGtk.value === 'Lainnya' && !inpEditGtkManual.value.trim()) { return showErr(err, 'Silakan tulis nama jabatan Anda.'); }
 				if (!postPayload.bank) { return showErr(err, 'Nama bank belum diisi.'); }
 				if (!postPayload.rekening) { return showErr(err, 'Nomor rekening belum diisi.'); }
 				if (!postPayload.pengalaman_jabatan) { return showErr(err, 'Pengalaman jabatan belum diisi.'); }
 				if (!postPayload.hp) { return showErr(err, 'Nomor HP/WhatsApp belum diisi.'); }
 				if (!postPayload.email || !EMAIL_REGEX.test(postPayload.email)) { return showErr(err, 'Email wajib diisi dengan format yang benar.'); }
-				if (!postPayload.email_belajar || !EMAIL_REGEX.test(postPayload.email_belajar) || !/@([a-z0-9-]+\.)*belajar\.id$/.test(postPayload.email_belajar)) {
-					return showErr(err, 'Email belajar.id wajib diisi dan harus berakhiran belajar.id.');
+				if (postPayload.email_belajar && (!EMAIL_REGEX.test(postPayload.email_belajar) || !/@([a-z0-9-]+\.)*belajar\.id$/.test(postPayload.email_belajar))) {
+					return showErr(err, 'Format email belajar.id tidak valid (harus berakhiran belajar.id, atau kosongkan jika tidak ada).');
 				}
 
 				busy(btnSave, true);
@@ -2020,7 +2164,10 @@
 
 			var bioItems = [
 				['Nama lengkap', formatNamaGelar(b.nama, b.gelar_depan, b.gelar_belakang)],
+				['Gelar Depan', (b.gelar_depan && b.gelar_depan !== '-') ? b.gelar_depan : '-'],
+				['Gelar Belakang', (b.gelar_belakang && b.gelar_belakang !== '-') ? b.gelar_belakang : '-'],
 				['Tempat, Tanggal Lahir', ttlTxt],
+				['Pangkat / Golongan', b.pangkat_golongan || '-'],
 				['NUPTK', b.nuptk || b.nisn || '-'],
 				['NIP', b.nip || '-'],
 				['Instansi', b.sekolah || '-'],

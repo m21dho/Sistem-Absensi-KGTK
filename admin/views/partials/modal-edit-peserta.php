@@ -41,7 +41,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<label class="kgtk-field" style="margin:0;">
 						<span style="font-weight:700;color:#0b2d56;">Peran dalam Pelatihan *</span>
 						<select class="kgtk-input" name="peran" id="kgtk-edit-ps-peran" required>
-							<?php foreach ( KGTK_Helpers::PERAN as $peran ) : ?>
+							<?php foreach ( KGTK_Helpers::peran_list() as $peran ) : ?>
 								<option value="<?php echo esc_attr( $peran ); ?>"><?php echo esc_html( $peran ); ?></option>
 							<?php endforeach; ?>
 						</select>
@@ -121,32 +121,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<!-- Kepegawaian & Instansi -->
 			<div class="kgtk-row2">
 				<label class="kgtk-field">
-					<span>Asal Sekolah / Instansi *</span>
-					<input type="text" class="kgtk-input" name="sekolah" id="kgtk-edit-ps-sekolah" maxlength="200" required>
-				</label>
-				<label class="kgtk-field">
 					<span>Kabupaten / Kota *</span>
-					<input type="text" class="kgtk-input" name="kabkota" id="kgtk-edit-ps-kabkota" maxlength="80" required>
-				</label>
-			</div>
-
-			<label class="kgtk-field">
-				<span>Alamat Sekolah / Instansi</span>
-				<textarea class="kgtk-input" name="alamat_instansi" id="kgtk-edit-ps-alamat-instansi" rows="2" placeholder="Alamat lengkap kantor / sekolah"></textarea>
-			</label>
-
-			<div class="kgtk-row2">
-				<label class="kgtk-field">
-					<span>Jabatan / Jenis GTK *</span>
-					<select class="kgtk-input" name="jenis_gtk" id="kgtk-edit-ps-jabatan">
-						<?php foreach ( KGTK_Helpers::JABATAN as $jbt ) : ?>
-							<option value="<?php echo esc_attr( $jbt ); ?>"><?php echo esc_html( $jbt ); ?></option>
+					<select class="kgtk-input" name="kabkota" id="kgtk-edit-ps-kabkota" required>
+						<option value="">-- Pilih Wilayah / Kab/Kota --</option>
+						<?php foreach ( KGTK_Helpers::kabkota_list() as $kab ) : ?>
+							<option value="<?php echo esc_attr( $kab ); ?>"><?php echo esc_html( $kab ); ?></option>
 						<?php endforeach; ?>
 					</select>
 				</label>
 				<label class="kgtk-field">
-					<span>Pangkat / Golongan</span>
-					<input type="text" class="kgtk-input" name="pangkat_golongan" id="kgtk-edit-ps-pangkat" list="kgtk-edit-pangkat-list" placeholder="mis. Penata Muda (III/a)">
+					<span>Instansi *</span>
+					<div class="kgtk-combo" style="position:relative;">
+						<input type="text" class="kgtk-input" id="kgtk-edit-ps-sekolah-input" placeholder="Ketik untuk mencari instansi / sekolah..." autocomplete="off" style="padding-right:30px;">
+						<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:#64748b;font-size:11px;">&#9660;</span>
+						<ul class="kgtk-combo-list" id="kgtk-edit-ps-sekolah-list" hidden style="position:absolute;z-index:999;left:0;right:0;top:100%;margin:4px 0 0;padding:4px;list-style:none;max-height:220px;overflow-y:auto;background:#fff;border:1.5px solid #0083C4;border-radius:8px;box-shadow:0 8px 24px rgba(15,42,74,.18);"></ul>
+					</div>
+					<input type="hidden" name="sekolah" id="kgtk-edit-ps-sekolah">
+				</label>
+			</div>
+
+			<label class="kgtk-field">
+				<span>Alamat Instansi</span>
+				<textarea class="kgtk-input" name="alamat_instansi" id="kgtk-edit-ps-alamat-instansi" rows="2" placeholder="Alamat lengkap kantor / sekolah"></textarea>
+			</label>
+
+			<div class="kgtk-row2">
+				<div class="kgtk-field">
+					<label class="kgtk-field" style="margin-bottom:0;">
+						<span>Jabatan / Jenis GTK *</span>
+						<select class="kgtk-input" name="jenis_gtk" id="kgtk-edit-ps-jabatan">
+							<?php foreach ( KGTK_Helpers::JABATAN as $jbt ) : ?>
+								<option value="<?php echo esc_attr( $jbt ); ?>"><?php echo esc_html( $jbt ); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</label>
+					<label class="kgtk-field" id="kgtk-edit-ps-jabatan-manual-wrap" style="display:none;margin-top:8px;margin-bottom:0;">
+						<span>Tulis Jabatan *</span>
+						<input type="text" class="kgtk-input" id="kgtk-edit-ps-jabatan-manual" maxlength="100" placeholder="Ketik jabatan (mis. Staf, Analis, Dosen, dll.)">
+					</label>
+				</div>
+				<label class="kgtk-field">
+					<span>Pangkat / Golongan * <small style="color:#64748b;font-size:12px;font-weight:normal;">(Isi "-" jika Non ASN)</small></span>
+					<input type="text" class="kgtk-input" name="pangkat_golongan" id="kgtk-edit-ps-pangkat" list="kgtk-edit-pangkat-list" required placeholder="mis. Penata Muda (III/a) atau -">
 					<datalist id="kgtk-edit-pangkat-list">
 						<?php foreach ( KGTK_Helpers::PANGKAT_GOLONGAN as $pg ) : ?>
 							<option value="<?php echo esc_attr( $pg ); ?>"></option>
@@ -157,8 +173,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="kgtk-row2">
 				<label class="kgtk-field">
-					<span>Pendidikan Terakhir</span>
-					<input type="text" class="kgtk-input" name="pendidikan" id="kgtk-edit-ps-pendidikan" placeholder="mis. D4 / S1 Pendidikan">
+					<span>Pendidikan Terakhir *</span>
+					<select class="kgtk-input" name="pendidikan" id="kgtk-edit-ps-pendidikan">
+						<option value="">-- Pilih Pendidikan Terakhir --</option>
+						<?php foreach ( KGTK_Helpers::PENDIDIKAN as $pend ) : ?>
+							<option value="<?php echo esc_attr( $pend ); ?>"><?php echo esc_html( $pend ); ?></option>
+						<?php endforeach; ?>
+					</select>
 				</label>
 				<label class="kgtk-field">
 					<span>NUPTK / NISN</span>
