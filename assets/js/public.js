@@ -625,7 +625,7 @@
 		var heroChildren;
 		if (S.info && S.info.nama) {
 			// Satukan Banner: Header Terpadu Pelatihan yang Ringkas & Padat
-			var topBar = el('div', { class: 'kgtk-hero-top-bar' }, [crumbs, pillBtn]);
+			var topBar = el('div', { class: 'kgtk-hero-top-bar' }, [crumbs]);
 			var allKelasHero = S.info.kelas || [];
 			var singleKelas = allKelasHero.length === 1 ? allKelasHero[0] : null;
 			var kelasWithInfo = allKelasHero.length > 1 ? allKelasHero.filter(function (k) { return k && (k.tanggal || k.deadline_formatted); }) : [];
@@ -1010,20 +1010,35 @@
 			maxlength: 16,
 			autocomplete: 'off',
 			pattern: '[0-9]*',
-			placeholder: '16 digit angka NIK sesuai KTP',
+			placeholder: 'Contoh: 2171012345678901 (16 digit angka)',
 			required: true
 		}, S.nik);
+
+		// Badge penghitung digit NIK secara real-time agar interaktif
+		var digitCounter = el('span', { class: 'kgtk-nik-counter' });
+		function updateNikCounter() {
+			var len = (f.input.value || '').length;
+			if (len === 16) {
+				digitCounter.textContent = '✓ 16 / 16 digit lengkap';
+				digitCounter.className = 'kgtk-nik-counter is-complete';
+				f.input.classList.add('is-valid-nik');
+			} else {
+				digitCounter.textContent = len + ' / 16 digit';
+				digitCounter.className = 'kgtk-nik-counter';
+				f.input.classList.remove('is-valid-nik');
+			}
+		}
+		var lblSpan = f.wrap.querySelector('span');
+		if (lblSpan) {
+			var lblRow = el('div', { class: 'kgtk-nik-label-row' });
+			lblSpan.parentNode.insertBefore(lblRow, lblSpan);
+			lblRow.appendChild(lblSpan);
+			lblRow.appendChild(digitCounter);
+		}
+		updateNikCounter();
+
 		var err = errBox();
-		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut' });
-		var back = el('button', { type: 'button', class: 'kgtk-btn kgtk-btn--ghost kgtk-btn--block kgtk-btn--large', style: 'margin-top:12px;', text: isAcara ? '← Ganti Kode Acara' : '← Ganti Kode Pelatihan' });
-		back.addEventListener('click', function () {
-			S.nik = '';
-			S.nip = '';
-			S.idType = 'nik';
-			S.verifTipe = '';
-			S.verifNilai = '';
-			go('kode');
-		});
+		var btn = el('button', { type: 'submit', class: 'kgtk-btn kgtk-btn--block kgtk-btn--large', text: isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut Pendaftaran' });
 
 		var noticeBox = null;
 		if (customNote) {
@@ -1036,28 +1051,28 @@
 				'<div class="kgtk-notice-box-body">' + esc(customNote) + '</div>';
 		}
 
+		var iconSvgNik = el('div', { class: 'kgtk-card-icon-circle', 'aria-hidden': 'true' });
+		iconSvgNik.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="7" y1="15" x2="11" y2="15"/></svg>';
+
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
-			el('h2', { text: isAcara ? 'Verifikasi Identitas (NIK)' : 'Nomor Induk Kependudukan (NIK)' }),
-			el('p', { class: 'kgtk-muted', text: isAcara ? 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mengisi absen kegiatan ini.' : 'Masukkan 16 digit Nomor Induk Kependudukan (NIK) sesuai KTP Anda untuk mendaftar pelatihan.' }),
+			el('div', { class: 'kgtk-card-header-clean' }, [
+				iconSvgNik,
+				el('div', {}, [
+					el('h2', { text: isAcara ? 'Verifikasi Identitas (NIK)' : 'Masukkan Nomor Induk Kependudukan (NIK)' }),
+					el('p', { class: 'kgtk-card-desc', text: isAcara ? 'Ketik 16 digit NIK sesuai KTP Anda. Sistem otomatis mengecek apakah data Anda sudah tersimpan.' : 'Ketik 16 digit NIK sesuai KTP Anda. Sistem otomatis mengecek apakah Anda sudah pernah mendaftar sebelumnya.' })
+				])
+			]),
 			noticeBox,
 			err,
 			f.wrap,
-			btn,
-			back
+			btn
 		]);
 
 		f.input.addEventListener('input', function () {
 			f.input.value = f.input.value.replace(/\D/g, '').slice(0, 16);
 			S.verifTipe = '';
 			S.verifNilai = '';
-		});
-		back.addEventListener('click', function () {
-			S.nik = '';
-			S.nip = '';
-			S.idType = 'nik';
-			S.verifTipe = '';
-			S.verifNilai = '';
-			go('kode');
+			updateNikCounter();
 		});
 		form.addEventListener('submit', function (e) {
 			e.preventDefault();
@@ -1066,7 +1081,7 @@
 			var val = f.input.value.trim();
 			if (!/^\d{16}$/.test(val)) {
 				f.input.classList.add('is-invalid');
-				var msgNik = !val ? 'NIK belum diisi.' : 'NIK harus terdiri dari 16 digit angka.';
+				var msgNik = !val ? 'NIK belum diisi.' : 'NIK harus terdiri dari 16 digit angka (saat ini ' + val.length + ' digit).';
 				showErr(err, msgNik);
 				kgtkAlert('NIK Belum Sesuai', msgNik + ' Silakan periksa kembali Nomor Induk Kependudukan pada KTP Anda.', {
 					type: 'warning',
@@ -1081,7 +1096,7 @@
 			S.nip = '';
 			busy(btn, true);
 			cekNik(val).catch(function (x) {
-				busy(btn, false, 'Lanjut');
+				busy(btn, false, isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut Pendaftaran');
 				showErr(err, x.message);
 				kgtkAlert('Pemeriksaan Gagal', x.message || 'Terjadi kesalahan saat memeriksa data.', {
 					type: 'danger',
@@ -1089,7 +1104,36 @@
 				});
 			});
 		});
-		return el('div', {}, [btnBackKode, form]);
+
+		// Kartu pintas interaktif "Lihat Biodata & Riwayat Saya" yang menonjol & mudah dilihat
+		var bioShortcutIcon = el('div', { class: 'kgtk-bio-shortcut-icon', 'aria-hidden': 'true' });
+		bioShortcutIcon.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+		var bioShortcut = el('div', {
+			class: 'kgtk-bio-shortcut',
+			role: 'button',
+			tabindex: '0',
+			'aria-label': 'Lihat Biodata dan Riwayat Pelatihan Saya'
+		}, [
+			bioShortcutIcon,
+			el('div', { class: 'kgtk-bio-shortcut-body' }, [
+				el('div', { class: 'kgtk-bio-shortcut-title', text: 'Lihat Biodata & Riwayat Saya' }),
+				el('div', { class: 'kgtk-bio-shortcut-desc', text: 'Cek bukti pendaftaran, ubah biodata, atau lihat seluruh kegiatan yang pernah Anda ikuti.' })
+			]),
+			el('div', { class: 'kgtk-bio-shortcut-cta' }, [
+				el('span', { text: 'Buka' }),
+				el('span', { class: 'kgtk-bio-shortcut-arrow', text: '→' })
+			])
+		]);
+		bioShortcut.addEventListener('click', function () { goBiodataSaya(); });
+		bioShortcut.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				goBiodataSaya();
+			}
+		});
+
+		return el('div', {}, [btnBackKode, bioShortcut, form]);
 	}
 
 	function vNikVerif() {
@@ -1102,28 +1146,26 @@
 		});
 
 		var err = errBox();
-		var fVal = field('No. HP / WhatsApp atau Email', 'f-vval', {
+		var fVal = field('Masukkan No. HP / WhatsApp atau Email Anda', 'f-vval', {
 			type: 'text',
 			required: true,
 			autocomplete: 'off',
-			placeholder: 'Ketik No. HP (0812...) atau Email Anda'
+			placeholder: 'Ketik No. HP (0812...) atau Email yang pernah didaftarkan'
 		});
 
-		var btnVerifText = isAcara ? 'Lanjut Mengisi Absen' : 'Lanjut Pendaftaran';
+		var btnVerifText = isAcara ? 'Lanjut Mengisi Presensi' : 'Lanjut Pendaftaran Pelatihan';
 		var btnVerif = el('button', {
 			type: 'submit',
 			class: 'kgtk-btn kgtk-btn-action-tarik',
 			text: btnVerifText
 		});
 
-		var btnSkip = el('button', {
+		var btnFallback = el('button', {
 			type: 'button',
-			class: 'kgtk-btn kgtk-btn-action-baru'
-		}, [
-			el('span', { text: isAcara ? 'Isi Data Presensi Baru' : 'Isi Formulir Pendaftaran Baru' }),
-			el('span', { class: 'kgtk-btn-arrow', text: '→' })
-		]);
-		btnSkip.addEventListener('click', function () {
+			class: 'kgtk-link',
+			text: isAcara ? 'Isi data presensi baru secara manual' : 'Isi formulir baru secara manual'
+		});
+		btnFallback.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
 			S.form = emptyForm();
@@ -1131,52 +1173,29 @@
 		});
 
 		var boxSudah = el('div', { class: 'kgtk-verif-box kgtk-verif-box--sudah' }, [
-			el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--sudah', text: 'PILIHAN 1' }),
-			el('div', { class: 'kgtk-verif-title', text: 'Saya SUDAH pernah ' + (isAcara ? 'mengisi presensi' : 'mendaftar') }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Isi No. HP atau Email yang pernah dipakai. Biodata Anda akan terisi otomatis, tidak perlu mengetik ulang.' }),
+			el('div', { class: 'kgtk-verif-badge-row' }, [
+				el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--found', text: '✓ DATA SUDAH TERDAFTAR' })
+			]),
+			el('div', { class: 'kgtk-verif-title', text: 'NIK Anda Sudah Terdaftar di Sistem!' }),
+			el('p', {
+				class: 'kgtk-verif-desc',
+				text: isAcara
+					? 'Biodata Anda sudah tersimpan. Tinggal masukkan No. HP atau Email yang pernah didaftarkan di bawah ini untuk langsung melanjutkan presensi acara.'
+					: 'Biodata Anda sudah tersimpan. Tinggal masukkan No. HP atau Email yang pernah didaftarkan di bawah ini untuk langsung melanjutkan pendaftaran pelatihan.'
+			}),
 			fVal.wrap,
 			btnVerif
 		]);
 
-		var pemisah = el('div', { class: 'kgtk-verif-or' }, [
-			el('span', { text: 'ATAU' })
+		var fallbackBox = el('div', { class: 'kgtk-verif-fallback' }, [
+			el('span', { text: 'No. HP atau Email lama sudah tidak aktif? ' }),
+			btnFallback
 		]);
-
-		var boxBelum = el('div', {
-			class: 'kgtk-verif-box kgtk-verif-box--belum',
-			role: 'button',
-			tabindex: '0',
-			title: 'Klik untuk mengisi formulir baru'
-		}, [
-			el('div', { class: 'kgtk-verif-badge-row' }, [
-				el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--belum', text: 'PILIHAN 2' }),
-				el('span', { class: 'kgtk-verif-pill-new', text: 'Formulir Baru' })
-			]),
-			el('div', { class: 'kgtk-verif-title', text: 'Saya BELUM pernah ' + (isAcara ? 'mengisi presensi' : 'mendaftar') }),
-			el('p', { class: 'kgtk-verif-desc', text: 'Mulai mengisi formulir baru dari awal tanpa perlu memasukkan No. HP atau Email sebelumnya.' }),
-			btnSkip
-		]);
-
-		boxBelum.addEventListener('click', function (e) {
-			if (e.target !== btnSkip && !btnSkip.contains(e.target)) {
-				btnSkip.click();
-			}
-		});
-		boxBelum.addEventListener('keydown', function (e) {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				btnSkip.click();
-			}
-		});
-
-		var petunjuk = el('div', { class: 'kgtk-verif-hint', text: 'Pilih salah satu di bawah ini untuk melanjutkan' });
 
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
 			err,
-			petunjuk,
 			boxSudah,
-			pemisah,
-			boxBelum
+			fallbackBox
 		]);
 
 		form.addEventListener('submit', function (e) {
@@ -1208,7 +1227,7 @@
 				busy(btnVerif, false, btnVerifText);
 				var pesan = x.message || 'Terjadi kesalahan.';
 				if (pesan.indexOf('Data tidak cocok') > -1) {
-					pesan = 'No. HP / Email tidak ditemukan untuk NIK ini. Jika belum pernah mendaftar, klik tombol hijau di bawah.';
+					pesan = 'No. HP / Email tidak cocok dengan data yang tersimpan untuk NIK ini. Periksa kembali atau klik tautan isi formulir baru di bawah.';
 				}
 				showErr(err, pesan);
 			});
@@ -1232,9 +1251,12 @@
 			if (d.guru) {
 				S.form = Object.assign(emptyForm(), d.guru);
 				go('biodata');
-			} else {
+			} else if (d.nik_terdaftar) {
 				S.form = emptyForm();
 				go('nik-verif');
+			} else {
+				S.form = emptyForm();
+				go('biodata');
 			}
 		});
 	}
@@ -1249,7 +1271,7 @@
 		var isAcara = (S.info && S.info.jenis === 'acara');
 		var btnBackVerif = el('button', { type: 'button', class: 'kgtk-btn-back', text: '← Kembali ke Langkah Sebelumnya' });
 		btnBackVerif.addEventListener('click', function () {
-			go(S.cek && S.cek.guru ? 'nik-verif' : 'nik');
+			go(S.cek && (S.cek.guru || S.cek.nik_terdaftar) ? 'nik-verif' : 'nik');
 		});
 
 		var baru = !S.cek || !S.cek.guru, F = S.form;
@@ -1470,7 +1492,24 @@
 				'<div class="kgtk-notice-box-body">' + esc(customNoteBio) + '</div>';
 		}
 
+		var newBannerBio = null;
+		if (baru && S.cek && S.cek.nik_terdaftar === false) {
+			newBannerBio = el('div', { class: 'kgtk-biodata-new-banner' }, [
+				el('div', { class: 'kgtk-verif-badge-row' }, [
+					el('span', { class: 'kgtk-verif-badge kgtk-verif-badge--belum', text: 'PENDAFTAR BARU' }),
+					el('span', { class: 'kgtk-verif-pill-new', text: 'Formulir Pendaftaran Baru' })
+				]),
+				el('p', {
+					class: 'kgtk-biodata-new-banner-text',
+					text: isAcara
+						? 'NIK Anda belum terdaftar di sistem. Silakan lengkapi formulir presensi baru di bawah ini.'
+						: 'NIK Anda belum terdaftar di sistem. Silakan lengkapi formulir pendaftaran baru di bawah ini.'
+				})
+			]);
+		}
+
 		var form = el('form', { class: 'kgtk-card kgtk-card--senior', novalidate: true }, [
+			newBannerBio,
 			el('h2', { text: isAcara ? (baru ? 'Lengkapi Data Mengisi Absen' : 'Periksa Data Mengisi Absen') : (baru ? 'Lengkapi biodata' : 'Periksa biodata') }),
 			el('p', { class: 'kgtk-muted', text: isAcara ? (baru ? 'Isi data diri Anda untuk mengisi absen kehadiran. Tanda * wajib diisi.' : 'Data Anda tersimpan dari kegiatan sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.') : (baru ? 'Isi data diri Anda untuk mendaftar. Tanda * wajib diisi.' : 'Data tersimpan dari pendaftaran sebelumnya. Perbarui bila ada yang berubah. Tanda * wajib diisi.') }),
 			noticeBoxBio,
@@ -1503,7 +1542,7 @@
 		back.addEventListener('click', function () {
 			S.verifTipe = '';
 			S.verifNilai = '';
-			go(S.cek && S.cek.guru ? 'nik-verif' : 'nik');
+			go(S.cek && (S.cek.guru || S.cek.nik_terdaftar) ? 'nik-verif' : 'nik');
 		});
 
 		form.addEventListener('input', function (e) {

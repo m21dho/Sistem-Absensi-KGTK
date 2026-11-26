@@ -294,18 +294,23 @@ class KGTK_REST_Public extends KGTK_REST_Base {
 			}
 			return self::respond(
 				array(
-					'status'    => 'ok',
-					'pelatihan' => $pel,
-					'guru'      => $guru,
+					'status'        => 'ok',
+					'pelatihan'     => $pel,
+					'nik_terdaftar' => true,
+					'guru'          => $guru,
 				)
 			);
 		}
 
+		$tg            = KGTK_DB::table( 'guru' );
+		$nik_terdaftar = (bool) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tg} WHERE nik = %s LIMIT 1", $nik ) );
+
 		return self::respond(
 			array(
-				'status'    => 'ok',
-				'pelatihan' => $pel,
-				'guru'      => null,
+				'status'        => 'ok',
+				'pelatihan'     => $pel,
+				'nik_terdaftar' => $nik_terdaftar,
+				'guru'          => null,
 			)
 		);
 	}
